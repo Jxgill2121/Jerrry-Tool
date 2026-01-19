@@ -1,0 +1,2503 @@
+# VERSION: 2026-01-16 v4.4 - Professional Powertech Theme
+# Powertech – One Stop Tools (Surrey, BC)
+
+from __future__ import annotations
+
+import os
+import re
+import base64
+from io import StringIO, BytesIO
+from typing import List, Dict, Tuple, Optional
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+
+import pandas as pd
+
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
+
+# ============================================================
+# EMBEDDED LOGO (BASE64)
+# ============================================================
+
+# PASTE YOUR BASE64 LOGO STRING BETWEEN THE TRIPLE QUOTES BELOW
+POWERTECH_LOGO_BASE64 = """
+
+"""
+
+
+# ============================================================
+# THEME CONFIGURATION
+# ============================================================
+
+class PowertechTheme:
+    """Professional Powertech color scheme and styling"""
+    
+    # Main colors - professional blue/gray palette
+    PRIMARY = "#1e3a5f"          # Deep blue
+    PRIMARY_LIGHT = "#2c5282"    # Medium blue
+    PRIMARY_DARK = "#0f1e36"     # Very dark blue
+    
+    ACCENT = "#3182ce"           # Bright blue for highlights
+    ACCENT_LIGHT = "#4299e1"     # Light blue
+    
+    SUCCESS = "#38a169"          # Green for success states
+    WARNING = "#d69e2e"          # Yellow/gold for warnings
+    ERROR = "#e53e3e"            # Red for errors
+    
+    # Neutral colors
+    BG_MAIN = "#f7fafc"          # Very light gray background
+    BG_SECONDARY = "#edf2f7"     # Light gray
+    BG_CARD = "#ffffff"          # White cards
+    
+    TEXT_PRIMARY = "#1a202c"     # Almost black
+    TEXT_SECONDARY = "#4a5568"   # Medium gray
+    TEXT_LIGHT = "#718096"       # Light gray
+    
+    BORDER = "#cbd5e0"           # Light border
+    
+    # Fonts
+    FONT_FAMILY = "Segoe UI"
+    FONT_SIZE_TITLE = 16
+    FONT_SIZE_HEADING = 12
+    FONT_SIZE_BODY = 10
+    FONT_SIZE_SMALL = 9
+
+def apply_powertech_theme(root):
+    """Apply custom Powertech styling to the application"""
+    
+    style = ttk.Style(root)
+    
+    # Use 'clam' as base theme for better customization
+    style.theme_use('clam')
+    
+    # Configure main window
+    root.configure(bg=PowertechTheme.BG_MAIN)
+    
+    # Notebook (tabs)
+    style.configure('TNotebook', 
+                   background=PowertechTheme.BG_MAIN,
+                   borderwidth=0)
+    style.configure('TNotebook.Tab',
+                   background=PowertechTheme.BG_SECONDARY,
+                   foreground=PowertechTheme.TEXT_PRIMARY,
+                   padding=[20, 10],
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY, 'bold'))
+    style.map('TNotebook.Tab',
+             background=[('selected', PowertechTheme.PRIMARY)],
+             foreground=[('selected', 'white')],
+             expand=[('selected', [1, 1, 1, 0])])
+    
+    # Frames
+    style.configure('TFrame',
+                   background=PowertechTheme.BG_MAIN)
+    style.configure('Card.TFrame',
+                   background=PowertechTheme.BG_CARD,
+                   relief='flat',
+                   borderwidth=1)
+    
+    # LabelFrames
+    style.configure('TLabelframe',
+                   background=PowertechTheme.BG_CARD,
+                   foreground=PowertechTheme.PRIMARY,
+                   borderwidth=2,
+                   relief='solid')
+    style.configure('TLabelframe.Label',
+                   background=PowertechTheme.BG_CARD,
+                   foreground=PowertechTheme.PRIMARY,
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_HEADING, 'bold'))
+    
+    # Buttons
+    style.configure('TButton',
+                   background=PowertechTheme.PRIMARY,
+                   foreground='white',
+                   borderwidth=0,
+                   focuscolor='none',
+                   padding=[15, 8],
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY, 'bold'))
+    style.map('TButton',
+             background=[('active', PowertechTheme.PRIMARY_LIGHT),
+                        ('pressed', PowertechTheme.PRIMARY_DARK)])
+    
+    # Action buttons (prominent)
+    style.configure('Action.TButton',
+                   background=PowertechTheme.ACCENT,
+                   foreground='white',
+                   padding=[20, 10],
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY, 'bold'))
+    style.map('Action.TButton',
+             background=[('active', PowertechTheme.ACCENT_LIGHT)])
+    
+    # Labels
+    style.configure('TLabel',
+                   background=PowertechTheme.BG_MAIN,
+                   foreground=PowertechTheme.TEXT_PRIMARY,
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY))
+    
+    style.configure('Title.TLabel',
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_TITLE, 'bold'),
+                   foreground=PowertechTheme.PRIMARY)
+    
+    style.configure('Subtitle.TLabel',
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY),
+                   foreground=PowertechTheme.TEXT_SECONDARY)
+    
+    style.configure('Status.TLabel',
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY),
+                   foreground=PowertechTheme.TEXT_SECONDARY,
+                   padding=[5, 5])
+    
+    # Entry and Combobox
+    style.configure('TEntry',
+                   fieldbackground='white',
+                   foreground=PowertechTheme.TEXT_PRIMARY,
+                   borderwidth=1,
+                   relief='solid')
+    
+    style.configure('TCombobox',
+                   fieldbackground='white',
+                   foreground=PowertechTheme.TEXT_PRIMARY,
+                   arrowcolor=PowertechTheme.PRIMARY,
+                   borderwidth=1)
+    style.map('TCombobox',
+             fieldbackground=[('readonly', 'white')],
+             selectbackground=[('readonly', PowertechTheme.ACCENT_LIGHT)])
+    
+    # Spinbox
+    style.configure('TSpinbox',
+                   fieldbackground='white',
+                   foreground=PowertechTheme.TEXT_PRIMARY,
+                   arrowcolor=PowertechTheme.PRIMARY)
+    
+    # Checkbutton
+    style.configure('TCheckbutton',
+                   background=PowertechTheme.BG_CARD,
+                   foreground=PowertechTheme.TEXT_PRIMARY,
+                   font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY))
+
+
+# ============================================================
+# General helpers
+# ============================================================
+
+def natural_sort_key(text: str):
+    return [int(s) if s.isdigit() else s.lower() for s in re.split(r"(\d+)", text)]
+
+
+def safe_float(s: str):
+    s = (s or "").strip()
+    if s == "":
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return "INVALID"
+
+
+def safe_int(s: str):
+    s = (s or "").strip()
+    if s == "":
+        return None
+    try:
+        return int(float(s))
+    except ValueError:
+        return "INVALID"
+
+
+# ============================================================
+# Header detection (robust)
+# ============================================================
+
+def detect_delimiter(lines: List[str]) -> str:
+    sample = "".join(lines[:80])
+    if "\t" in sample:
+        return "\t"
+    if "," in sample:
+        return ","
+    if ";" in sample:
+        return ";"
+    return "  "
+
+
+def smart_split(line: str, delim: str) -> List[str]:
+    s = line.strip("\n").rstrip()
+    if not s:
+        return []
+    if delim == "  ":
+        return [p for p in re.split(r"\s{2,}", s.strip()) if p != ""]
+    return [p.strip() for p in s.split(delim)]
+
+
+def is_numberish(x: str) -> bool:
+    x = x.strip()
+    if x == "":
+        return False
+    try:
+        float(x)
+        return True
+    except Exception:
+        return False
+
+
+def is_timeish(x: str) -> bool:
+    x = x.strip()
+    if not x:
+        return False
+    if ":" in x:
+        return True
+    if "/" in x and ":" in x:
+        return True
+    return False
+
+
+def header_score(parts: List[str]) -> float:
+    if len(parts) < 3:
+        return -1e9
+    lower = [p.lower() for p in parts]
+    texty = sum(1 for p in parts if any(ch.isalpha() for ch in p))
+    numeric = sum(1 for p in parts if is_numberish(p))
+
+    keywords = ["time", "date", "elapsed", "cycle", "step", "ptank", "tamb", "tfluid", "tskin", "pit", "pitleak"]
+    key_hits = 0
+    for p in lower:
+        for k in keywords:
+            if p == k or p.startswith(k):
+                key_hits += 1
+
+    return (texty * 2.0) + (key_hits * 3.0) - (numeric * 3.0) - (0.5 if len(parts) < 6 else 0.0)
+
+
+def data_score(parts: List[str]) -> float:
+    if len(parts) < 3:
+        return -1e9
+    first = parts[0].strip()
+    numish = sum(1 for p in parts[1:] if is_numberish(p))
+    nonnum = (len(parts) - 1) - numish
+    return (10.0 if is_timeish(first) else 0.0) + (numish * 1.0) - (nonnum * 0.5)
+
+
+def find_header_line_index(path: str, max_lines: int = 400) -> Tuple[int, str, List[str]]:
+    with open(path, "r", errors="ignore") as f:
+        lines = []
+        for _ in range(max_lines):
+            ln = f.readline()
+            if ln == "":
+                break
+            lines.append(ln)
+
+    if not lines:
+        raise RuntimeError(f"Empty file: {path}")
+
+    delim = detect_delimiter(lines)
+
+    best_idx = None
+    best_total = -1e18
+
+    for i in range(len(lines)):
+        raw = lines[i].strip()
+        if not raw:
+            continue
+
+        low = raw.lower()
+        if low.startswith("log rate") or low.startswith("powertech test log") or low.startswith("time step") or low.startswith("cycle test"):
+            continue
+
+        parts = smart_split(lines[i], delim)
+        if len(parts) < 3:
+            continue
+
+        hs = header_score(parts)
+
+        look = []
+        for j in range(i + 1, min(i + 25, len(lines))):
+            if not lines[j].strip():
+                continue
+            pj = smart_split(lines[j], delim)
+            if len(pj) < 3:
+                continue
+            look.append(data_score(pj))
+            if len(look) >= 3:
+                break
+
+        if not look:
+            continue
+
+        ds = sum(sorted(look, reverse=True)[:2])
+        total = hs + ds
+
+        if total > best_total:
+            best_total = total
+            best_idx = i
+
+    if best_idx is None:
+        raise RuntimeError(f"Could not detect header line in: {os.path.basename(path)}")
+
+    return best_idx, delim, lines
+
+
+def read_headers_only(path: str) -> Tuple[List[str], str, int, List[str]]:
+    header_idx, delim, lines = find_header_line_index(path)
+    headers = smart_split(lines[header_idx], delim)
+    return headers, delim, header_idx, lines
+
+
+# ============================================================
+# File loaders
+# ============================================================
+
+def load_table_allow_duplicate_headers(path: str) -> pd.DataFrame:
+    headers, delim, header_idx, lines = read_headers_only(path)
+    data_text = "".join(lines[header_idx + 1:])
+
+    parse_headers = make_unique_names(headers)
+
+    if delim == "  ":
+        sep = r"\s{2,}"
+        engine = "python"
+    else:
+        sep = delim
+        engine = "c"
+
+    df = pd.read_csv(
+        StringIO(data_text),
+        sep=sep,
+        engine=engine,
+        names=parse_headers,
+        header=None,
+        low_memory=False
+    )
+
+    df.columns = headers
+    return df
+
+
+def make_unique_names(names: List[str]) -> List[str]:
+    counts: Dict[str, int] = {}
+    out: List[str] = []
+    for n in names:
+        counts[n] = counts.get(n, 0) + 1
+        out.append(f"{n}__{counts[n]}")
+    return out
+
+
+def build_minmax_display_map(headers: List[str]) -> Tuple[List[str], Dict[str, str], Dict[str, str]]:
+    internal = make_unique_names(headers)
+    internal_to_display: Dict[str, str] = {}
+    internal_kind: Dict[str, str] = {}
+
+    for i, raw in enumerate(headers):
+        internal_to_display[internal[i]] = raw
+        internal_kind[internal[i]] = "other"
+
+    start = 2 if len(headers) >= 2 else 0
+    i = start
+    while i + 1 < len(headers):
+        a = headers[i]
+        b = headers[i + 1]
+        if a == b:
+            internal_to_display[internal[i]] = f"{a} (Min)"
+            internal_to_display[internal[i + 1]] = f"{b} (Max)"
+            internal_kind[internal[i]] = "min"
+            internal_kind[internal[i + 1]] = "max"
+            i += 2
+        else:
+            i += 1
+
+    return internal, internal_to_display, internal_kind
+
+
+def load_maxmin_for_plot(path: str) -> Tuple[pd.DataFrame, List[str], Dict[str, str], Dict[str, str]]:
+    raw_df = load_table_allow_duplicate_headers(path)
+    raw_headers = list(raw_df.columns)
+
+    internal, internal_to_display, internal_kind = build_minmax_display_map(raw_headers)
+    raw_df.columns = internal
+    return raw_df, internal, internal_to_display, internal_kind
+
+
+# ============================================================
+# Page 1: Merge
+# ============================================================
+
+def merge_selected_files(filepaths: List[str], out_path: str) -> str:
+    if not filepaths:
+        raise RuntimeError("No files selected.")
+    filepaths = sorted(filepaths, key=lambda p: natural_sort_key(os.path.basename(p)))
+
+    with open(out_path, "w", encoding="utf-8", errors="ignore") as out:
+        for fp in filepaths:
+            with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            out.write(content)
+            if not content.endswith("\n"):
+                out.write("\n")
+            out.write("\n")
+    return out_path
+
+
+# ============================================================
+# Page 2: Merged -> Max/Min (template)
+# ============================================================
+
+def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str) -> pd.DataFrame:
+    df = df_raw.copy()
+    df[cycle_col] = pd.to_numeric(df[cycle_col], errors="coerce")
+    df = df[df[cycle_col].notna()].reset_index(drop=True)
+
+    value_cols = [c for c in df.columns if c not in (time_col, cycle_col)]
+    for c in value_cols:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    g = df.groupby(cycle_col, sort=False)
+
+    time_last = g[time_col].last().reset_index()
+    time_last.columns = ["Cycle", "Date  Time"]
+
+    mins = g[value_cols].min().reset_index()
+    maxs = g[value_cols].max().reset_index()
+
+    mins_map = mins.set_index(cycle_col)
+    maxs_map = maxs.set_index(cycle_col)
+
+    cycles = time_last["Cycle"].tolist()
+    time_map = dict(zip(time_last["Cycle"], time_last["Date  Time"]))
+
+    out_rows = []
+    for cyc in cycles:
+        row = [time_map.get(cyc, ""), cyc]
+        for col in value_cols:
+            row.append(mins_map.loc[cyc, col] if cyc in mins_map.index else "")
+            row.append(maxs_map.loc[cyc, col] if cyc in maxs_map.index else "")
+        out_rows.append(row)
+
+    out_headers = ["Date  Time", "Cycle"]
+    for col in value_cols:
+        out_headers.append(col)
+        out_headers.append(col)
+
+    out_df = pd.DataFrame(out_rows, columns=out_headers)
+    return out_df
+
+
+# ============================================================
+# Page 4: Streaming means + duration + Ptank ramp rate
+# ============================================================
+
+def parse_time_to_seconds(series: pd.Series) -> pd.Series:
+    s = series.astype(str).str.strip()
+
+    out_num = pd.to_numeric(s, errors="coerce")
+    if out_num.notna().any():
+        return out_num
+
+    dt = pd.to_datetime(s, errors="coerce")
+    if dt.notna().any():
+        return dt.astype("int64") / 1e9
+
+    def one(x: str):
+        x = (x or "").strip()
+        if not x or ":" not in x:
+            return None
+        parts = x.split(":")
+        try:
+            if len(parts) == 2:
+                mm = float(parts[0])
+                ss = float(parts[1])
+                return mm * 60.0 + ss
+            if len(parts) == 3:
+                hh = float(parts[0])
+                mm = float(parts[1])
+                ss = float(parts[2])
+                return hh * 3600.0 + mm * 60.0 + ss
+        except Exception:
+            return None
+        return None
+
+    parsed = s.apply(one)
+    return pd.to_numeric(parsed, errors="coerce")
+
+
+def stream_file_means(path: str, cols: List[str], chunksize: int = 50000) -> Tuple[Dict[str, Optional[float]], Dict[str, int]]:
+    headers, delim, header_idx, _lines = read_headers_only(path)
+    missing = [c for c in cols if c not in headers]
+    if missing:
+        raise RuntimeError(f"Missing columns in {os.path.basename(path)}: {missing}")
+
+    if delim == "  ":
+        sep = r"\s{2,}"
+        engine = "python"
+    else:
+        sep = delim
+        engine = "c"
+
+    skip = header_idx + 1
+    sums = {c: 0.0 for c in cols}
+    counts = {c: 0 for c in cols}
+
+    for chunk in pd.read_csv(
+        path, sep=sep, engine=engine, skiprows=skip, names=headers,
+        usecols=cols, header=None, low_memory=False, chunksize=chunksize
+    ):
+        for c in cols:
+            s = pd.to_numeric(chunk[c], errors="coerce")
+            valid = s.dropna()
+            if not valid.empty:
+                sums[c] += float(valid.sum())
+                counts[c] += int(valid.shape[0])
+
+    means = {c: (sums[c] / counts[c] if counts[c] > 0 else None) for c in cols}
+    return means, counts
+
+
+def stream_file_duration_seconds(path: str, mode: str, col: str, chunksize: int = 50000) -> Optional[float]:
+    headers, delim, header_idx, _lines = read_headers_only(path)
+    if col not in headers:
+        raise RuntimeError(f"Duration column '{col}' not found in {os.path.basename(path)}")
+
+    if delim == "  ":
+        sep = r"\s{2,}"
+        engine = "python"
+    else:
+        sep = delim
+        engine = "c"
+
+    skip = header_idx + 1
+    first_val = None
+    last_val = None
+
+    for chunk in pd.read_csv(
+        path, sep=sep, engine=engine, skiprows=skip, names=headers,
+        usecols=[col], header=None, low_memory=False, chunksize=chunksize
+    ):
+        if mode == "Elapsed":
+            v = pd.to_numeric(chunk[col], errors="coerce").dropna()
+        else:
+            v = parse_time_to_seconds(chunk[col]).dropna()
+
+        if v.empty:
+            continue
+        if first_val is None:
+            first_val = float(v.iloc[0])
+        last_val = float(v.iloc[-1])
+
+    if first_val is None or last_val is None:
+        return None
+
+    dur = last_val - first_val
+    if dur < 0:
+        return None
+    return float(dur)
+
+
+def stream_ptank_initial_ramp_stats(
+    path: str,
+    time_mode: str,
+    time_col: str,
+    ptank_col: str,
+    start_dp: float = 1.0,
+    window_minutes: float = 5.0,
+    window_dp: float = 20.0,
+    min_points: int = 30,
+    dt_min: float = 0.02,
+    dt_max: float = 2.0,
+    ramp_cap_mpa_min: float = 50.0,
+    chunksize: int = 50000
+) -> tuple[Optional[float], Optional[float]]:
+    headers, delim, header_idx, _lines = read_headers_only(path)
+    for c in [time_col, ptank_col]:
+        if c not in headers:
+            raise RuntimeError(f"Ramp: column '{c}' not found in {os.path.basename(path)}")
+
+    if delim == "  ":
+        sep = r"\s{2,}"
+        engine = "python"
+    else:
+        sep = delim
+        engine = "c"
+
+    skip = header_idx + 1
+
+    seg_t: List[float] = []
+    seg_p: List[float] = []
+
+    baseline_p = None
+    ramp_started = False
+    ramp_start_t = None
+    ramp_start_p = None
+
+    seg_inst_ramps_mpa_min: List[float] = []
+
+    prev_t = None
+    prev_p = None
+
+    max_seg_seconds = window_minutes * 60.0
+
+    def time_series_from_chunk(chunk: pd.DataFrame) -> pd.Series:
+        if time_mode == "Elapsed":
+            return pd.to_numeric(chunk[time_col], errors="coerce")
+        return parse_time_to_seconds(chunk[time_col])
+
+    for chunk in pd.read_csv(
+        path,
+        sep=sep,
+        engine=engine,
+        skiprows=skip,
+        names=headers,
+        usecols=[time_col, ptank_col],
+        header=None,
+        low_memory=False,
+        chunksize=chunksize
+    ):
+        t = time_series_from_chunk(chunk)
+        p = pd.to_numeric(chunk[ptank_col], errors="coerce")
+        df_tp = pd.DataFrame({"t": t, "p": p}).dropna()
+        if df_tp.empty:
+            continue
+
+        tvals = df_tp["t"].astype(float).values
+        pvals = df_tp["p"].astype(float).values
+
+        if baseline_p is None and len(pvals) > 0:
+            baseline_p = float(pvals[0])
+
+        for i in range(len(tvals)):
+            ti = float(tvals[i])
+            pi = float(pvals[i])
+
+            if prev_t is not None:
+                dt = ti - prev_t
+                dp = pi - prev_p
+
+                if dt <= 0 or dt < dt_min or dt > dt_max:
+                    prev_t, prev_p = ti, pi
+                    continue
+
+                if (not ramp_started) and baseline_p is not None:
+                    if (pi - baseline_p) >= start_dp and dp > 0:
+                        ramp_started = True
+                        ramp_start_t = ti
+                        ramp_start_p = pi
+                        seg_t = [ti]
+                        seg_p = [pi]
+                        seg_inst_ramps_mpa_min = []
+                        prev_t, prev_p = ti, pi
+                        continue
+
+                if ramp_started:
+                    if ramp_start_t is not None and (ti - ramp_start_t) > max_seg_seconds:
+                        break
+                    if ramp_start_p is not None and (pi - ramp_start_p) > window_dp:
+                        break
+
+                    seg_t.append(ti)
+                    seg_p.append(pi)
+
+                    if dp > 0:
+                        ramp_mpa_min = (dp / dt) * 60.0
+                        if ramp_mpa_min <= ramp_cap_mpa_min:
+                            seg_inst_ramps_mpa_min.append(ramp_mpa_min)
+
+            prev_t, prev_p = ti, pi
+
+        if ramp_started and ramp_start_t is not None and len(seg_t) > 0:
+            last_t = seg_t[-1]
+            if (last_t - ramp_start_t) > max_seg_seconds:
+                break
+            if ramp_start_p is not None and (seg_p[-1] - ramp_start_p) > window_dp:
+                break
+
+    if not ramp_started or len(seg_t) < min_points:
+        return None, None
+
+    t0 = seg_t[0]
+    x = [tt - t0 for tt in seg_t]
+    y = seg_p
+
+    x_mean = sum(x) / len(x)
+    y_mean = sum(y) / len(y)
+    num = sum((x[i] - x_mean) * (y[i] - y_mean) for i in range(len(x)))
+    den = sum((x[i] - x_mean) ** 2 for i in range(len(x)))
+
+    if den <= 0:
+        return None, None
+
+    slope_mpa_s = num / den
+    slope_mpa_min = slope_mpa_s * 60.0
+
+    max_ramp_mpa_min = max(seg_inst_ramps_mpa_min) if seg_inst_ramps_mpa_min else None
+
+    return float(slope_mpa_min), (float(max_ramp_mpa_min) if max_ramp_mpa_min is not None else None)
+
+
+# ============================================================
+# Page 5: Validation
+# ============================================================
+
+def validate_maxmin_file(df: pd.DataFrame, limits: Dict, cycle_col: str) -> Tuple[pd.DataFrame, Dict]:
+    results = []
+    total_violations = 0
+    violation_details: Dict[str, int] = {}
+
+    for idx, row in df.iterrows():
+        cycle = row.get(cycle_col, idx)
+        violations = []
+
+        for var_name, lim in limits.items():
+            min_col = f"{var_name} (Min)"
+            max_col = f"{var_name} (Max)"
+
+            min_val = pd.to_numeric(row.get(min_col, None), errors="coerce")
+            max_val = pd.to_numeric(row.get(max_col, None), errors="coerce")
+
+            min_lower = lim.get("min_lower")
+            min_upper = lim.get("min_upper")
+            max_lower = lim.get("max_lower")
+            max_upper = lim.get("max_upper")
+
+            if pd.notna(min_val):
+                if min_lower is not None and min_val < min_lower:
+                    violations.append(f"{var_name} Min={min_val:.3f} < {min_lower:.3f}")
+                    violation_details[var_name] = violation_details.get(var_name, 0) + 1
+                elif min_upper is not None and min_val > min_upper:
+                    violations.append(f"{var_name} Min={min_val:.3f} > {min_upper:.3f}")
+                    violation_details[var_name] = violation_details.get(var_name, 0) + 1
+
+            if pd.notna(max_val):
+                if max_lower is not None and max_val < max_lower:
+                    violations.append(f"{var_name} Max={max_val:.3f} < {max_lower:.3f}")
+                    violation_details[var_name] = violation_details.get(var_name, 0) + 1
+                elif max_upper is not None and max_val > max_upper:
+                    violations.append(f"{var_name} Max={max_val:.3f} > {max_upper:.3f}")
+                    violation_details[var_name] = violation_details.get(var_name, 0) + 1
+
+        if violations:
+            total_violations += 1
+
+        status = "PASS" if not violations else "FAIL"
+        results.append({
+            "Cycle": cycle,
+            "Status": status,
+            "Violations": " | ".join(violations) if violations else "",
+            "Row_Index": idx
+        })
+
+    results_df = pd.DataFrame(results)
+
+    summary = {
+        "total_cycles": len(df),
+        "passed_cycles": len(results_df[results_df["Status"] == "PASS"]),
+        "failed_cycles": total_violations,
+        "pass_rate": (len(results_df[results_df["Status"] == "PASS"]) / len(df) * 100) if len(df) > 0 else 0,
+        "violation_by_variable": violation_details
+    }
+
+    return results_df, summary
+
+
+# ============================================================
+# Main App with Professional Theme
+# ============================================================
+
+class PowertechToolsApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("JERRY - Powertech Analysis Tools — Surrey, BC")
+        self.geometry("1500x950")
+        
+        # Apply theme
+        apply_powertech_theme(self)
+        
+        # Add company header
+        self._build_header()
+
+        self.nb = ttk.Notebook(self)
+        self.nb.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+
+        self.tab_merge = ttk.Frame(self.nb)
+        self.tab_maxmin = ttk.Frame(self.nb)
+        self.tab_plot = ttk.Frame(self.nb)
+        self.tab_avg = ttk.Frame(self.nb)
+        self.tab_val = ttk.Frame(self.nb)
+
+        self.nb.add(self.tab_merge, text="  1) MERGE FILES  ")
+        self.nb.add(self.tab_maxmin, text="  2) MAX/MIN ANALYSIS  ")
+        self.nb.add(self.tab_plot, text="  3) PLOT DATA  ")
+        self.nb.add(self.tab_avg, text="  4) CYCLE AVERAGES  ")
+        self.nb.add(self.tab_val, text="  5) VALIDATION  ")
+
+        self._build_merge_tab()
+        self._build_maxmin_tab()
+        self._build_plot_tab()
+        self._build_avg_tab()
+        self._build_validation_tab()
+
+    def _build_header(self):
+        """Build professional header with company branding"""
+        header = tk.Frame(self, bg="white", height=120)
+        header.pack(fill="x", side="top")
+        header.pack_propagate(False)
+        
+        # Try to load embedded logo
+        logo_label = None
+        
+        try:
+            if POWERTECH_LOGO_BASE64.strip():
+                from PIL import Image, ImageTk
+                
+                # Decode base64 to image
+                logo_data = base64.b64decode(POWERTECH_LOGO_BASE64.strip())
+                logo_img = Image.open(BytesIO(logo_data))
+                
+                # Resize to fit header (maintain aspect ratio) - MUCH BIGGER
+                logo_img.thumbnail((450, 100), Image.Resampling.LANCZOS)
+                logo_photo = ImageTk.PhotoImage(logo_img)
+                
+                logo_label = tk.Label(header, image=logo_photo, bg="white")
+                logo_label.image = logo_photo  # Keep a reference
+                logo_label.pack(side="left", padx=30, pady=10)
+        except Exception as e:
+            # If logo fails to load, fall back to text
+            print(f"Logo not loaded: {e}")
+        
+        # If no logo loaded, use text
+        if logo_label is None:
+            title = tk.Label(
+                header,
+                text="JERRY",
+                font=(PowertechTheme.FONT_FAMILY, 32, "bold"),
+                bg="white",
+                fg=PowertechTheme.PRIMARY
+            )
+            title.pack(side="left", padx=30, pady=10)
+        
+        # Subtitle
+        subtitle = tk.Label(
+            header,
+            text="JERRY - Powertech Analysis Tools",
+            font=(PowertechTheme.FONT_FAMILY, 14),
+            bg="white",
+            fg=PowertechTheme.TEXT_SECONDARY
+        )
+        subtitle.pack(side="left", padx=(0, 30))
+        
+        # Location
+        location = tk.Label(
+            header,
+            text="📍 Surrey, British Columbia",
+            font=(PowertechTheme.FONT_FAMILY, 10),
+            bg="white",
+            fg=PowertechTheme.TEXT_SECONDARY
+        )
+        location.pack(side="right", padx=30)
+
+    # ============ MERGE TAB ============
+    
+    def _build_merge_tab(self):
+        f = ttk.Frame(self.tab_merge)
+        f.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        title_label = ttk.Label(f, text="Merge Multiple Log Files", style='Title.TLabel')
+        title_label.pack(anchor="w", pady=(0, 5))
+        
+        desc_label = ttk.Label(
+            f,
+            text="Combine multiple .txt log files into a single merged file for analysis",
+            style='Subtitle.TLabel'
+        )
+        desc_label.pack(anchor="w", pady=(0, 20))
+
+        # File selection card
+        card = ttk.LabelFrame(f, text="File Selection", padding=20)
+        card.pack(fill="x", pady=(0, 15))
+
+        self.merge_files: List[str] = []
+        self.merge_files_label = tk.StringVar(value="No files selected")
+        
+        btn_frame = ttk.Frame(card)
+        btn_frame.pack(fill="x", pady=(0, 10))
+        
+        ttk.Button(
+            btn_frame,
+            text="📁 Choose Files",
+            command=self._merge_choose_files,
+            style='Action.TButton'
+        ).pack(side="left")
+        
+        ttk.Label(
+            btn_frame,
+            textvariable=self.merge_files_label,
+            style='Status.TLabel'
+        ).pack(side="left", padx=15)
+
+        # Action card
+        action_card = ttk.LabelFrame(f, text="Merge Operation", padding=20)
+        action_card.pack(fill="x", pady=(0, 15))
+        
+        ttk.Button(
+            action_card,
+            text="▶ MERGE FILES",
+            command=self._merge_now,
+            style='Action.TButton'
+        ).pack(side="left")
+
+        self.merge_status = tk.StringVar(value="")
+        status_label = ttk.Label(action_card, textvariable=self.merge_status, style='Status.TLabel')
+        status_label.pack(side="left", padx=15)
+
+    def _merge_choose_files(self):
+        paths = filedialog.askopenfilenames(
+            title="Select .txt log files to merge",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not paths:
+            return
+        self.merge_files = sorted(list(paths), key=lambda p: natural_sort_key(os.path.basename(p)))
+        self.merge_files_label.set(f"✓ {len(self.merge_files)} files selected")
+        self.merge_status.set("Ready to merge")
+
+    def _merge_now(self):
+        try:
+            if not self.merge_files:
+                messagebox.showerror("Error", "Please select files first")
+                return
+
+            default_dir = os.path.dirname(self.merge_files[0])
+            out_path = filedialog.asksaveasfilename(
+                title="Save merged file",
+                defaultextension=".txt",
+                initialfile="merged_output.txt",
+                initialdir=default_dir,
+                filetypes=[("Text", "*.txt"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            merge_selected_files(self.merge_files, out_path)
+            self.merge_status.set(f"✓ Success! File saved")
+            messagebox.showinfo("Complete", f"Merged file created:\n{out_path}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    # ============ MAX/MIN TAB ============
+    
+    def _build_maxmin_tab(self):
+        f = ttk.Frame(self.tab_maxmin)
+        f.pack(fill="both", expand=True, padx=20, pady=20)
+
+        title_label = ttk.Label(f, text="Max/Min Analysis", style='Title.TLabel')
+        title_label.pack(anchor="w", pady=(0, 5))
+        
+        desc_label = ttk.Label(
+            f,
+            text="Generate max/min template from merged log file",
+            style='Subtitle.TLabel'
+        )
+        desc_label.pack(anchor="w", pady=(0, 20))
+
+        # File selection
+        card1 = ttk.LabelFrame(f, text="Input File", padding=20)
+        card1.pack(fill="x", pady=(0, 15))
+        
+        self.mm_infile = tk.StringVar(value="")
+        btn_frame = ttk.Frame(card1)
+        btn_frame.pack(fill="x")
+        
+        ttk.Button(
+            btn_frame,
+            text="📁 Choose Merged File",
+            command=self._mm_choose_file,
+            style='Action.TButton'
+        ).pack(side="left")
+        
+        ttk.Label(btn_frame, textvariable=self.mm_infile, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Column selection
+        card2 = ttk.LabelFrame(f, text="Column Configuration", padding=20)
+        card2.pack(fill="x", pady=(0, 15))
+
+        self.mm_df: Optional[pd.DataFrame] = None
+        self.mm_time_col = tk.StringVar(value="")
+        self.mm_cycle_col = tk.StringVar(value="")
+
+        col_frame = ttk.Frame(card2)
+        col_frame.pack(fill="x")
+        
+        # Time column
+        time_row = ttk.Frame(col_frame)
+        time_row.pack(fill="x", pady=5)
+        ttk.Label(time_row, text="Time Column:", width=20).pack(side="left")
+        self.cb_mm_time = ttk.Combobox(time_row, state="disabled", width=40, textvariable=self.mm_time_col, values=[])
+        self.cb_mm_time.pack(side="left", padx=10)
+
+        # Cycle column
+        cycle_row = ttk.Frame(col_frame)
+        cycle_row.pack(fill="x", pady=5)
+        ttk.Label(cycle_row, text="Cycle Column:", width=20).pack(side="left")
+        self.cb_mm_cycle = ttk.Combobox(cycle_row, state="disabled", width=40, textvariable=self.mm_cycle_col, values=[])
+        self.cb_mm_cycle.pack(side="left", padx=10)
+
+        # Action
+        action_card = ttk.LabelFrame(f, text="Generate Analysis", padding=20)
+        action_card.pack(fill="x", pady=(0, 15))
+        
+        ttk.Button(
+            action_card,
+            text="▶ CREATE MAX/MIN FILE",
+            command=self._mm_make,
+            style='Action.TButton'
+        ).pack(side="left")
+
+        self.mm_status = tk.StringVar(value="")
+        ttk.Label(action_card, textvariable=self.mm_status, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Preview
+        prev_card = ttk.LabelFrame(f, text="Data Preview", padding=15)
+        prev_card.pack(fill="both", expand=True, pady=(0, 0))
+        
+        self.mm_preview = tk.Text(
+            prev_card,
+            height=18,
+            wrap="none",
+            bg="white",
+            fg=PowertechTheme.TEXT_PRIMARY,
+            font=(PowertechTheme.FONT_FAMILY, 9)
+        )
+        self.mm_preview.pack(fill="both", expand=True)
+
+    def _mm_choose_file(self):
+        path = filedialog.askopenfilename(
+            title="Select merged log file",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not path:
+            return
+        self.mm_infile.set(path)  # Store full path
+        self._mm_load_preview()
+
+    def _mm_load_preview(self):
+        try:
+            path = self.mm_infile.get().strip()
+            if not path or not os.path.exists(path):
+                messagebox.showerror("Error", f"File not found: {path}")
+                return
+            
+            df = load_table_allow_duplicate_headers(path)
+            self.mm_df = df
+
+            cols = list(df.columns)
+            self.cb_mm_time["values"] = cols
+            self.cb_mm_cycle["values"] = cols
+            self.cb_mm_time["state"] = "readonly"
+            self.cb_mm_cycle["state"] = "readonly"
+
+            self.mm_time_col.set("Time" if "Time" in cols else cols[0])
+            self.mm_cycle_col.set("Cycle" if "Cycle" in cols else cols[-1])
+
+            self.mm_preview.delete("1.0", tk.END)
+            preview_text = f"✓ Loaded: {len(df):,} rows × {len(cols)} columns\n\n"
+            preview_text += df.head(20).to_string(index=False)
+            self.mm_preview.insert(tk.END, preview_text)
+
+            self.mm_status.set("✓ File loaded successfully")
+        except Exception as e:
+            self.mm_df = None
+            messagebox.showerror("Error", str(e))
+
+    def _mm_make(self):
+        try:
+            if self.mm_df is None:
+                messagebox.showerror("Error", "Please load a file first")
+                return
+
+            df = self.mm_df.copy()
+            time_c = self.mm_time_col.get().strip()
+            cycle_c = self.mm_cycle_col.get().strip()
+
+            if time_c not in df.columns or cycle_c not in df.columns:
+                messagebox.showerror("Error", "Invalid column selection")
+                return
+
+            out_df = compute_maxmin_template(df, time_c, cycle_c)
+
+            default_name = os.path.splitext(os.path.basename(self.mm_infile.get().strip()))[0] + "_maxmin.txt"
+            out_path = filedialog.asksaveasfilename(
+                title="Save max/min file",
+                defaultextension=".txt",
+                initialfile=default_name,
+                filetypes=[("Text", "*.txt"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            header_block = ["Powertech Test Log", "Time step =0.10 s", "", "Cycle test"]
+
+            with open(out_path, "w", encoding="utf-8", errors="ignore") as f:
+                for line in header_block:
+                    f.write(line + "\n")
+                f.write("\t".join(list(out_df.columns)) + "\n")
+                out_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
+
+            self.mm_status.set(f"✓ File created successfully")
+            messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    # ============ PLOT TAB ============
+    
+    def _build_plot_tab(self):
+        # Create scrollable container for entire tab
+        canvas_container = tk.Canvas(self.tab_plot, bg=PowertechTheme.BG_MAIN)
+        scrollbar_y = ttk.Scrollbar(self.tab_plot, orient="vertical", command=canvas_container.yview)
+        scrollbar_x = ttk.Scrollbar(self.tab_plot, orient="horizontal", command=canvas_container.xview)
+        
+        f = ttk.Frame(canvas_container)
+        f.bind("<Configure>", lambda e: canvas_container.configure(scrollregion=canvas_container.bbox("all")))
+        
+        canvas_container.create_window((0, 0), window=f, anchor="nw")
+        canvas_container.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+        
+        canvas_container.pack(side="left", fill="both", expand=True)
+        scrollbar_y.pack(side="right", fill="y")
+        scrollbar_x.pack(side="bottom", fill="x")
+        
+        # Enable mouse wheel scrolling
+        def _on_mousewheel(event):
+            canvas_container.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas_container.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Add padding
+        inner_frame = ttk.Frame(f)
+        inner_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        title_label = ttk.Label(inner_frame, text="Data Visualization", style='Title.TLabel')
+        title_label.pack(anchor="w", pady=(0, 5))
+        
+        desc_label = ttk.Label(
+            inner_frame,
+            text="Plot max/min values across cycles with customizable graphs",
+            style='Subtitle.TLabel'
+        )
+        desc_label.pack(anchor="w", pady=(0, 20))
+
+        # File selection
+        card1 = ttk.LabelFrame(inner_frame, text="Input File", padding=20)
+        card1.pack(fill="x", pady=(0, 15))
+        
+        self.plot_infile = tk.StringVar(value="")
+        btn_frame = ttk.Frame(card1)
+        btn_frame.pack(fill="x")
+        
+        ttk.Button(
+            btn_frame,
+            text="📁 Choose Max/Min File",
+            command=self._plot_choose_file,
+            style='Action.TButton'
+        ).pack(side="left")
+        
+        ttk.Label(btn_frame, textvariable=self.plot_infile, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Plot configuration
+        config_card = ttk.LabelFrame(inner_frame, text="Plot Configuration", padding=20)
+        config_card.pack(fill="x", pady=(0, 15))
+
+        self.plot_df: Optional[pd.DataFrame] = None
+        self.plot_internal_cols: List[str] = []
+        self.plot_internal_to_display: Dict[str, str] = {}
+        self.plot_internal_kind: Dict[str, str] = {}
+
+        self.plot_cycle_col = tk.StringVar(value="")
+        self.plot_cycle_from = tk.StringVar(value="")
+        self.plot_cycle_to = tk.StringVar(value="")
+        
+        # Visualization mode
+        self.plot_mode = tk.StringVar(value="scatter")  # "scatter" or "overview"
+
+        # Cycle settings
+        cycle_row = ttk.Frame(config_card)
+        cycle_row.pack(fill="x", pady=(0, 10))
+        
+        ttk.Label(cycle_row, text="Cycle Column:", width=15).pack(side="left")
+        self.cb_plot_cycle = ttk.Combobox(cycle_row, state="disabled", width=30, textvariable=self.plot_cycle_col, values=[])
+        self.cb_plot_cycle.pack(side="left", padx=10)
+        
+        ttk.Label(cycle_row, text="Range:", width=8).pack(side="left", padx=(20, 5))
+        ttk.Entry(cycle_row, textvariable=self.plot_cycle_from, width=10).pack(side="left", padx=5)
+        ttk.Label(cycle_row, text="to").pack(side="left", padx=5)
+        ttk.Entry(cycle_row, textvariable=self.plot_cycle_to, width=10).pack(side="left", padx=5)
+        ttk.Label(cycle_row, text="(optional)", style='Subtitle.TLabel').pack(side="left", padx=5)
+        
+        # Visualization mode selector
+        mode_row = ttk.Frame(config_card)
+        mode_row.pack(fill="x", pady=(10, 10))
+        
+        ttk.Label(mode_row, text="Visualization Mode:", width=15, font=(PowertechTheme.FONT_FAMILY, 10, 'bold')).pack(side="left")
+        ttk.Radiobutton(mode_row, text="📊 Scatter Plot (Standard)", variable=self.plot_mode, value="scatter").pack(side="left", padx=10)
+        ttk.Radiobutton(mode_row, text="📈 Overview Mode (Rolling Stats + Heatmap)", variable=self.plot_mode, value="overview").pack(side="left", padx=10)
+        
+        self.plot_mode_suggestion = tk.StringVar(value="")
+        ttk.Label(mode_row, textvariable=self.plot_mode_suggestion, style='Subtitle.TLabel', foreground=PowertechTheme.ACCENT).pack(side="left", padx=15)
+
+        # Graph setup
+        graph_row = ttk.Frame(config_card)
+        graph_row.pack(fill="x", pady=(0, 10))
+        
+        ttk.Label(graph_row, text="Number of Graphs:", width=15).pack(side="left")
+        self.num_graphs_var = tk.IntVar(value=2)
+        ttk.Spinbox(
+            graph_row, from_=1, to=10, width=8, textvariable=self.num_graphs_var,
+            command=self._plot_rebuild_graph_rows
+        ).pack(side="left", padx=10)
+        
+        ttk.Button(
+            graph_row,
+            text="🔄 Rebuild Graph Rows",
+            command=self._plot_rebuild_graph_rows
+        ).pack(side="left", padx=10)
+
+        # Graph selection area
+        self.graph_rows_box = ttk.LabelFrame(config_card, text="Graph Variables", padding=15)
+        self.graph_rows_box.pack(fill="x", pady=(10, 0))
+
+        hdr = ttk.Frame(self.graph_rows_box)
+        hdr.pack(fill="x", pady=(0, 8))
+        ttk.Label(hdr, text="#", width=3, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w")
+        ttk.Label(hdr, text="Y-Axis Variable 1", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5)
+        ttk.Label(hdr, text="Y-Axis Variable 2", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5)
+        ttk.Label(hdr, text="Y Min", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5)
+        ttk.Label(hdr, text="Y Max", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5)
+        ttk.Label(hdr, text="Min Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5)
+        ttk.Label(hdr, text="Min Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5)
+        ttk.Label(hdr, text="Max Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5)
+        ttk.Label(hdr, text="Max Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5)
+
+        self.graph_selectors: List[Dict] = []
+
+        # Action
+        action_card = ttk.LabelFrame(inner_frame, text="Generate Plots", padding=20)
+        action_card.pack(fill="x", pady=(0, 15))
+        
+        self.plot_btn = ttk.Button(
+            action_card,
+            text="▶ CREATE PLOTS",
+            command=self._plot_make,
+            state="disabled",
+            style='Action.TButton'
+        )
+        self.plot_btn.pack(side="left")
+
+        # Plot area (no longer in scrollable container - part of main scroll)
+        plot_card = ttk.LabelFrame(inner_frame, text="Visualization", padding=15)
+        plot_card.pack(fill="both", expand=True, pady=(0, 0))
+
+        # Larger figure size for better readability
+        self.fig = plt.Figure(figsize=(14, 10), dpi=100)
+        self.fig.patch.set_facecolor(PowertechTheme.BG_CARD)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=plot_card)
+        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+        toolbar = NavigationToolbar2Tk(self.canvas, plot_card)
+        toolbar.update()
+
+        self._plot_rebuild_graph_rows()
+
+    def _plot_choose_file(self):
+        path = filedialog.askopenfilename(
+            title="Select max/min file",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not path:
+            return
+        self.plot_infile.set(path)  # Store full path
+        self._plot_load_file()
+
+    def _plot_load_file(self):
+        try:
+            path = self.plot_infile.get().strip()
+            if not path or not os.path.exists(path):
+                messagebox.showerror("Error", f"File not found: {path}")
+                return
+            
+            df, internal_cols, internal_to_display, internal_kind = load_maxmin_for_plot(path)
+
+            self.plot_df = df
+            self.plot_internal_cols = internal_cols
+            self.plot_internal_to_display = internal_to_display
+            self.plot_internal_kind = internal_kind
+
+            cycle_internal = None
+            for c in internal_cols:
+                if internal_to_display.get(c, "") == "Cycle":
+                    cycle_internal = c
+                    break
+            if cycle_internal is None:
+                cycle_internal = internal_cols[1] if len(internal_cols) > 1 else internal_cols[0]
+
+            self.cb_plot_cycle["values"] = [internal_to_display[c] for c in internal_cols]
+            self.cb_plot_cycle["state"] = "readonly"
+            self.plot_cycle_col.set(internal_to_display[cycle_internal])
+
+            self._plot_refresh_graph_row_values()
+            self.plot_btn["state"] = "normal"
+            messagebox.showinfo("Success", "File loaded successfully")
+        except Exception as e:
+            self.plot_df = None
+            self.plot_btn["state"] = "disabled"
+            messagebox.showerror("Error", str(e))
+
+    def _plot_rebuild_graph_rows(self):
+        kids = self.graph_rows_box.winfo_children()
+        for w in kids[1:]:
+            w.destroy()
+
+        self.graph_selectors.clear()
+
+        n = int(self.num_graphs_var.get() or 1)
+        for i in range(n):
+            rowf = ttk.Frame(self.graph_rows_box)
+            rowf.pack(fill="x", pady=3)
+
+            ttk.Label(rowf, text=str(i + 1), width=3).grid(row=0, column=0, sticky="w")
+
+            y1_var = tk.StringVar(value="")
+            y2_var = tk.StringVar(value="")
+            y_min_var = tk.StringVar(value="")
+            y_max_var = tk.StringVar(value="")
+            min_low_var = tk.StringVar(value="")
+            min_high_var = tk.StringVar(value="")
+            max_low_var = tk.StringVar(value="")
+            max_high_var = tk.StringVar(value="")
+
+            y1_cb = ttk.Combobox(rowf, state="disabled", width=30, textvariable=y1_var, values=[])
+            y2_cb = ttk.Combobox(rowf, state="disabled", width=30, textvariable=y2_var, values=[""])
+            y1_cb.grid(row=0, column=1, padx=5, sticky="w")
+            y2_cb.grid(row=0, column=2, padx=5, sticky="w")
+
+            ttk.Entry(rowf, width=8, textvariable=y_min_var).grid(row=0, column=3, padx=5, sticky="w")
+            ttk.Entry(rowf, width=8, textvariable=y_max_var).grid(row=0, column=4, padx=5, sticky="w")
+            ttk.Entry(rowf, width=8, textvariable=min_low_var).grid(row=0, column=5, padx=5, sticky="w")
+            ttk.Entry(rowf, width=8, textvariable=min_high_var).grid(row=0, column=6, padx=5, sticky="w")
+            ttk.Entry(rowf, width=8, textvariable=max_low_var).grid(row=0, column=7, padx=5, sticky="w")
+            ttk.Entry(rowf, width=8, textvariable=max_high_var).grid(row=0, column=8, padx=5, sticky="w")
+
+            self.graph_selectors.append({
+                "y1_var": y1_var, "y2_var": y2_var,
+                "y_min_var": y_min_var, "y_max_var": y_max_var,
+                "min_low_var": min_low_var, "min_high_var": min_high_var,
+                "max_low_var": max_low_var, "max_high_var": max_high_var
+            })
+
+        self._plot_refresh_graph_row_values()
+
+    def _plot_refresh_graph_row_values(self):
+        if self.plot_df is None:
+            return
+
+        display_list = [self.plot_internal_to_display[c] for c in self.plot_internal_cols]
+        for i, _sel in enumerate(self.graph_selectors):
+            row = self.graph_rows_box.winfo_children()[i + 1]
+            y1_cb = row.grid_slaves(row=0, column=1)[0]
+            y2_cb = row.grid_slaves(row=0, column=2)[0]
+            y1_cb.configure(values=display_list, state="readonly")
+            y2_cb.configure(values=[""] + display_list, state="readonly")
+
+    def _display_to_internal(self, display_name: str) -> Optional[str]:
+        for k, v in self.plot_internal_to_display.items():
+            if v == display_name:
+                return k
+        return None
+
+    def _plot_make(self):
+        try:
+            if self.plot_df is None:
+                messagebox.showerror("Error", "Please load a file first")
+                return
+
+            df = self.plot_df.copy()
+
+            cycle_display = self.plot_cycle_col.get().strip()
+            cycle_internal = self._display_to_internal(cycle_display)
+            if not cycle_internal or cycle_internal not in df.columns:
+                messagebox.showerror("Error", "Invalid cycle column")
+                return
+
+            df[cycle_internal] = pd.to_numeric(df[cycle_internal], errors="coerce")
+            df = df[df[cycle_internal].notna()].reset_index(drop=True)
+
+            c_from = safe_int(self.plot_cycle_from.get())
+            c_to = safe_int(self.plot_cycle_to.get())
+            if c_from == "INVALID" or c_to == "INVALID":
+                messagebox.showerror("Error", "Cycle range must be integers")
+                return
+            if c_from is not None:
+                df = df[df[cycle_internal] >= c_from]
+            if c_to is not None:
+                df = df[df[cycle_internal] <= c_to]
+            df = df.reset_index(drop=True)
+
+            if df.empty:
+                messagebox.showerror("Error", "No data in selected range")
+                return
+                
+            # Check cycle count and suggest mode
+            num_cycles = len(df)
+            if num_cycles > 100 and self.plot_mode.get() == "scatter":
+                self.plot_mode_suggestion.set(f"💡 {num_cycles} cycles detected - Overview Mode recommended!")
+            else:
+                self.plot_mode_suggestion.set("")
+
+            plot_jobs = []
+            for i, sel in enumerate(self.graph_selectors):
+                y1_disp = sel["y1_var"].get().strip()
+                y2_disp = sel["y2_var"].get().strip()
+                y_min = safe_float(sel["y_min_var"].get())
+                y_max = safe_float(sel["y_max_var"].get())
+                min_low = safe_float(sel["min_low_var"].get())
+                min_high = safe_float(sel["min_high_var"].get())
+                max_low = safe_float(sel["max_low_var"].get())
+                max_high = safe_float(sel["max_high_var"].get())
+
+                if any(x == "INVALID" for x in [y_min, y_max, min_low, min_high, max_low, max_high]):
+                    messagebox.showerror("Error", f"Graph {i+1}: limits must be numeric")
+                    return
+
+                if y1_disp or y2_disp:
+                    plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high))
+
+            if not plot_jobs:
+                messagebox.showwarning("Warning", "Please select at least one variable")
+                return
+
+            # Route to appropriate plotting function
+            mode = self.plot_mode.get()
+            if mode == "overview":
+                self._plot_make_overview(df, cycle_internal, plot_jobs)
+            else:
+                self._plot_make_scatter(df, cycle_internal, plot_jobs)
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+    
+    def _plot_make_scatter(self, df, cycle_internal, plot_jobs):
+        """Original scatter plot implementation"""
+        self.fig.clear()
+        n = len(plot_jobs)
+
+        for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high) in enumerate(plot_jobs, start=1):
+            ax = self.fig.add_subplot(n, 1, idx)
+
+            x = df[cycle_internal]
+            labels_for_title = []
+
+            def plot_series(y_disp: str):
+                if not y_disp:
+                    return
+                y_int = self._display_to_internal(y_disp)
+                if not y_int or y_int not in df.columns:
+                    return
+
+                y = pd.to_numeric(df[y_int], errors="coerce")
+                kind = self.plot_internal_kind.get(y_int, "other")
+
+                if kind == "min":
+                    ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.ACCENT, label=y_disp, alpha=0.6)
+                elif kind == "max":
+                    ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.ERROR, label=y_disp, alpha=0.6)
+                else:
+                    ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.PRIMARY, label=y_disp, alpha=0.6)
+
+                labels_for_title.append(y_disp)
+
+            plot_series(y1_disp)
+            plot_series(y2_disp)
+
+            ax.set_xlabel("Cycle", fontsize=10, fontweight='bold')
+            ax.set_ylabel("Value", fontsize=10, fontweight='bold')
+            ax.grid(True, alpha=0.3, linestyle='--')
+            ax.set_title(" | ".join(labels_for_title) if labels_for_title else f"Graph {graph_num}",
+                         fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
+            ax.set_facecolor('#fafafa')
+
+            # Set Y-axis limits if specified
+            if y_min is not None and y_max is not None:
+                ax.set_ylim(y_min, y_max)
+            elif y_min is not None:
+                ax.set_ylim(bottom=y_min)
+            elif y_max is not None:
+                ax.set_ylim(top=y_max)
+
+            # Draw limit lines - separate for min and max
+            if min_low is not None:
+                ax.axhline(min_low, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.7, label=f"Min Lower Limit")
+            if min_high is not None:
+                ax.axhline(min_high, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.7, label=f"Min Upper Limit")
+            if max_low is not None:
+                ax.axhline(max_low, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.7, label=f"Max Lower Limit")
+            if max_high is not None:
+                ax.axhline(max_high, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.7, label=f"Max Upper Limit")
+
+            ax.legend(fontsize=9, loc='best')
+
+        self.fig.tight_layout()
+        self.canvas.draw()
+    
+    def _plot_make_overview(self, df, cycle_internal, plot_jobs):
+        """Overview mode with rolling statistics and heatmap"""
+        self.fig.clear()
+        
+        num_cycles = len(df)
+        
+        # Determine layout: if only 1 variable pair, use 2 rows (rolling + heatmap)
+        # If multiple variables, use more rows
+        n_vars = len(plot_jobs)
+        
+        if n_vars == 1:
+            # 2 subplots: rolling stats + heatmap
+            n_rows = 2
+        else:
+            # Rolling stats for each variable + one heatmap at bottom
+            n_rows = n_vars + 1
+        
+        # Calculate rolling window (adaptive based on data size)
+        window = max(10, min(100, num_cycles // 20))
+        
+        x = df[cycle_internal]
+        
+        # Plot rolling statistics for each variable
+        for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high) in enumerate(plot_jobs, start=1):
+            if n_vars == 1:
+                ax = self.fig.add_subplot(n_rows, 1, 1)
+            else:
+                ax = self.fig.add_subplot(n_rows, 1, idx)
+            
+            labels_for_title = []
+            
+            def plot_rolling_series(y_disp: str, color_base: str):
+                if not y_disp:
+                    return
+                y_int = self._display_to_internal(y_disp)
+                if not y_int or y_int not in df.columns:
+                    return
+                
+                y = pd.to_numeric(df[y_int], errors="coerce")
+                kind = self.plot_internal_kind.get(y_int, "other")
+                
+                # Determine color
+                if kind == "min":
+                    color = PowertechTheme.ACCENT
+                elif kind == "max":
+                    color = PowertechTheme.ERROR
+                else:
+                    color = PowertechTheme.PRIMARY
+                
+                # Calculate rolling statistics
+                y_series = pd.Series(y.values)
+                rolling_mean = y_series.rolling(window=window, center=True, min_periods=1).mean()
+                rolling_std = y_series.rolling(window=window, center=True, min_periods=1).std()
+                
+                # Plot mean line
+                ax.plot(x, rolling_mean, linewidth=2.5, color=color, label=f"{y_disp} (avg)", alpha=0.9)
+                
+                # Plot confidence envelope (mean ± std)
+                ax.fill_between(x, 
+                               rolling_mean - rolling_std, 
+                               rolling_mean + rolling_std,
+                               color=color, alpha=0.15, label=f"{y_disp} (±1σ)")
+                
+                # Plot actual data points (lighter, smaller)
+                ax.plot(x, y, marker=".", linestyle="None", markersize=2, color=color, alpha=0.2)
+                
+                labels_for_title.append(y_disp)
+            
+            plot_rolling_series(y1_disp, "blue")
+            plot_rolling_series(y2_disp, "red")
+            
+            ax.set_xlabel("Cycle", fontsize=9, fontweight='bold')
+            ax.set_ylabel("Value", fontsize=9, fontweight='bold')
+            ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            title_text = " | ".join(labels_for_title) if labels_for_title else f"Graph {graph_num}"
+            ax.set_title(f"Rolling Statistics (Window={window}) - {title_text}",
+                         fontsize=10, fontweight="bold", color=PowertechTheme.PRIMARY)
+            ax.set_facecolor('#fafafa')
+            
+            # Set Y-axis limits if specified
+            if y_min is not None and y_max is not None:
+                ax.set_ylim(y_min, y_max)
+            elif y_min is not None:
+                ax.set_ylim(bottom=y_min)
+            elif y_max is not None:
+                ax.set_ylim(top=y_max)
+            
+            # Add limit lines if specified - separate for min and max
+            if min_low is not None:
+                ax.axhline(min_low, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.8, label=f"Min Lower")
+            if min_high is not None:
+                ax.axhline(min_high, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.8, label=f"Min Upper")
+            if max_low is not None:
+                ax.axhline(max_low, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.8, label=f"Max Lower")
+            if max_high is not None:
+                ax.axhline(max_high, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.8, label=f"Max Upper")
+            
+            ax.legend(fontsize=8, loc='best', framealpha=0.9)
+        
+        # Create heatmap showing binned cycle performance
+        ax_heat = self.fig.add_subplot(n_rows, 1, n_rows)
+        
+        # Determine bin size (aim for ~20-50 bins)
+        bin_size = max(1, num_cycles // 30)
+        n_bins = (num_cycles + bin_size - 1) // bin_size
+        
+        # Collect all variables to plot in heatmap
+        heatmap_vars = []
+        heatmap_labels = []
+        for graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high in plot_jobs:
+            for y_disp in [y1_disp, y2_disp]:
+                if y_disp:
+                    y_int = self._display_to_internal(y_disp)
+                    if y_int and y_int in df.columns:
+                        heatmap_vars.append((y_int, y_disp, y_min, y_max, min_low, min_high, max_low, max_high))
+                        heatmap_labels.append(y_disp)
+        
+        if heatmap_vars:
+            heatmap_data = []
+            bin_labels = []
+            
+            for bin_idx in range(n_bins):
+                start_idx = bin_idx * bin_size
+                end_idx = min((bin_idx + 1) * bin_size, num_cycles)
+                bin_df = df.iloc[start_idx:end_idx]
+                
+                bin_start_cycle = int(bin_df[cycle_internal].iloc[0])
+                bin_end_cycle = int(bin_df[cycle_internal].iloc[-1])
+                bin_labels.append(f"{bin_start_cycle}-{bin_end_cycle}")
+                
+                row_data = []
+                for y_int, y_disp, y_min, y_max, min_low, min_high, max_low, max_high in heatmap_vars:
+                    y_vals = pd.to_numeric(bin_df[y_int], errors="coerce").dropna()
+                    if len(y_vals) > 0:
+                        # Calculate average value in this bin
+                        avg_val = y_vals.mean()
+                        row_data.append(avg_val)
+                    else:
+                        row_data.append(0)
+                
+                heatmap_data.append(row_data)
+            
+            heatmap_array = pd.DataFrame(heatmap_data, columns=heatmap_labels, index=bin_labels).T
+            
+            # Create heatmap
+            import numpy as np
+            im = ax_heat.imshow(heatmap_array.values, aspect='auto', cmap='RdYlGn_r', interpolation='nearest')
+            
+            # Set ticks
+            ax_heat.set_yticks(range(len(heatmap_labels)))
+            ax_heat.set_yticklabels(heatmap_labels, fontsize=8)
+            
+            # Only show some x-axis labels to avoid crowding
+            x_tick_indices = np.linspace(0, len(bin_labels)-1, min(10, len(bin_labels)), dtype=int)
+            ax_heat.set_xticks(x_tick_indices)
+            ax_heat.set_xticklabels([bin_labels[i] for i in x_tick_indices], rotation=45, ha='right', fontsize=7)
+            
+            ax_heat.set_xlabel("Cycle Range", fontsize=9, fontweight='bold')
+            ax_heat.set_title(f"Binned Average Values (Bin Size={bin_size} cycles)",
+                            fontsize=10, fontweight="bold", color=PowertechTheme.PRIMARY)
+            
+            # Add colorbar
+            cbar = self.fig.colorbar(im, ax=ax_heat, orientation='vertical', pad=0.02, fraction=0.046)
+            cbar.ax.tick_params(labelsize=8)
+            cbar.set_label('Average Value', fontsize=8)
+        
+        self.fig.tight_layout()
+        self.canvas.draw()
+
+    # ============ AVERAGES TAB ============
+    
+    def _build_avg_tab(self):
+        f = ttk.Frame(self.tab_avg)
+        f.pack(fill="both", expand=True, padx=20, pady=20)
+
+        title_label = ttk.Label(f, text="Cycle Averages & Statistics", style='Title.TLabel')
+        title_label.pack(anchor="w", pady=(0, 5))
+        
+        desc_label = ttk.Label(
+            f,
+            text="Calculate averages, durations, and ramp rates across multiple cycle files",
+            style='Subtitle.TLabel'
+        )
+        desc_label.pack(anchor="w", pady=(0, 20))
+
+        # File selection
+        card1 = ttk.LabelFrame(f, text="Step 1: Select Cycle Files", padding=20)
+        card1.pack(fill="x", pady=(0, 12))
+
+        self.avg_files: List[str] = []
+        self.avg_files_label = tk.StringVar(value="No files selected")
+        
+        btn_frame = ttk.Frame(card1)
+        btn_frame.pack(fill="x")
+        
+        ttk.Button(
+            btn_frame,
+            text="📁 Choose Cycle Files",
+            command=self._avg_choose_files,
+            style='Action.TButton'
+        ).pack(side="left")
+        
+        ttk.Label(btn_frame, textvariable=self.avg_files_label, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Duration settings
+        card2 = ttk.LabelFrame(f, text="Step 2: Duration Configuration", padding=20)
+        card2.pack(fill="x", pady=(0, 12))
+
+        self.duration_mode = tk.StringVar(value="Elapsed")
+        dur_row = ttk.Frame(card2)
+        dur_row.pack(fill="x")
+        
+        ttk.Label(dur_row, text="Mode:", width=15).pack(side="left")
+        ttk.Combobox(
+            dur_row, width=15, state="readonly",
+            values=["Elapsed", "Time"], textvariable=self.duration_mode
+        ).pack(side="left", padx=10)
+
+        self.duration_col = tk.StringVar(value="")
+        ttk.Label(dur_row, text="Column:", width=10).pack(side="left", padx=(20, 5))
+        self.cb_duration_col = ttk.Combobox(dur_row, width=30, state="disabled", textvariable=self.duration_col, values=[])
+        self.cb_duration_col.pack(side="left", padx=10)
+
+        # Ramp rate settings
+        card3 = ttk.LabelFrame(f, text="Step 3: Ptank Ramp Rate (Optional)", padding=20)
+        card3.pack(fill="x", pady=(0, 12))
+
+        self.compute_ramp = tk.BooleanVar(value=True)
+        ramp_row1 = ttk.Frame(card3)
+        ramp_row1.pack(fill="x", pady=(0, 8))
+        
+        ttk.Checkbutton(ramp_row1, text="Compute Ptank ramp rate", variable=self.compute_ramp).pack(side="left")
+
+        ramp_row2 = ttk.Frame(card3)
+        ramp_row2.pack(fill="x")
+        
+        ttk.Label(ramp_row2, text="Ptank Column:", width=15).pack(side="left")
+        self.ptank_col = tk.StringVar(value="")
+        self.cb_ptank_col = ttk.Combobox(ramp_row2, width=30, state="disabled", textvariable=self.ptank_col, values=[])
+        self.cb_ptank_col.pack(side="left", padx=10)
+
+        self.ramp_positive_only = tk.BooleanVar(value=True)
+        ttk.Checkbutton(ramp_row2, text="Filling only (dP>0)", variable=self.ramp_positive_only).pack(side="left", padx=15)
+
+        # Column selection
+        card4 = ttk.LabelFrame(f, text="Step 4: Select Variables to Average", padding=20)
+        card4.pack(fill="both", expand=False, pady=(0, 12))
+
+        list_frame = ttk.Frame(card4)
+        list_frame.pack(fill="both", expand=True)
+        
+        self.avg_cols_listbox = tk.Listbox(
+            list_frame,
+            selectmode="extended",
+            height=8,
+            bg="white",
+            fg=PowertechTheme.TEXT_PRIMARY,
+            font=(PowertechTheme.FONT_FAMILY, 9)
+        )
+        self.avg_cols_listbox.pack(side="left", fill="both", expand=True)
+        sb = ttk.Scrollbar(list_frame, orient="vertical", command=self.avg_cols_listbox.yview)
+        sb.pack(side="right", fill="y")
+        self.avg_cols_listbox.configure(yscrollcommand=sb.set)
+
+        # Actions
+        card5 = ttk.LabelFrame(f, text="Step 5: Compute", padding=20)
+        card5.pack(fill="x", pady=(0, 12))
+
+        action_frame = ttk.Frame(card5)
+        action_frame.pack(fill="x")
+        
+        ttk.Button(
+            action_frame,
+            text="📊 LOAD COLUMNS",
+            command=self._avg_load_cols
+        ).pack(side="left", padx=(0, 10))
+        
+        ttk.Button(
+            action_frame,
+            text="▶ COMPUTE AVERAGES",
+            command=self._avg_compute,
+            style='Action.TButton'
+        ).pack(side="left", padx=(0, 10))
+        
+        ttk.Button(
+            action_frame,
+            text="💾 SAVE RESULTS (CSV)",
+            command=self._avg_save_csv
+        ).pack(side="left")
+
+        self.avg_status = tk.StringVar(value="")
+        ttk.Label(action_frame, textvariable=self.avg_status, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Results
+        card6 = ttk.LabelFrame(f, text="Results", padding=15)
+        card6.pack(fill="both", expand=True)
+
+        # Create frame for text with scrollbars
+        text_frame = ttk.Frame(card6)
+        text_frame.pack(fill="both", expand=True)
+
+        # Scrollbars
+        scrollbar_y = ttk.Scrollbar(text_frame, orient="vertical")
+        scrollbar_x = ttk.Scrollbar(text_frame, orient="horizontal")
+
+        self.avg_text = tk.Text(
+            text_frame,
+            height=15,
+            wrap="none",
+            bg="white",
+            fg=PowertechTheme.TEXT_PRIMARY,
+            font=(PowertechTheme.FONT_FAMILY, 9),
+            yscrollcommand=scrollbar_y.set,
+            xscrollcommand=scrollbar_x.set
+        )
+
+        scrollbar_y.config(command=self.avg_text.yview)
+        scrollbar_x.config(command=self.avg_text.xview)
+
+        # Pack scrollbars and text
+        scrollbar_y.pack(side="right", fill="y")
+        scrollbar_x.pack(side="bottom", fill="x")
+        self.avg_text.pack(side="left", fill="both", expand=True)
+
+        self.avg_results_df: Optional[pd.DataFrame] = None
+
+    def _avg_choose_files(self):
+        paths = filedialog.askopenfilenames(
+            title="Select cycle files",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not paths:
+            return
+        self.avg_files = sorted(list(paths), key=lambda p: natural_sort_key(os.path.basename(p)))
+        self.avg_files_label.set(f"✓ {len(self.avg_files)} files selected")
+        self.avg_status.set("Files ready")
+
+    def _avg_load_cols(self):
+        try:
+            if not self.avg_files:
+                messagebox.showerror("Error", "Please select files first")
+                return
+
+            headers, _delim, _idx, _lines = read_headers_only(self.avg_files[0])
+
+            self.avg_cols_listbox.delete(0, tk.END)
+            for h in headers:
+                self.avg_cols_listbox.insert(tk.END, h)
+
+            self.cb_duration_col["values"] = headers
+            self.cb_duration_col["state"] = "readonly"
+
+            self.cb_ptank_col["values"] = headers
+            self.cb_ptank_col["state"] = "readonly"
+
+            if "Elapsed" in headers:
+                self.duration_col.set("Elapsed")
+                self.duration_mode.set("Elapsed")
+            elif "Time" in headers:
+                self.duration_col.set("Time")
+                self.duration_mode.set("Time")
+            else:
+                self.duration_col.set(headers[0])
+
+            ptank_guess = None
+            for h in headers:
+                if h.lower() == "ptank" or h.lower().startswith("ptank"):
+                    ptank_guess = h
+                    break
+            if ptank_guess is None:
+                for h in headers:
+                    if "ptank" in h.lower():
+                        ptank_guess = h
+                        break
+            self.ptank_col.set(ptank_guess if ptank_guess else (headers[0] if headers else ""))
+
+            self.avg_status.set(f"✓ Loaded {len(headers)} columns")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _avg_compute(self):
+        try:
+            if not self.avg_files:
+                messagebox.showerror("Error", "Please select files first")
+                return
+
+            dur_mode = self.duration_mode.get().strip()
+            dur_col = self.duration_col.get().strip()
+            if not dur_col:
+                messagebox.showerror("Error", "Please select duration column")
+                return
+
+            sel = list(self.avg_cols_listbox.curselection())
+            selected_cols = [self.avg_cols_listbox.get(i) for i in sel] if sel else []
+
+            do_ramp = bool(self.compute_ramp.get())
+            ptank_col = self.ptank_col.get().strip()
+            if do_ramp and not ptank_col:
+                messagebox.showerror("Error", "Please select Ptank column")
+                return
+
+            per_file_rows = []
+            total_sums = {c: 0.0 for c in selected_cols}
+            total_counts = {c: 0 for c in selected_cols}
+
+            self.avg_text.delete("1.0", tk.END)
+            self.avg_text.insert(tk.END, f"═══ PROCESSING {len(self.avg_files)} FILES ═══\n\n")
+            self.avg_text.insert(tk.END, f"Duration Mode: {dur_mode} (Column: {dur_col})\n")
+            if do_ramp:
+                self.avg_text.insert(tk.END, f"Ramp Analysis: Enabled (Column: {ptank_col})\n")
+            self.avg_text.insert(tk.END, f"Averaging: {len(selected_cols)} variables\n\n")
+
+            for fp in self.avg_files:
+                row = {"File": os.path.basename(fp)}
+
+                dur_s = stream_file_duration_seconds(fp, dur_mode, dur_col, chunksize=50000)
+                row["Cycle Duration (s)"] = dur_s
+
+                if do_ramp:
+                    init_mean_mpa_min, init_max_mpa_min = stream_ptank_initial_ramp_stats(
+                        fp,
+                        time_mode=dur_mode,
+                        time_col=dur_col,
+                        ptank_col=ptank_col,
+                        start_dp=1.0,
+                        window_minutes=5.0,
+                        window_dp=20.0,
+                        min_points=30,
+                        dt_min=0.02,
+                        dt_max=2.0,
+                        ramp_cap_mpa_min=50.0
+                    )
+                    row["Ptank Initial Ramp Mean (MPa/min)"] = init_mean_mpa_min
+                    row["Ptank Initial Ramp Max (MPa/min)"] = init_max_mpa_min
+
+                if selected_cols:
+                    means, counts = stream_file_means(fp, selected_cols, chunksize=50000)
+                    for c in selected_cols:
+                        row[f"{c} (mean)"] = means[c]
+                        row[f"{c} (N)"] = counts[c]
+
+                        if counts[c] and means[c] is not None:
+                            total_sums[c] += means[c] * counts[c]
+                            total_counts[c] += counts[c]
+
+                per_file_rows.append(row)
+
+            df = pd.DataFrame(per_file_rows)
+
+            lines = []
+            lines.append("═══════════════════════════════════")
+            lines.append("     CYCLE DURATION SUMMARY")
+            lines.append("═══════════════════════════════════")
+            dur_series = pd.to_numeric(df["Cycle Duration (s)"], errors="coerce")
+            if dur_series.notna().any():
+                lines.append(f"Average Duration: {float(dur_series.mean()):.2f} s")
+                lines.append(f"Min Duration:     {float(dur_series.min()):.2f} s")
+                lines.append(f"Max Duration:     {float(dur_series.max()):.2f} s")
+                lines.append(f"Total Duration:   {float(dur_series.sum()):.2f} s")
+            else:
+                lines.append("⚠ Duration could not be computed")
+            lines.append("")
+
+            if do_ramp:
+                lines.append("═══════════════════════════════════")
+                lines.append("    PTANK RAMP RATE ANALYSIS")
+                lines.append("═══════════════════════════════════")
+
+                mr = pd.to_numeric(df["Ptank Initial Ramp Mean (MPa/min)"], errors="coerce")
+                mx = pd.to_numeric(df["Ptank Initial Ramp Max (MPa/min)"], errors="coerce")
+
+                if mr.notna().any():
+                    lines.append(f"Avg Mean Ramp: {float(mr.mean()):.2f} MPa/min")
+                    lines.append(f"Max Mean Ramp: {float(mr.max()):.2f} MPa/min")
+                else:
+                    lines.append("⚠ No ramp data found")
+                if mx.notna().any():
+                    lines.append(f"Peak Ramp Rate: {float(mx.max()):.2f} MPa/min")
+                lines.append("")
+
+            if selected_cols:
+                lines.append("═══════════════════════════════════")
+                lines.append("    OVERALL SIGNAL AVERAGES")
+                lines.append("═══════════════════════════════════")
+                lines.append("Unweighted = avg of per-file means")
+                lines.append("Weighted   = mean across all samples")
+                lines.append("")
+                for c in selected_cols:
+                    file_means = pd.to_numeric(df[f"{c} (mean)"], errors="coerce")
+                    unweighted = float(file_means.mean()) if file_means.notna().any() else None
+                    weighted = (total_sums[c] / total_counts[c]) if total_counts[c] > 0 else None
+                    lines.append(f"{c}:")
+                    lines.append(f"  Unweighted = {unweighted:.4f}" if unweighted else "  Unweighted = N/A")
+                    lines.append(f"  Weighted   = {weighted:.4f}" if weighted else "  Weighted   = N/A")
+
+            lines.append("\n═══════════════════════════════════")
+            lines.append("    PER-FILE RESULTS (First 25)")
+            lines.append("═══════════════════════════════════\n")
+
+            self.avg_text.insert(tk.END, "\n".join(lines))
+            self.avg_text.insert(tk.END, "\n" + df.head(25).to_string(index=False))
+
+            self.avg_results_df = df
+            self.avg_status.set("✓ Analysis complete")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _avg_save_csv(self):
+        try:
+            if self.avg_results_df is None:
+                messagebox.showerror("Error", "Please compute results first")
+                return
+
+            out_path = filedialog.asksaveasfilename(
+                title="Save results",
+                defaultextension=".csv",
+                initialfile="cycle_averages.csv",
+                filetypes=[("CSV", "*.csv"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            self.avg_results_df.to_csv(out_path, index=False)
+            messagebox.showinfo("Success", f"Results saved to:\n{out_path}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    # ============ VALIDATION TAB ============
+    
+    def _build_validation_tab(self):
+        f = ttk.Frame(self.tab_val)
+        f.pack(fill="both", expand=True, padx=20, pady=20)
+
+        title_label = ttk.Label(f, text="Validation & Quality Control", style='Title.TLabel')
+        title_label.pack(anchor="w", pady=(0, 5))
+        
+        desc_label = ttk.Label(
+            f,
+            text="Set validation limits and check cycle data against specifications",
+            style='Subtitle.TLabel'
+        )
+        desc_label.pack(anchor="w", pady=(0, 20))
+
+        # File selection
+        card1 = ttk.LabelFrame(f, text="Step 1: Load Max/Min File", padding=20)
+        card1.pack(fill="x", pady=(0, 12))
+
+        self.val_infile = tk.StringVar(value="")
+        btn_frame = ttk.Frame(card1)
+        btn_frame.pack(fill="x")
+        
+        ttk.Button(
+            btn_frame,
+            text="📁 Choose Max/Min File",
+            command=self._val_choose_file,
+            style='Action.TButton'
+        ).pack(side="left")
+        
+        ttk.Label(btn_frame, textvariable=self.val_infile, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Cycle column
+        card2 = ttk.LabelFrame(f, text="Step 2: Select Cycle Column", padding=20)
+        card2.pack(fill="x", pady=(0, 12))
+
+        self.val_cycle_col = tk.StringVar(value="")
+        self.cb_val_cycle = ttk.Combobox(card2, state="disabled", width=40, textvariable=self.val_cycle_col, values=[])
+        self.cb_val_cycle.pack(side="left", padx=10)
+
+        # Validation limits
+        card3 = ttk.LabelFrame(f, text="Step 3: Set Validation Limits", padding=20)
+        card3.pack(fill="both", expand=True, pady=(0, 12))
+
+        ttk.Label(
+            card3,
+            text="Configure min/max acceptable ranges for each variable:",
+            style='Subtitle.TLabel'
+        ).pack(anchor="w", pady=(0, 10))
+
+        canvas = tk.Canvas(card3, height=200, bg="white")
+        scrollbar = ttk.Scrollbar(card3, orient="vertical", command=canvas.yview)
+        self.val_limits_frame = ttk.Frame(canvas)
+
+        self.val_limits_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=self.val_limits_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        hdr = ttk.Frame(self.val_limits_frame)
+        hdr.pack(fill="x", pady=8)
+        ttk.Label(hdr, text="Variable", width=18, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, padx=5)
+        ttk.Label(hdr, text="Min Lower", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, padx=5)
+        ttk.Label(hdr, text="Min Upper", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, padx=5)
+        ttk.Label(hdr, text="Max Lower", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, padx=5)
+        ttk.Label(hdr, text="Max Upper", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, padx=5)
+
+        self.val_limit_entries: List[Dict] = []
+        self.val_df: Optional[pd.DataFrame] = None
+        self.val_variables: List[str] = []
+
+        # Actions
+        card4 = ttk.LabelFrame(f, text="Step 4: Validation Actions", padding=20)
+        card4.pack(fill="x", pady=(0, 12))
+
+        action_frame = ttk.Frame(card4)
+        action_frame.pack(fill="x")
+        
+        ttk.Button(
+            action_frame,
+            text="▶ RUN VALIDATION",
+            command=self._val_validate,
+            style='Action.TButton'
+        ).pack(side="left", padx=(0, 10))
+        
+        ttk.Button(
+            action_frame,
+            text="📊 EXPORT TO EXCEL",
+            command=self._val_export_excel
+        ).pack(side="left", padx=(0, 10))
+        
+        ttk.Button(
+            action_frame,
+            text="📥 LOAD LIMITS",
+            command=self._val_load_limits
+        ).pack(side="left", padx=(0, 10))
+        
+        ttk.Button(
+            action_frame,
+            text="💾 SAVE LIMITS",
+            command=self._val_save_limits
+        ).pack(side="left")
+
+        self.val_status = tk.StringVar(value="")
+        ttk.Label(action_frame, textvariable=self.val_status, style='Status.TLabel').pack(side="left", padx=15)
+
+        # Results
+        card5 = ttk.LabelFrame(f, text="Validation Results", padding=15)
+        card5.pack(fill="both", expand=True)
+
+        self.val_results_text = tk.Text(
+            card5,
+            height=12,
+            wrap="none",
+            bg="white",
+            fg=PowertechTheme.TEXT_PRIMARY,
+            font=(PowertechTheme.FONT_FAMILY, 9)
+        )
+        self.val_results_text.pack(fill="both", expand=True)
+
+        self.val_results_df: Optional[pd.DataFrame] = None
+        self.val_summary: Optional[Dict] = None
+
+    def _val_choose_file(self):
+        path = filedialog.askopenfilename(
+            title="Select max/min file",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not path:
+            return
+        self.val_infile.set(path)  # Store full path
+        self._val_load_file()
+
+    def _val_load_file(self):
+        try:
+            path = self.val_infile.get().strip()
+            if not path or not os.path.exists(path):
+                messagebox.showerror("Error", f"File not found: {path}")
+                return
+            
+            raw_df = load_table_allow_duplicate_headers(path)
+
+            internal, internal_to_display, internal_kind = build_minmax_display_map(list(raw_df.columns))
+            raw_df.columns = internal
+
+            df = raw_df.rename(columns=internal_to_display)
+
+            self.val_df = df
+            headers = list(df.columns)
+            
+            variables = set()
+            for h in headers:
+                if h.endswith(" (Min)"):
+                    base = h[:-6]
+                    if f"{base} (Max)" in headers:
+                        variables.add(base)
+
+            self.val_variables = sorted(list(variables))
+
+            self.cb_val_cycle["values"] = headers
+            self.cb_val_cycle["state"] = "readonly"
+            self.val_cycle_col.set("Cycle" if "Cycle" in headers else (headers[1] if len(headers) > 1 else headers[0]))
+
+            for widget in self.val_limits_frame.winfo_children()[1:]:
+                widget.destroy()
+            self.val_limit_entries.clear()
+
+            for var in self.val_variables:
+                row = ttk.Frame(self.val_limits_frame)
+                row.pack(fill="x", pady=3)
+
+                ttk.Label(row, text=var, width=18).grid(row=0, column=0, padx=5, sticky="w")
+
+                min_lower = tk.StringVar(value="")
+                min_upper = tk.StringVar(value="")
+                max_lower = tk.StringVar(value="")
+                max_upper = tk.StringVar(value="")
+
+                ttk.Entry(row, textvariable=min_lower, width=10).grid(row=0, column=1, padx=5)
+                ttk.Entry(row, textvariable=min_upper, width=10).grid(row=0, column=2, padx=5)
+                ttk.Entry(row, textvariable=max_lower, width=10).grid(row=0, column=3, padx=5)
+                ttk.Entry(row, textvariable=max_upper, width=10).grid(row=0, column=4, padx=5)
+
+                self.val_limit_entries.append({
+                    "variable": var,
+                    "min_lower": min_lower,
+                    "min_upper": min_upper,
+                    "max_lower": max_lower,
+                    "max_upper": max_upper
+                })
+
+            self.val_status.set(f"✓ Loaded {len(df)} cycles, {len(self.val_variables)} variables")
+
+        except Exception as e:
+            self.val_df = None
+            messagebox.showerror("Error", str(e))
+
+    def _val_validate(self):
+        try:
+            if self.val_df is None:
+                messagebox.showerror("Error", "Please load a file first")
+                return
+
+            cycle_col = self.val_cycle_col.get().strip()
+            if not cycle_col or cycle_col not in self.val_df.columns:
+                messagebox.showerror("Error", "Invalid cycle column")
+                return
+
+            limits: Dict[str, Dict[str, Optional[float]]] = {}
+            for entry in self.val_limit_entries:
+                var = entry["variable"]
+
+                min_lower = safe_float(entry["min_lower"].get())
+                min_upper = safe_float(entry["min_upper"].get())
+                max_lower = safe_float(entry["max_lower"].get())
+                max_upper = safe_float(entry["max_upper"].get())
+
+                if min_lower == "INVALID" or min_upper == "INVALID" or max_lower == "INVALID" or max_upper == "INVALID":
+                    messagebox.showerror("Error", f"Invalid limits for '{var}'")
+                    return
+
+                if any(x is not None for x in [min_lower, min_upper, max_lower, max_upper]):
+                    limits[var] = {
+                        "min_lower": min_lower,
+                        "min_upper": min_upper,
+                        "max_lower": max_lower,
+                        "max_upper": max_upper
+                    }
+
+            if not limits:
+                messagebox.showwarning("Warning", "Please set at least one limit")
+                return
+
+            results_df, summary = validate_maxmin_file(self.val_df, limits, cycle_col)
+            self.val_results_df = results_df
+            self.val_summary = summary
+
+            self.val_results_text.delete("1.0", tk.END)
+
+            summary_text = (
+                "═══════════════════════════════════\n"
+                "     VALIDATION SUMMARY\n"
+                "═══════════════════════════════════\n"
+                f"Total Cycles:  {summary['total_cycles']}\n"
+                f"✓ Passed:      {summary['passed_cycles']} ({summary['pass_rate']:.1f}%)\n"
+                f"✗ Failed:      {summary['failed_cycles']} ({100 - summary['pass_rate']:.1f}%)\n\n"
+                "Violations by Variable:\n"
+            )
+            for var, count in sorted(summary["violation_by_variable"].items()):
+                summary_text += f"  • {var}: {count} violation(s)\n"
+
+            summary_text += "\n═══════════════════════════════════\n"
+            summary_text += "  FAILED CYCLES (First 50)\n"
+            summary_text += "═══════════════════════════════════\n\n"
+
+            self.val_results_text.insert(tk.END, summary_text)
+            failed = results_df[results_df["Status"] == "FAIL"].head(50)
+            self.val_results_text.insert(tk.END, failed.to_string(index=False))
+
+            self.val_status.set(f"✓ Validation complete: {summary['passed_cycles']}/{summary['total_cycles']} passed")
+            messagebox.showinfo(
+                "Validation Complete",
+                f"✓ Passed: {summary['passed_cycles']}\n✗ Failed: {summary['failed_cycles']}\n\nExport to Excel for full results"
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _val_export_excel(self):
+        try:
+            if self.val_results_df is None or self.val_summary is None or self.val_df is None:
+                messagebox.showerror("Error", "Please run validation first")
+                return
+
+            out_path = filedialog.asksaveasfilename(
+                title="Save validation results",
+                defaultextension=".xlsx",
+                initialfile="validation_results.xlsx",
+                filetypes=[("Excel", "*.xlsx"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            try:
+                from openpyxl import Workbook
+                from openpyxl.styles import PatternFill, Font
+            except ImportError:
+                messagebox.showerror("Missing Library", "openpyxl required\n\nInstall: pip install openpyxl")
+                return
+
+            wb = Workbook()
+            ws_summary = wb.active
+            ws_summary.title = "Summary"
+
+            summary_data = [
+                ["POWERTECH VALIDATION SUMMARY"],
+                [""],
+                ["Total Cycles", self.val_summary["total_cycles"]],
+                ["Passed Cycles", self.val_summary["passed_cycles"]],
+                ["Failed Cycles", self.val_summary["failed_cycles"]],
+                ["Pass Rate (%)", f"{self.val_summary['pass_rate']:.1f}%"],
+                [""],
+                ["VIOLATIONS BY VARIABLE"],
+            ]
+            for var, count in sorted(self.val_summary["violation_by_variable"].items()):
+                summary_data.append([var, count])
+
+            for row_data in summary_data:
+                ws_summary.append(row_data)
+
+            title_fill = PatternFill(start_color="1e3a5f", end_color="1e3a5f", fill_type="solid")
+            title_font = Font(bold=True, color="FFFFFF", size=14)
+            ws_summary["A1"].fill = title_fill
+            ws_summary["A1"].font = title_font
+
+            ws_results = wb.create_sheet("Results")
+
+            merged_df = self.val_df.copy()
+            merged_df["Validation_Status"] = self.val_results_df["Status"]
+            merged_df["Violations"] = self.val_results_df["Violations"]
+
+            headers = ["Validation_Status", "Violations"] + list(self.val_df.columns)
+            ws_results.append(headers)
+
+            for idx, _row in merged_df.iterrows():
+                status = self.val_results_df.loc[idx, "Status"]
+                violations = self.val_results_df.loc[idx, "Violations"]
+                row_data = [status, violations] + list(self.val_df.iloc[idx])
+                ws_results.append(row_data)
+
+            green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+            red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+            header_fill = PatternFill(start_color="1e3a5f", end_color="1e3a5f", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF")
+
+            for cell in ws_results[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+
+            for row_idx in range(2, ws_results.max_row + 1):
+                status_cell = ws_results.cell(row=row_idx, column=1)
+                fill = green_fill if status_cell.value == "PASS" else red_fill
+                for col_idx in range(1, ws_results.max_column + 1):
+                    ws_results.cell(row=row_idx, column=col_idx).fill = fill
+
+            for col in ws_results.columns:
+                max_len = 0
+                col_letter = col[0].column_letter
+                for cell in col:
+                    try:
+                        max_len = max(max_len, len(str(cell.value)))
+                    except Exception:
+                        pass
+                ws_results.column_dimensions[col_letter].width = min(max_len + 2, 55)
+
+            wb.save(out_path)
+            messagebox.showinfo("Success", f"Excel file saved:\n{out_path}\n\n✓ Green = PASS\n✗ Red = FAIL")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _val_load_limits(self):
+        try:
+            path = filedialog.askopenfilename(
+                title="Load validation limits",
+                filetypes=[("CSV", "*.csv"), ("All", "*.*")]
+            )
+            if not path:
+                return
+
+            limits_df = pd.read_csv(path)
+
+            for entry in self.val_limit_entries:
+                var = entry["variable"]
+                row = limits_df[limits_df["Variable"] == var]
+                if not row.empty:
+                    entry["min_lower"].set(str(row.iloc[0].get("Min_Lower", "")))
+                    entry["min_upper"].set(str(row.iloc[0].get("Min_Upper", "")))
+                    entry["max_lower"].set(str(row.iloc[0].get("Max_Lower", "")))
+                    entry["max_upper"].set(str(row.iloc[0].get("Max_Upper", "")))
+
+            messagebox.showinfo("Success", f"Limits loaded from:\n{path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _val_save_limits(self):
+        try:
+            if not self.val_limit_entries:
+                messagebox.showerror("Error", "Please load a file first")
+                return
+
+            out_path = filedialog.asksaveasfilename(
+                title="Save validation limits",
+                defaultextension=".csv",
+                initialfile="validation_limits.csv",
+                filetypes=[("CSV", "*.csv"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            rows = []
+            for entry in self.val_limit_entries:
+                rows.append({
+                    "Variable": entry["variable"],
+                    "Min_Lower": entry["min_lower"].get(),
+                    "Min_Upper": entry["min_upper"].get(),
+                    "Max_Lower": entry["max_lower"].get(),
+                    "Max_Upper": entry["max_upper"].get()
+                })
+
+            pd.DataFrame(rows).to_csv(out_path, index=False)
+            messagebox.showinfo("Success", f"Limits saved to:\n{path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+
+# ============================================================
+# RUN APPLICATION
+# ============================================================
+
+if __name__ == "__main__":
+    app = PowertechToolsApp()
+    app.mainloop()
