@@ -8,7 +8,7 @@ from typing import Optional
 import pandas as pd
 
 from powertech_tools.utils.file_parser import load_table_allow_duplicate_headers
-from powertech_tools.data.processor import compute_maxmin_template
+from powertech_tools.data.processor import compute_maxmin_template, compute_maxmin_from_multiple_files
 
 
 def build_tab(parent, app):
@@ -30,25 +30,51 @@ def build_tab(parent, app):
 
     desc_label = ttk.Label(
         f,
-        text="Generate max/min template from merged log file",
+        text="Generate max/min template from cycle files",
         style='Subtitle.TLabel'
     )
     desc_label.pack(anchor="w", pady=(0, 20))
 
+    # Mode selection
+    mode_card = ttk.LabelFrame(f, text="Input Mode", padding=20)
+    mode_card.pack(fill="x", pady=(0, 15))
+
+    app.mm_mode = tk.StringVar(value="multiple")
+    mode_frame = ttk.Frame(mode_card)
+    mode_frame.pack(fill="x")
+
+    ttk.Radiobutton(
+        mode_frame,
+        text="Multiple Cycle Files (Recommended)",
+        variable=app.mm_mode,
+        value="multiple",
+        command=lambda: _mm_mode_changed(app)
+    ).pack(anchor="w", pady=2)
+
+    ttk.Radiobutton(
+        mode_frame,
+        text="Single Merged File",
+        variable=app.mm_mode,
+        value="single",
+        command=lambda: _mm_mode_changed(app)
+    ).pack(anchor="w", pady=2)
+
     # File selection
-    card1 = ttk.LabelFrame(f, text="Input File", padding=20)
+    card1 = ttk.LabelFrame(f, text="Input Files", padding=20)
     card1.pack(fill="x", pady=(0, 15))
 
     app.mm_infile = tk.StringVar(value="")
+    app.mm_infiles = []  # For multiple files
     btn_frame = ttk.Frame(card1)
     btn_frame.pack(fill="x")
 
-    ttk.Button(
+    app.mm_choose_btn = ttk.Button(
         btn_frame,
-        text="📁 Choose Merged File",
-        command=lambda: _mm_choose_file(app),
+        text="📁 Choose Cycle Files",
+        command=lambda: _mm_choose_files(app),
         style='Action.TButton'
-    ).pack(side="left")
+    )
+    app.mm_choose_btn.pack(side="left")
 
     ttk.Label(btn_frame, textvariable=app.mm_infile, style='Status.TLabel').pack(side="left", padx=15)
 
@@ -57,7 +83,7 @@ def build_tab(parent, app):
     card2.pack(fill="x", pady=(0, 15))
 
     app.mm_df = None
-    app.mm_time_col = tk.StringVar(value="")
+    app.mm_time_col = tk.StringVar(value="Time")
     app.mm_cycle_col = tk.StringVar(value="")
 
     col_frame = ttk.Frame(card2)
@@ -70,12 +96,22 @@ def build_tab(parent, app):
     app.cb_mm_time = ttk.Combobox(time_row, state="disabled", width=40, textvariable=app.mm_time_col, values=[])
     app.cb_mm_time.pack(side="left", padx=10)
 
-    # Cycle column
+    # Cycle column (only for single merged file mode)
     cycle_row = ttk.Frame(col_frame)
     cycle_row.pack(fill="x", pady=5)
-    ttk.Label(cycle_row, text="Cycle Column:", width=20).pack(side="left")
+    app.mm_cycle_label = ttk.Label(cycle_row, text="Cycle Column:", width=20)
+    app.mm_cycle_label.pack(side="left")
     app.cb_mm_cycle = ttk.Combobox(cycle_row, state="disabled", width=40, textvariable=app.mm_cycle_col, values=[])
     app.cb_mm_cycle.pack(side="left", padx=10)
+
+    # Note for multiple files mode
+    app.mm_mode_note = ttk.Label(
+        card2,
+        text="Note: In Multiple Files mode, each file = one cycle. Time column is optional.",
+        font=(PowertechTheme.FONT_FAMILY, 8),
+        foreground="#666"
+    )
+    app.mm_mode_note.pack(anchor="w", pady=(5, 0))
 
     # Action
     action_card = ttk.LabelFrame(f, text="Generate Analysis", padding=20)
@@ -106,16 +142,50 @@ def build_tab(parent, app):
     app.mm_preview.pack(fill="both", expand=True)
 
 
-def _mm_choose_file(app):
+def _mm_mode_changed(app):
+    """Handle mode change between single/multiple files"""
+    mode = app.mm_mode.get()
+    if mode == "multiple":
+        app.mm_choose_btn["text"] = "📁 Choose Cycle Files"
+        app.cb_mm_cycle["state"] = "disabled"
+    else:
+        app.mm_choose_btn["text"] = "📁 Choose Merged File"
+        app.cb_mm_cycle["state"] = "readonly" if app.mm_df is not None else "disabled"
+
+
+def _mm_choose_files(app):
     """Handle file selection for max/min analysis"""
-    path = filedialog.askopenfilename(
-        title="Select merged log file",
-        filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
-    )
-    if not path:
-        return
-    app.mm_infile.set(path)
-    _mm_load_preview(app)
+    mode = app.mm_mode.get()
+
+    if mode == "multiple":
+        # Select multiple cycle files
+        paths = filedialog.askopenfilenames(
+            title="Select cycle files (one file per cycle)",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not paths:
+            return
+        app.mm_infiles = list(paths)
+        app.mm_infile.set(f"✓ {len(paths)} files selected")
+        app.mm_df = None
+        app.cb_mm_time["state"] = "disabled"
+        app.cb_mm_cycle["state"] = "disabled"
+        app.mm_preview.delete("1.0", tk.END)
+        app.mm_preview.insert(tk.END, f"✓ {len(paths)} cycle files selected\n\n")
+        for i, p in enumerate(sorted(app.mm_infiles), start=1):
+            app.mm_preview.insert(tk.END, f"Cycle {i}: {os.path.basename(p)}\n")
+        app.mm_status.set("Ready to create max/min file")
+    else:
+        # Select single merged file
+        path = filedialog.askopenfilename(
+            title="Select merged log file",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not path:
+            return
+        app.mm_infile.set(path)
+        app.mm_infiles = []
+        _mm_load_preview(app)
 
 
 def _mm_load_preview(app):
@@ -152,40 +222,75 @@ def _mm_load_preview(app):
 def _mm_make(app):
     """Generate the max/min template file"""
     try:
-        if app.mm_df is None:
-            messagebox.showerror("Error", "Please load a file first")
-            return
+        mode = app.mm_mode.get()
 
-        df = app.mm_df.copy()
-        time_c = app.mm_time_col.get().strip()
-        cycle_c = app.mm_cycle_col.get().strip()
+        if mode == "multiple":
+            # Multiple files mode - each file is one cycle
+            if not app.mm_infiles:
+                messagebox.showerror("Error", "Please select cycle files first")
+                return
 
-        if time_c not in df.columns or cycle_c not in df.columns:
-            messagebox.showerror("Error", "Invalid column selection")
-            return
+            time_c = app.mm_time_col.get().strip() or "Time"
 
-        out_df = compute_maxmin_template(df, time_c, cycle_c)
+            out_df = compute_maxmin_from_multiple_files(app.mm_infiles, time_c)
 
-        default_name = os.path.splitext(os.path.basename(app.mm_infile.get().strip()))[0] + "_maxmin.txt"
-        out_path = filedialog.asksaveasfilename(
-            title="Save max/min file",
-            defaultextension=".txt",
-            initialfile=default_name,
-            filetypes=[("Text", "*.txt"), ("All", "*.*")]
-        )
-        if not out_path:
-            return
+            default_name = "cycles_maxmin.txt"
+            out_path = filedialog.asksaveasfilename(
+                title="Save max/min file",
+                defaultextension=".txt",
+                initialfile=default_name,
+                filetypes=[("Text", "*.txt"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
 
-        header_block = ["Powertech Test Log", "Time step =0.10 s", "", "Cycle test"]
+            header_block = ["Powertech Test Log", "Time step =0.10 s", "", "Cycle test"]
 
-        with open(out_path, "w", encoding="utf-8", errors="ignore") as f:
-            for line in header_block:
-                f.write(line + "\n")
-            f.write("\t".join(list(out_df.columns)) + "\n")
-            out_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
+            with open(out_path, "w", encoding="utf-8", errors="ignore") as f:
+                for line in header_block:
+                    f.write(line + "\n")
+                f.write("\t".join(list(out_df.columns)) + "\n")
+                out_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
 
-        app.mm_status.set(f"✓ File created successfully")
-        messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}")
+            app.mm_status.set(f"✓ File created successfully")
+            messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}\n\n{len(app.mm_infiles)} cycles processed")
+
+        else:
+            # Single merged file mode
+            if app.mm_df is None:
+                messagebox.showerror("Error", "Please load a file first")
+                return
+
+            df = app.mm_df.copy()
+            time_c = app.mm_time_col.get().strip()
+            cycle_c = app.mm_cycle_col.get().strip()
+
+            if time_c not in df.columns or cycle_c not in df.columns:
+                messagebox.showerror("Error", "Invalid column selection")
+                return
+
+            out_df = compute_maxmin_template(df, time_c, cycle_c)
+
+            default_name = os.path.splitext(os.path.basename(app.mm_infile.get().strip()))[0] + "_maxmin.txt"
+            out_path = filedialog.asksaveasfilename(
+                title="Save max/min file",
+                defaultextension=".txt",
+                initialfile=default_name,
+                filetypes=[("Text", "*.txt"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            header_block = ["Powertech Test Log", "Time step =0.10 s", "", "Cycle test"]
+
+            with open(out_path, "w", encoding="utf-8", errors="ignore") as f:
+                for line in header_block:
+                    f.write(line + "\n")
+                f.write("\t".join(list(out_df.columns)) + "\n")
+                out_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
+
+            app.mm_status.set(f"✓ File created successfully")
+            messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}")
 
     except Exception as e:
         messagebox.showerror("Error", str(e))

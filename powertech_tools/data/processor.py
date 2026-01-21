@@ -6,6 +6,105 @@ from typing import List, Dict, Tuple, Optional
 import pandas as pd
 
 from powertech_tools.utils.file_parser import read_headers_only
+from powertech_tools.utils.helpers import natural_sort_key
+
+
+def compute_maxmin_from_multiple_files(
+    filepaths: List[str],
+    time_col: str
+) -> pd.DataFrame:
+    """
+    Compute min/max template from multiple cycle files.
+
+    Each file represents one cycle. Computes min/max for all parameters
+    in each file and outputs one row per file.
+
+    Args:
+        filepaths: List of file paths, each containing one cycle of data
+        time_col: Name of the time column
+
+    Returns:
+        DataFrame with Date Time, Cycle, and alternating min/max columns
+
+    Raises:
+        RuntimeError: If files cannot be processed
+    """
+    if not filepaths:
+        raise RuntimeError("No files provided")
+
+    # Sort files naturally by basename
+    filepaths = sorted(filepaths, key=lambda p: natural_sort_key(os.path.basename(p)))
+
+    all_rows = []
+    value_cols = None
+
+    for cycle_num, fp in enumerate(filepaths, start=1):
+        # Load the file
+        headers, delim, header_idx, lines = read_headers_only(fp)
+
+        if time_col not in headers:
+            raise RuntimeError(f"Time column '{time_col}' not found in {os.path.basename(fp)}")
+
+        # Parse the data
+        data_text = "".join(lines[header_idx + 1:])
+
+        if delim == "  ":
+            sep = r"\s{2,}"
+            engine = "python"
+        else:
+            sep = delim
+            engine = "c"
+
+        from io import StringIO
+        df = pd.read_csv(
+            StringIO(data_text),
+            sep=sep,
+            engine=engine,
+            names=headers,
+            header=None,
+            low_memory=False
+        )
+
+        if df.empty:
+            continue
+
+        # Get value columns (all except time)
+        if value_cols is None:
+            value_cols = [c for c in headers if c != time_col and c.lower() != 'cycle']
+
+        # Convert to numeric
+        for c in value_cols:
+            if c in df.columns:
+                df[c] = pd.to_numeric(df[c], errors="coerce")
+
+        # Get last timestamp
+        last_time = df[time_col].iloc[-1] if time_col in df.columns else ""
+
+        # Compute min/max for this file (this cycle)
+        row = [last_time, cycle_num]
+        for col in value_cols:
+            if col in df.columns:
+                min_val = df[col].min()
+                max_val = df[col].max()
+            else:
+                min_val = ""
+                max_val = ""
+            row.append(min_val)
+            row.append(max_val)
+
+        all_rows.append(row)
+
+    if not all_rows:
+        raise RuntimeError("No valid data found in any files")
+
+    # Build headers
+    out_headers = ["Date  Time", "Cycle"]
+    for col in value_cols:
+        out_headers.append(col)  # Min column
+        out_headers.append(col)  # Max column
+
+    out_df = pd.DataFrame(all_rows, columns=out_headers)
+    return out_df
 
 
 def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str) -> pd.DataFrame:
@@ -55,11 +154,6 @@ def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str)
 
     if num_unique_cycles == 0:
         raise RuntimeError("No cycles found after filtering")
-
-    # Debug: Print cycle information
-    print(f"DEBUG: Found {num_unique_cycles} unique cycles: {unique_cycles}")
-    print(f"DEBUG: Total rows in data: {len(df)}")
-    print(f"DEBUG: Cycle value counts:\n{df[cycle_col].value_counts().sort_index()}")
 
     # Get value columns (all except time and cycle)
     value_cols = [c for c in df.columns if c not in (time_col, cycle_col)]
