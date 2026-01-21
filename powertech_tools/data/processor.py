@@ -50,11 +50,16 @@ def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str)
     df = df[df[cycle_col].notna()].reset_index(drop=True)
 
     # Get unique cycles for validation
-    unique_cycles = df[cycle_col].unique()
+    unique_cycles = sorted(df[cycle_col].unique())
     num_unique_cycles = len(unique_cycles)
 
     if num_unique_cycles == 0:
         raise RuntimeError("No cycles found after filtering")
+
+    # Debug: Print cycle information
+    print(f"DEBUG: Found {num_unique_cycles} unique cycles: {unique_cycles}")
+    print(f"DEBUG: Total rows in data: {len(df)}")
+    print(f"DEBUG: Cycle value counts:\n{df[cycle_col].value_counts().sort_index()}")
 
     # Get value columns (all except time and cycle)
     value_cols = [c for c in df.columns if c not in (time_col, cycle_col)]
