@@ -22,43 +22,87 @@ def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str)
 
     Returns:
         DataFrame with Date Time, Cycle, and alternating min/max columns
+
+    Raises:
+        RuntimeError: If no valid cycle data is found or grouping fails
     """
     df = df_raw.copy()
+
+    # Validate input
+    if df.empty:
+        raise RuntimeError("Input DataFrame is empty")
+
+    if cycle_col not in df.columns:
+        raise RuntimeError(f"Cycle column '{cycle_col}' not found in data")
+
+    if time_col not in df.columns:
+        raise RuntimeError(f"Time column '{time_col}' not found in data")
+
+    # Convert cycle column to numeric
     df[cycle_col] = pd.to_numeric(df[cycle_col], errors="coerce")
+
+    # Count valid cycles before filtering
+    valid_cycles_before = df[cycle_col].notna().sum()
+    if valid_cycles_before == 0:
+        raise RuntimeError(f"No valid numeric cycle values found in column '{cycle_col}'")
+
+    # Filter out rows with NaN cycles
     df = df[df[cycle_col].notna()].reset_index(drop=True)
 
+    # Get unique cycles for validation
+    unique_cycles = df[cycle_col].unique()
+    num_unique_cycles = len(unique_cycles)
+
+    if num_unique_cycles == 0:
+        raise RuntimeError("No cycles found after filtering")
+
+    # Get value columns (all except time and cycle)
     value_cols = [c for c in df.columns if c not in (time_col, cycle_col)]
+
+    if not value_cols:
+        raise RuntimeError("No value columns found for min/max computation")
+
+    # Convert value columns to numeric
     for c in value_cols:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
+    # Group by cycle
     g = df.groupby(cycle_col, sort=False)
 
+    # Get time for each cycle (last timestamp in the cycle)
     time_last = g[time_col].last().reset_index()
     time_last.columns = ["Cycle", "Date  Time"]
 
+    # Compute min and max for each value column per cycle
     mins = g[value_cols].min().reset_index()
     maxs = g[value_cols].max().reset_index()
 
+    # Create lookup maps
     mins_map = mins.set_index(cycle_col)
     maxs_map = maxs.set_index(cycle_col)
 
     cycles = time_last["Cycle"].tolist()
     time_map = dict(zip(time_last["Cycle"], time_last["Date  Time"]))
 
+    # Build output rows: one row per cycle with alternating min/max for each parameter
     out_rows = []
     for cyc in cycles:
         row = [time_map.get(cyc, ""), cyc]
         for col in value_cols:
-            row.append(mins_map.loc[cyc, col] if cyc in mins_map.index else "")
-            row.append(maxs_map.loc[cyc, col] if cyc in maxs_map.index else "")
+            min_val = mins_map.loc[cyc, col] if cyc in mins_map.index else ""
+            max_val = maxs_map.loc[cyc, col] if cyc in maxs_map.index else ""
+            row.append(min_val)
+            row.append(max_val)
         out_rows.append(row)
 
+    # Build headers: Date Time, Cycle, then alternating column names for min/max pairs
     out_headers = ["Date  Time", "Cycle"]
     for col in value_cols:
-        out_headers.append(col)
-        out_headers.append(col)
+        out_headers.append(col)  # Min column
+        out_headers.append(col)  # Max column
 
     out_df = pd.DataFrame(out_rows, columns=out_headers)
+
     return out_df
 
 
