@@ -8,7 +8,7 @@ from typing import List, Optional
 import pandas as pd
 
 from powertech_tools.utils.file_parser import read_headers_only
-from powertech_tools.utils.helpers import natural_sort_key
+from powertech_tools.utils.helpers import natural_sort_key, ScrollableFrame
 from powertech_tools.data.processor import (
     stream_file_means,
     stream_file_duration_seconds,
@@ -24,8 +24,10 @@ def build_tab(parent, app):
         parent: Parent frame for this tab
         app: Main application instance (for storing state)
     """
-    f = ttk.Frame(parent)
-    f.pack(fill="both", expand=True, padx=20, pady=20)
+    scrollable = ScrollableFrame(parent)
+    scrollable.pack(fill="both", expand=True)
+    f = ttk.Frame(scrollable.content)
+    f.pack(fill="both", expand=True, padx=15, pady=15)
 
     # Import theme for styling
     from powertech_tools.config.theme import PowertechTheme

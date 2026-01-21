@@ -9,6 +9,7 @@ import pandas as pd
 
 from powertech_tools.utils.file_parser import load_table_allow_duplicate_headers
 from powertech_tools.data.processor import compute_maxmin_template, compute_maxmin_from_multiple_files
+from powertech_tools.utils.helpers import ScrollableFrame
 
 
 def build_tab(parent, app):
@@ -19,8 +20,10 @@ def build_tab(parent, app):
         parent: Parent frame for this tab
         app: Main application instance (for storing state)
     """
-    f = ttk.Frame(parent)
-    f.pack(fill="both", expand=True, padx=20, pady=20)
+    scrollable = ScrollableFrame(parent)
+    scrollable.pack(fill="both", expand=True)
+    f = ttk.Frame(scrollable.content)
+    f.pack(fill="both", expand=True, padx=15, pady=15)
 
     # Import theme for styling
     from powertech_tools.config.theme import PowertechTheme

@@ -6,7 +6,7 @@ from tkinter import ttk, filedialog, messagebox
 from typing import List
 
 from powertech_tools.data.loader import merge_selected_files
-from powertech_tools.utils.helpers import natural_sort_key
+from powertech_tools.utils.helpers import natural_sort_key, ScrollableFrame
 
 
 def build_tab(parent, app):
@@ -17,8 +17,10 @@ def build_tab(parent, app):
         parent: Parent frame for this tab
         app: Main application instance (for storing state)
     """
-    f = ttk.Frame(parent)
-    f.pack(fill="both", expand=True, padx=20, pady=20)
+    scrollable = ScrollableFrame(parent)
+    scrollable.pack(fill="both", expand=True)
+    f = ttk.Frame(scrollable.content)
+    f.pack(fill="both", expand=True, padx=15, pady=15)
 
     # Import theme for styling
     from powertech_tools.config.theme import PowertechTheme

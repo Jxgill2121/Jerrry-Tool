@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from powertech_tools.utils.file_parser import load_maxmin_for_plot
-from powertech_tools.utils.helpers import safe_float, safe_int
+from powertech_tools.utils.helpers import safe_float, safe_int, ScrollableFrame
 
 
 def build_tab(parent, app):
@@ -25,28 +25,10 @@ def build_tab(parent, app):
     from powertech_tools.config.theme import PowertechTheme
 
     # Create scrollable container for entire tab
-    canvas_container = tk.Canvas(parent, bg=PowertechTheme.BG_MAIN)
-    scrollbar_y = ttk.Scrollbar(parent, orient="vertical", command=canvas_container.yview)
-    scrollbar_x = ttk.Scrollbar(parent, orient="horizontal", command=canvas_container.xview)
-
-    f = ttk.Frame(canvas_container)
-    f.bind("<Configure>", lambda e: canvas_container.configure(scrollregion=canvas_container.bbox("all")))
-
-    canvas_container.create_window((0, 0), window=f, anchor="nw")
-    canvas_container.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
-
-    canvas_container.pack(side="left", fill="both", expand=True)
-    scrollbar_y.pack(side="right", fill="y")
-    scrollbar_x.pack(side="bottom", fill="x")
-
-    # Enable mouse wheel scrolling
-    def _on_mousewheel(event):
-        canvas_container.yview_scroll(int(-1*(event.delta/120)), "units")
-    canvas_container.bind_all("<MouseWheel>", _on_mousewheel)
-
-    # Add padding
-    inner_frame = ttk.Frame(f)
-    inner_frame.pack(fill="both", expand=True, padx=20, pady=20)
+    scrollable = ScrollableFrame(parent)
+    scrollable.pack(fill="both", expand=True)
+    inner_frame = ttk.Frame(scrollable.content)
+    inner_frame.pack(fill="both", expand=True, padx=15, pady=15)
 
     title_label = ttk.Label(inner_frame, text="Data Visualization", style='Title.TLabel')
     title_label.pack(anchor="w", pady=(0, 5))
