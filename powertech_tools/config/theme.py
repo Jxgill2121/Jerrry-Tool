@@ -1,5 +1,5 @@
-# VERSION: 2026-01-16 v4.4 - Professional Powertech Theme
-# Powertech – One Stop Tools (Surrey, BC)
+# VERSION: 2026-01-22 v5.0 - JERRY HITT Team Theme
+# JERRY - HITT Team Analysis Tool (Surrey, BC)
 
 from tkinter import ttk
 
@@ -19,18 +19,18 @@ POWERTECH_LOGO_BASE64 = """
 # ============================================================
 
 class PowertechTheme:
-    """Professional Powertech color scheme and styling"""
+    """JERRY HITT Team - Vibrant and bold color scheme"""
 
-    # Main colors - professional blue/gray palette
-    PRIMARY = "#1e3a5f"          # Deep blue
-    PRIMARY_LIGHT = "#2c5282"    # Medium blue
-    PRIMARY_DARK = "#0f1e36"     # Very dark blue
+    # Main colors - vibrant orange and deep blue
+    PRIMARY = "#004E89"          # Deep blue (HITT Team blue)
+    PRIMARY_LIGHT = "#1A6BA8"    # Medium blue
+    PRIMARY_DARK = "#002E54"     # Very dark blue
 
-    ACCENT = "#3182ce"           # Bright blue for highlights
-    ACCENT_LIGHT = "#4299e1"     # Light blue
+    ACCENT = "#FF6B35"           # Vibrant orange (JERRY orange)
+    ACCENT_LIGHT = "#FF8C5A"     # Light orange
 
     SUCCESS = "#38a169"          # Green for success states
-    WARNING = "#d69e2e"          # Yellow/gold for warnings
+    WARNING = "#FFA500"          # Orange for warnings
     ERROR = "#e53e3e"            # Red for errors
 
     # Neutral colors
@@ -44,8 +44,8 @@ class PowertechTheme:
 
     BORDER = "#cbd5e0"           # Light border
 
-    # Fonts
-    FONT_FAMILY = "Segoe UI"
+    # Fonts - clean and modern
+    FONT_FAMILY = "Arial"
     FONT_SIZE_TITLE = 16
     FONT_SIZE_HEADING = 12
     FONT_SIZE_BODY = 10

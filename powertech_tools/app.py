@@ -22,7 +22,7 @@ class PowertechToolsApp(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title("JERRY - Powertech Analysis Tools — Surrey, BC")
+        self.title("JERRY - HITT Team Analysis Tool")
         self.geometry("1500x950")
 
         # Apply theme
@@ -84,33 +84,43 @@ class PowertechToolsApp(tk.Tk):
             # If logo fails to load, fall back to text
             print(f"Logo not loaded: {e}")
 
-        # If no logo loaded, use text
+        # If no logo loaded, use text with bold, fun font
         if logo_label is None:
             title = tk.Label(
                 header,
                 text="JERRY",
-                font=(PowertechTheme.FONT_FAMILY, 32, "bold"),
+                font=("Impact", 38, "bold"),  # Bold, impactful font
                 bg="white",
-                fg=PowertechTheme.PRIMARY
+                fg="#FF6B35"  # Vibrant orange
             )
             title.pack(side="left", padx=30, pady=10)
 
-        # Subtitle
+        # Subtitle with team branding
         subtitle = tk.Label(
             header,
-            text="JERRY - Powertech Analysis Tools",
-            font=(PowertechTheme.FONT_FAMILY, 14),
+            text="HITT Team Analysis Tool",
+            font=("Arial", 16, "bold"),
             bg="white",
-            fg=PowertechTheme.TEXT_SECONDARY
+            fg="#004E89"  # Deep blue
         )
         subtitle.pack(side="left", padx=(0, 30))
+
+        # Tagline
+        tagline = tk.Label(
+            header,
+            text="High Impact Test Team",
+            font=("Arial", 9, "italic"),
+            bg="white",
+            fg="#666666"
+        )
+        tagline.pack(side="left", padx=(0, 20))
 
         # Location
         location = tk.Label(
             header,
-            text="📍 Surrey, British Columbia",
-            font=(PowertechTheme.FONT_FAMILY, 10),
+            text="📍 Surrey, BC • HITT Squad",
+            font=("Arial", 10, "bold"),
             bg="white",
-            fg=PowertechTheme.TEXT_SECONDARY
+            fg="#FF6B35"
         )
         location.pack(side="right", padx=30)
