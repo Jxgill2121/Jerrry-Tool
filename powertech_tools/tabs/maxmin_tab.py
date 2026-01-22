@@ -110,9 +110,10 @@ def build_tab(parent, app):
     # Note for multiple files mode
     app.mm_mode_note = ttk.Label(
         card2,
-        text="Note: In Multiple Files mode, each file = one cycle. Time column is optional.",
+        text="Note: In Multiple Files mode, each file = one cycle.\nSelect the time column from your files (optional). All other columns will be analyzed for min/max.",
         font=(PowertechTheme.FONT_FAMILY, 8),
-        foreground="#666"
+        foreground="#666",
+        justify="left"
     )
     app.mm_mode_note.pack(anchor="w", pady=(5, 0))
 
@@ -171,10 +172,30 @@ def _mm_choose_files(app):
         app.mm_infiles = list(paths)
         app.mm_infile.set(f"✓ {len(paths)} files selected")
         app.mm_df = None
-        app.cb_mm_time["state"] = "disabled"
+
+        # Load first file to get column names
+        try:
+            from powertech_tools.utils.file_parser import read_headers_only
+            headers, _, _, _ = read_headers_only(paths[0])
+            app.cb_mm_time["values"] = headers
+            app.cb_mm_time["state"] = "readonly"
+
+            # Try to auto-select Time column
+            if "Time" in headers:
+                app.mm_time_col.set("Time")
+            elif "time" in headers:
+                app.mm_time_col.set("time")
+            elif len(headers) > 0:
+                app.mm_time_col.set(headers[0])
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not read file headers: {e}")
+            return
+
         app.cb_mm_cycle["state"] = "disabled"
         app.mm_preview.delete("1.0", tk.END)
         app.mm_preview.insert(tk.END, f"✓ {len(paths)} cycle files selected\n\n")
+        app.mm_preview.insert(tk.END, f"Columns detected: {', '.join(headers)}\n\n")
+        app.mm_preview.insert(tk.END, "Files:\n")
         for i, p in enumerate(sorted(app.mm_infiles), start=1):
             app.mm_preview.insert(tk.END, f"Cycle {i}: {os.path.basename(p)}\n")
         app.mm_status.set("Ready to create max/min file")
@@ -233,9 +254,24 @@ def _mm_make(app):
                 messagebox.showerror("Error", "Please select cycle files first")
                 return
 
-            time_c = app.mm_time_col.get().strip() or "Time"
+            time_c = app.mm_time_col.get().strip()
+
+            if not time_c:
+                response = messagebox.askyesno(
+                    "No Time Column",
+                    "No time column selected. Continue without time stamps?"
+                )
+                if not response:
+                    return
 
             out_df = compute_maxmin_from_multiple_files(app.mm_infiles, time_c)
+
+            # Show summary
+            summary = f"Processed {len(app.mm_infiles)} cycles\n"
+            summary += f"Value columns: {(len(out_df.columns) - 2) // 2}\n"
+            summary += f"Columns: {', '.join([c for c in out_df.columns[2::2]])}"
+            app.mm_preview.delete("1.0", tk.END)
+            app.mm_preview.insert(tk.END, summary)
 
             default_name = "cycles_maxmin.txt"
             out_path = filedialog.asksaveasfilename(

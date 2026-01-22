@@ -21,7 +21,7 @@ def compute_maxmin_from_multiple_files(
 
     Args:
         filepaths: List of file paths, each containing one cycle of data
-        time_col: Name of the time column
+        time_col: Name of the time column (can be None or empty string to skip)
 
     Returns:
         DataFrame with Date Time, Cycle, and alternating min/max columns
@@ -42,8 +42,8 @@ def compute_maxmin_from_multiple_files(
         # Load the file
         headers, delim, header_idx, lines = read_headers_only(fp)
 
-        if time_col not in headers:
-            raise RuntimeError(f"Time column '{time_col}' not found in {os.path.basename(fp)}")
+        # Verify time column exists if specified
+        time_col_valid = time_col and time_col.strip() and time_col in headers
 
         # Parse the data
         data_text = "".join(lines[header_idx + 1:])
@@ -68,24 +68,35 @@ def compute_maxmin_from_multiple_files(
         if df.empty:
             continue
 
-        # Get value columns (all except time)
+        # Get value columns (all except time and cycle)
         if value_cols is None:
-            value_cols = [c for c in headers if c != time_col and c.lower() != 'cycle']
+            exclude_cols = []
+            if time_col_valid:
+                exclude_cols.append(time_col)
+            value_cols = [c for c in headers if c not in exclude_cols and c.lower() != 'cycle']
 
-        # Convert to numeric
+        # Convert value columns to numeric
         for c in value_cols:
             if c in df.columns:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
 
         # Get last timestamp
-        last_time = df[time_col].iloc[-1] if time_col in df.columns else ""
+        if time_col_valid:
+            last_time = df[time_col].iloc[-1] if len(df) > 0 else ""
+        else:
+            last_time = ""
 
         # Compute min/max for this file (this cycle)
         row = [last_time, cycle_num]
         for col in value_cols:
             if col in df.columns:
-                min_val = df[col].min()
-                max_val = df[col].max()
+                col_data = df[col].dropna()
+                if len(col_data) > 0:
+                    min_val = col_data.min()
+                    max_val = col_data.max()
+                else:
+                    min_val = ""
+                    max_val = ""
             else:
                 min_val = ""
                 max_val = ""
@@ -96,6 +107,9 @@ def compute_maxmin_from_multiple_files(
 
     if not all_rows:
         raise RuntimeError("No valid data found in any files")
+
+    if not value_cols:
+        raise RuntimeError("No value columns found to analyze")
 
     # Build headers
     out_headers = ["Date  Time", "Cycle"]
