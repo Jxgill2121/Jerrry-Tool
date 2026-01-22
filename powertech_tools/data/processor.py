@@ -73,12 +73,25 @@ def compute_maxmin_from_multiple_files(
         if df.empty:
             continue
 
+        # Fix column mismatch: if 'Elapsed' is in headers but data has one fewer column
+        # This happens when the header line has a phantom 'Elapsed' column
+        if len(df.columns) < len(headers):
+            print(f"  WARNING: Header has {len(headers)} columns but data has {len(df.columns)}")
+            if 'Elapsed' in headers and len(headers) == len(df.columns) + 1:
+                print(f"  Removing phantom 'Elapsed' column from headers")
+                # Remove 'Elapsed' from headers and reassign column names
+                headers_fixed = [h for h in headers if h != 'Elapsed']
+                df.columns = headers_fixed
+                print(f"  Fixed headers: {headers_fixed}")
+
         # Get value columns (all except time and cycle)
         if value_cols is None:
             exclude_cols = []
             if time_col_valid:
                 exclude_cols.append(time_col)
-            value_cols = [c for c in headers if c not in exclude_cols and c.lower() != 'cycle']
+            # Exclude 'Elapsed' as it may be a phantom header column
+            value_cols = [c for c in headers if c not in exclude_cols and c.lower() != 'cycle' and c.lower() != 'elapsed']
+            print(f"Value columns set from first file: {value_cols}")
 
         # Convert value columns to numeric
         for c in value_cols:
