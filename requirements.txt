@@ -1,0 +1,17 @@
+# Powertech Tools Dependencies
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# TDMS file support
+npTDMS>=1.10.0
+
+# GUI (usually comes with Python, but listed for completeness)
+# tkinter - included with Python standard library
+
+# Image processing (for logo display)
+Pillow>=10.0.0
+
+# Plotting
+matplotlib>=3.7.0
