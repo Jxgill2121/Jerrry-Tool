@@ -43,7 +43,7 @@ class PowertechToolsApp(tk.Tk):
         self.tab_val = ttk.Frame(self.nb)
 
         # Add tabs to notebook
-        self.nb.add(self.tab_merge, text="  1) MERGE FILES  ")
+        self.nb.add(self.tab_merge, text="  1) TDMS CONVERSION  ")
         self.nb.add(self.tab_maxmin, text="  2) MAX/MIN ANALYSIS  ")
         self.nb.add(self.tab_plot, text="  3) PLOT DATA  ")
         self.nb.add(self.tab_avg, text="  4) CYCLE AVERAGES  ")
