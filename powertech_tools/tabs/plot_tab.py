@@ -11,6 +11,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 from powertech_tools.utils.file_parser import load_maxmin_for_plot
 from powertech_tools.utils.helpers import safe_float, safe_int, ScrollableFrame
+from powertech_tools.utils.plot_presets import (
+    save_preset, delete_preset, get_preset_names, get_preset
+)
 
 
 def build_tab(parent, app):
@@ -97,6 +100,57 @@ def build_tab(parent, app):
 
     app.plot_mode_suggestion = tk.StringVar(value="")
     ttk.Label(mode_row, textvariable=app.plot_mode_suggestion, style='Subtitle.TLabel', foreground=PowertechTheme.ACCENT).pack(side="left", padx=15)
+
+    # Preset management section
+    preset_frame = ttk.LabelFrame(config_card, text="Parameter Presets (Save/Load Bounds)", padding=15)
+    preset_frame.pack(fill="x", pady=(15, 0))
+
+    preset_desc = ttk.Label(
+        preset_frame,
+        text="Save commonly used min/max bounds for different test types (e.g., R134a, R410A)",
+        font=(PowertechTheme.FONT_FAMILY, 8),
+        foreground="#666"
+    )
+    preset_desc.pack(anchor="w", pady=(0, 10))
+
+    preset_row1 = ttk.Frame(preset_frame)
+    preset_row1.pack(fill="x", pady=5)
+
+    ttk.Label(preset_row1, text="Select Preset:", width=15).pack(side="left")
+    app.preset_var = tk.StringVar(value="")
+    app.preset_combo = ttk.Combobox(preset_row1, state="readonly", width=30, textvariable=app.preset_var)
+    app.preset_combo.pack(side="left", padx=10)
+
+    ttk.Button(
+        preset_row1,
+        text="⬇ Load Preset",
+        command=lambda: _load_preset(app)
+    ).pack(side="left", padx=5)
+
+    ttk.Button(
+        preset_row1,
+        text="🗑 Delete",
+        command=lambda: _delete_preset(app)
+    ).pack(side="left", padx=5)
+
+    preset_row2 = ttk.Frame(preset_frame)
+    preset_row2.pack(fill="x", pady=5)
+
+    ttk.Label(preset_row2, text="Save As:", width=15).pack(side="left")
+    app.preset_name_var = tk.StringVar(value="")
+    ttk.Entry(preset_row2, textvariable=app.preset_name_var, width=30).pack(side="left", padx=10)
+
+    ttk.Button(
+        preset_row2,
+        text="💾 Save Current Settings",
+        command=lambda: _save_preset(app)
+    ).pack(side="left", padx=5)
+
+    app.preset_status = tk.StringVar(value="")
+    ttk.Label(preset_row2, textvariable=app.preset_status, foreground=PowertechTheme.ACCENT).pack(side="left", padx=10)
+
+    # Refresh preset list
+    _refresh_preset_list(app)
 
     # Graph setup
     graph_row = ttk.Frame(config_card)
@@ -277,6 +331,111 @@ def _display_to_internal(app, display_name: str) -> Optional[str]:
         if v == display_name:
             return k
     return None
+
+
+def _refresh_preset_list(app):
+    """Refresh the preset dropdown list"""
+    preset_names = get_preset_names()
+    app.preset_combo["values"] = preset_names
+    if preset_names:
+        app.preset_var.set(preset_names[0])
+    else:
+        app.preset_var.set("")
+
+
+def _save_preset(app):
+    """Save current graph settings as a preset"""
+    try:
+        preset_name = app.preset_name_var.get().strip()
+        if not preset_name:
+            messagebox.showerror("Error", "Please enter a preset name")
+            return
+
+        # Collect current settings from all graph rows
+        graph_configs = []
+        for sel in app.graph_selectors:
+            config = {
+                "y1_var": sel["y1_var"].get(),
+                "y2_var": sel["y2_var"].get(),
+                "y_min_var": sel["y_min_var"].get(),
+                "y_max_var": sel["y_max_var"].get(),
+                "min_low_var": sel["min_low_var"].get(),
+                "min_high_var": sel["min_high_var"].get(),
+                "max_low_var": sel["max_low_var"].get(),
+                "max_high_var": sel["max_high_var"].get()
+            }
+            graph_configs.append(config)
+
+        save_preset(preset_name, graph_configs)
+        _refresh_preset_list(app)
+        app.preset_var.set(preset_name)
+        app.preset_status.set(f"✓ Saved '{preset_name}'")
+        app.preset_name_var.set("")
+
+        # Clear status after 3 seconds
+        app.after(3000, lambda: app.preset_status.set(""))
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to save preset: {e}")
+
+
+def _load_preset(app):
+    """Load a preset and apply it to the graph settings"""
+    try:
+        preset_name = app.preset_var.get().strip()
+        if not preset_name:
+            messagebox.showerror("Error", "Please select a preset")
+            return
+
+        preset_data = get_preset(preset_name)
+        if not preset_data:
+            messagebox.showerror("Error", f"Preset '{preset_name}' not found")
+            return
+
+        # Ensure we have enough graph rows
+        if len(preset_data) > len(app.graph_selectors):
+            app.num_graphs_var.set(len(preset_data))
+            _plot_rebuild_graph_rows(app)
+
+        # Apply preset to each graph row
+        for i, config in enumerate(preset_data):
+            if i < len(app.graph_selectors):
+                sel = app.graph_selectors[i]
+                sel["y1_var"].set(config.get("y1", ""))
+                sel["y2_var"].set(config.get("y2", ""))
+                sel["y_min_var"].set(config.get("y_min", ""))
+                sel["y_max_var"].set(config.get("y_max", ""))
+                sel["min_low_var"].set(config.get("min_low", ""))
+                sel["min_high_var"].set(config.get("min_high", ""))
+                sel["max_low_var"].set(config.get("max_low", ""))
+                sel["max_high_var"].set(config.get("max_high", ""))
+
+        app.preset_status.set(f"✓ Loaded '{preset_name}'")
+        app.after(3000, lambda: app.preset_status.set(""))
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load preset: {e}")
+
+
+def _delete_preset(app):
+    """Delete the selected preset"""
+    try:
+        preset_name = app.preset_var.get().strip()
+        if not preset_name:
+            messagebox.showerror("Error", "Please select a preset to delete")
+            return
+
+        # Confirm deletion
+        if not messagebox.askyesno("Confirm Delete", f"Delete preset '{preset_name}'?"):
+            return
+
+        delete_preset(preset_name)
+        _refresh_preset_list(app)
+        app.preset_status.set(f"✓ Deleted '{preset_name}'")
+        app.after(3000, lambda: app.preset_status.set(""))
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to delete preset: {e}")
 
 
 def _plot_make(app):
