@@ -3,6 +3,7 @@
 import os
 from typing import List, Tuple, Dict, Optional
 import pandas as pd
+import numpy as np
 from nptdms import TdmsFile
 
 
@@ -29,139 +30,89 @@ def read_tdms_structure(filepath: str) -> Tuple[List[str], Dict[str, List[str]]]
     return groups, channels_dict
 
 
-def get_cycle_column_values(filepath: str, group_name: str, cycle_channel: str) -> List:
-    """
-    Get unique cycle values from a cycle indicator channel.
-
-    Args:
-        filepath: Path to TDMS file
-        group_name: Name of the group containing the cycle channel
-        cycle_channel: Name of the channel that indicates cycle number
-
-    Returns:
-        Sorted list of unique cycle values
-    """
-    tdms_file = TdmsFile.read(filepath)
-    group = tdms_file[group_name]
-    channel = group[cycle_channel]
-    data = channel[:]
-
-    import numpy as np
-    unique_cycles = sorted(np.unique(data))
-    return unique_cycles
-
-
-def convert_tdms_to_cycle_files(
-    filepath: str,
+def convert_tdms_files_to_cycles(
+    filepaths: List[str],
     output_dir: str,
     group_name: str,
-    cycle_channel: Optional[str] = None,
-    time_channel: Optional[str] = None,
+    selected_channels: List[str],
+    add_time_column: bool = True,
+    time_step: float = 0.10,
+    cycle_number_column: Optional[str] = None,
     progress_callback=None
 ) -> List[str]:
     """
-    Convert TDMS file to individual cycle TXT files.
+    Convert multiple TDMS files to individual cycle TXT files.
+    Each TDMS file represents one cycle.
 
     Args:
-        filepath: Path to TDMS file
+        filepaths: List of TDMS file paths to process
         output_dir: Directory to save cycle TXT files
         group_name: Name of the group to extract data from
-        cycle_channel: Name of channel that indicates cycle number (if None, treat whole file as one cycle)
-        time_channel: Name of time/timestamp channel (optional)
+        selected_channels: List of channel names to include in output
+        add_time_column: If True, generate a Time column based on time_step
+        time_step: Time interval in seconds between samples (default 0.10)
+        cycle_number_column: Optional channel name containing cycle number for labeling
         progress_callback: Optional callback function(current, total, message)
 
     Returns:
         List of created file paths
     """
-    tdms_file = TdmsFile.read(filepath)
-    group = tdms_file[group_name]
-
-    # Get all channel names and data
-    channel_names = [ch.name for ch in group.channels()]
-
-    if not channel_names:
-        raise RuntimeError(f"No channels found in group '{group_name}'")
-
-    # Read all data into a DataFrame
-    data_dict = {}
-    for ch_name in channel_names:
-        channel = group[ch_name]
-        data_dict[ch_name] = channel[:]
-
-    df = pd.DataFrame(data_dict)
-
-    # Determine output file prefix
-    base_name = os.path.splitext(os.path.basename(filepath))[0]
-
     created_files = []
+    total_files = len(filepaths)
 
-    if cycle_channel and cycle_channel in df.columns:
-        # Split by cycle column
-        unique_cycles = sorted(df[cycle_channel].unique())
-        total_cycles = len(unique_cycles)
+    for file_idx, filepath in enumerate(filepaths, start=1):
+        if progress_callback:
+            progress_callback(file_idx, total_files, f"Processing {os.path.basename(filepath)}")
 
-        for idx, cycle_val in enumerate(unique_cycles, start=1):
-            if progress_callback:
-                progress_callback(idx, total_cycles, f"Processing cycle {int(cycle_val)}")
+        try:
+            # Read TDMS file
+            tdms_file = TdmsFile.read(filepath)
+            group = tdms_file[group_name]
 
-            cycle_df = df[df[cycle_channel] == cycle_val].copy()
+            # Read selected channels into DataFrame
+            data_dict = {}
+            for ch_name in selected_channels:
+                if ch_name in [ch.name for ch in group.channels()]:
+                    channel = group[ch_name]
+                    data_dict[ch_name] = channel[:]
+                else:
+                    raise ValueError(f"Channel '{ch_name}' not found in group '{group_name}'")
 
-            # Reorder columns: time first if specified, then others, cycle column last
-            cols = list(cycle_df.columns)
-            ordered_cols = []
+            df = pd.DataFrame(data_dict)
 
-            if time_channel and time_channel in cols:
-                ordered_cols.append(time_channel)
-                cols.remove(time_channel)
+            if len(df) == 0:
+                continue  # Skip empty files
 
-            # Add other columns except cycle column
-            for col in cols:
-                if col != cycle_channel:
-                    ordered_cols.append(col)
+            # Add time column if requested
+            if add_time_column:
+                time_values = np.arange(len(df)) * time_step
+                df.insert(0, 'Time', time_values)
 
-            # Add cycle column at end
-            ordered_cols.append(cycle_channel)
+            # Determine cycle number for output filename
+            if cycle_number_column and cycle_number_column in df.columns:
+                # Use the cycle number from the data (take first value)
+                cycle_num = int(df[cycle_number_column].iloc[0])
+            else:
+                # Use file index as cycle number
+                cycle_num = file_idx
 
-            cycle_df = cycle_df[ordered_cols]
-
-            # Create output file
-            out_filename = f"{base_name}_cycle{int(cycle_val)}.txt"
+            # Determine output filename
+            base_name = os.path.splitext(os.path.basename(filepath))[0]
+            out_filename = f"{base_name}_cycle{cycle_num}.txt"
             out_path = os.path.join(output_dir, out_filename)
 
             # Write with Powertech header format
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write("Powertech Test Log\n")
-                f.write("Time step =0.10 s\n")
+                f.write(f"Time step ={time_step:.2f} s\n")
                 f.write("\n")
                 f.write("Cycle test\n")
-                f.write("\t".join(ordered_cols) + "\n")
-                cycle_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
+                f.write("\t".join(df.columns) + "\n")
+                df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
 
             created_files.append(out_path)
 
-    else:
-        # No cycle column - treat entire file as one cycle
-        if progress_callback:
-            progress_callback(1, 1, "Processing single cycle")
-
-        # Reorder columns: time first if specified
-        cols = list(df.columns)
-        if time_channel and time_channel in cols:
-            cols.remove(time_channel)
-            cols.insert(0, time_channel)
-
-        out_filename = f"{base_name}_cycle1.txt"
-        out_path = os.path.join(output_dir, out_filename)
-
-        # Write with Powertech header format
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write("Powertech Test Log\n")
-            f.write("Time step =0.10 s\n")
-            f.write("\n")
-            f.write("Cycle test\n")
-            f.write("\t".join(cols) + "\n")
-            df[cols].to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
-
-        created_files.append(out_path)
+        except Exception as e:
+            raise RuntimeError(f"Error processing {os.path.basename(filepath)}: {e}")
 
     return created_files
