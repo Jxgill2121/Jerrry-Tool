@@ -42,6 +42,11 @@ def compute_maxmin_from_multiple_files(
         # Load the file
         headers, delim, header_idx, lines = read_headers_only(fp)
 
+        print(f"\n=== DEBUG: Processing {os.path.basename(fp)} (Cycle {cycle_num}) ===")
+        print(f"Headers detected: {headers}")
+        print(f"Delimiter: {repr(delim)}")
+        print(f"Header at line: {header_idx}")
+
         # Verify time column exists if specified
         time_col_valid = time_col and time_col.strip() and time_col in headers
 
@@ -88,18 +93,22 @@ def compute_maxmin_from_multiple_files(
 
         # Compute min/max for this file (this cycle)
         row = [last_time, cycle_num]
+        print(f"Computing min/max for {len(value_cols)} value columns...")
         for col in value_cols:
             if col in df.columns:
                 col_data = df[col].dropna()
                 if len(col_data) > 0:
                     min_val = col_data.min()
                     max_val = col_data.max()
+                    print(f"  {col}: min={min_val:.6f}, max={max_val:.6f}, rows={len(col_data)}")
                 else:
                     min_val = ""
                     max_val = ""
+                    print(f"  {col}: NO DATA")
             else:
                 min_val = ""
                 max_val = ""
+                print(f"  {col}: COLUMN NOT FOUND")
             row.append(min_val)
             row.append(max_val)
 
