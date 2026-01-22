@@ -39,19 +39,24 @@ def compute_maxmin_from_multiple_files(
     value_cols = None
 
     for cycle_num, fp in enumerate(filepaths, start=1):
-        # Load the file
-        headers, delim, header_idx, lines = read_headers_only(fp)
+        # Load the file - read entire file instead of just first 400 lines
+        headers, delim, header_idx, _ = read_headers_only(fp)
+
+        # Now read the ENTIRE file to get all data
+        with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+            all_lines = f.readlines()
 
         print(f"\n=== DEBUG: Processing {os.path.basename(fp)} (Cycle {cycle_num}) ===")
         print(f"Headers detected: {headers}")
         print(f"Delimiter: {repr(delim)}")
         print(f"Header at line: {header_idx}")
+        print(f"Total lines in file: {len(all_lines)}")
 
         # Verify time column exists if specified
         time_col_valid = time_col and time_col.strip() and time_col in headers
 
-        # Parse the data
-        data_text = "".join(lines[header_idx + 1:])
+        # Parse the data from all lines after the header
+        data_text = "".join(all_lines[header_idx + 1:])
 
         if delim == "  ":
             sep = r"\s{2,}"
