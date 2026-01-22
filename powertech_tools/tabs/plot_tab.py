@@ -73,9 +73,6 @@ def build_tab(parent, app):
     app.plot_cycle_from = tk.StringVar(value="")
     app.plot_cycle_to = tk.StringVar(value="")
 
-    # Visualization mode
-    app.plot_mode = tk.StringVar(value="scatter")
-
     # Cycle settings
     cycle_row = ttk.Frame(config_card)
     cycle_row.pack(fill="x", pady=(0, 10))
@@ -89,17 +86,6 @@ def build_tab(parent, app):
     ttk.Label(cycle_row, text="to").pack(side="left", padx=5)
     ttk.Entry(cycle_row, textvariable=app.plot_cycle_to, width=10).pack(side="left", padx=5)
     ttk.Label(cycle_row, text="(optional)", style='Subtitle.TLabel').pack(side="left", padx=5)
-
-    # Visualization mode selector
-    mode_row = ttk.Frame(config_card)
-    mode_row.pack(fill="x", pady=(10, 10))
-
-    ttk.Label(mode_row, text="Visualization Mode:", width=15, font=(PowertechTheme.FONT_FAMILY, 10, 'bold')).pack(side="left")
-    ttk.Radiobutton(mode_row, text="📊 Scatter Plot (Standard)", variable=app.plot_mode, value="scatter").pack(side="left", padx=10)
-    ttk.Radiobutton(mode_row, text="📈 Overview Mode (Rolling Stats + Heatmap)", variable=app.plot_mode, value="overview").pack(side="left", padx=10)
-
-    app.plot_mode_suggestion = tk.StringVar(value="")
-    ttk.Label(mode_row, textvariable=app.plot_mode_suggestion, style='Subtitle.TLabel', foreground=PowertechTheme.ACCENT).pack(side="left", padx=15)
 
     # Preset management section
     preset_frame = ttk.LabelFrame(config_card, text="Parameter Presets (Save/Load Bounds)", padding=15)
@@ -471,13 +457,6 @@ def _plot_make(app):
             messagebox.showerror("Error", "No data in selected range")
             return
 
-        # Check cycle count and suggest mode
-        num_cycles = len(df)
-        if num_cycles > 100 and app.plot_mode.get() == "scatter":
-            app.plot_mode_suggestion.set(f"💡 {num_cycles} cycles detected - Overview Mode recommended!")
-        else:
-            app.plot_mode_suggestion.set("")
-
         plot_jobs = []
         for i, sel in enumerate(app.graph_selectors):
             y1_disp = sel["y1_var"].get().strip()
@@ -500,12 +479,8 @@ def _plot_make(app):
             messagebox.showwarning("Warning", "Please select at least one variable")
             return
 
-        # Route to appropriate plotting function
-        mode = app.plot_mode.get()
-        if mode == "overview":
-            _plot_make_overview(app, df, cycle_internal, plot_jobs)
-        else:
-            _plot_make_scatter(app, df, cycle_internal, plot_jobs)
+        # Generate scatter plots
+        _plot_make_scatter(app, df, cycle_internal, plot_jobs)
 
     except Exception as e:
         messagebox.showerror("Error", str(e))
@@ -572,174 +547,6 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
             ax.axhline(max_high, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.7, label=f"Max Upper Limit")
 
         ax.legend(fontsize=9, loc='best')
-
-    app.fig.tight_layout()
-    app.canvas.draw()
-
-
-def _plot_make_overview(app, df, cycle_internal, plot_jobs):
-    """Generate overview plots with rolling statistics and heatmap"""
-    from powertech_tools.config.theme import PowertechTheme
-    import numpy as np
-
-    app.fig.clear()
-
-    num_cycles = len(df)
-
-    # Determine layout
-    n_vars = len(plot_jobs)
-
-    if n_vars == 1:
-        n_rows = 2
-    else:
-        n_rows = n_vars + 1
-
-    # Calculate rolling window (adaptive based on data size)
-    window = max(10, min(100, num_cycles // 20))
-
-    x = df[cycle_internal]
-
-    # Plot rolling statistics for each variable
-    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high) in enumerate(plot_jobs, start=1):
-        if n_vars == 1:
-            ax = app.fig.add_subplot(n_rows, 1, 1)
-        else:
-            ax = app.fig.add_subplot(n_rows, 1, idx)
-
-        labels_for_title = []
-
-        def plot_rolling_series(y_disp: str, color_base: str):
-            if not y_disp:
-                return
-            y_int = _display_to_internal(app, y_disp)
-            if not y_int or y_int not in df.columns:
-                return
-
-            y = pd.to_numeric(df[y_int], errors="coerce")
-            kind = app.plot_internal_kind.get(y_int, "other")
-
-            # Determine color
-            if kind == "min":
-                color = PowertechTheme.ACCENT
-            elif kind == "max":
-                color = PowertechTheme.ERROR
-            else:
-                color = PowertechTheme.PRIMARY
-
-            # Calculate rolling statistics
-            y_series = pd.Series(y.values)
-            rolling_mean = y_series.rolling(window=window, center=True, min_periods=1).mean()
-            rolling_std = y_series.rolling(window=window, center=True, min_periods=1).std()
-
-            # Plot mean line
-            ax.plot(x, rolling_mean, linewidth=2.5, color=color, label=f"{y_disp} (avg)", alpha=0.9)
-
-            # Plot confidence envelope (mean ± std)
-            ax.fill_between(x,
-                           rolling_mean - rolling_std,
-                           rolling_mean + rolling_std,
-                           color=color, alpha=0.15, label=f"{y_disp} (±1σ)")
-
-            # Plot actual data points (lighter, smaller)
-            ax.plot(x, y, marker=".", linestyle="None", markersize=2, color=color, alpha=0.2)
-
-            labels_for_title.append(y_disp)
-
-        plot_rolling_series(y1_disp, "blue")
-        plot_rolling_series(y2_disp, "red")
-
-        ax.set_xlabel("Cycle", fontsize=9, fontweight='bold')
-        ax.set_ylabel("Value", fontsize=9, fontweight='bold')
-        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
-        title_text = " | ".join(labels_for_title) if labels_for_title else f"Graph {graph_num}"
-        ax.set_title(f"Rolling Statistics (Window={window}) - {title_text}",
-                     fontsize=10, fontweight="bold", color=PowertechTheme.PRIMARY)
-        ax.set_facecolor('#fafafa')
-
-        # Set Y-axis limits if specified
-        if y_min is not None and y_max is not None:
-            ax.set_ylim(y_min, y_max)
-        elif y_min is not None:
-            ax.set_ylim(bottom=y_min)
-        elif y_max is not None:
-            ax.set_ylim(top=y_max)
-
-        # Add limit lines if specified
-        if min_low is not None:
-            ax.axhline(min_low, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.8, label=f"Min Lower")
-        if min_high is not None:
-            ax.axhline(min_high, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.8, label=f"Min Upper")
-        if max_low is not None:
-            ax.axhline(max_low, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.8, label=f"Max Lower")
-        if max_high is not None:
-            ax.axhline(max_high, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.8, label=f"Max Upper")
-
-        ax.legend(fontsize=8, loc='best', framealpha=0.9)
-
-    # Create heatmap showing binned cycle performance
-    ax_heat = app.fig.add_subplot(n_rows, 1, n_rows)
-
-    # Determine bin size
-    bin_size = max(1, num_cycles // 30)
-    n_bins = (num_cycles + bin_size - 1) // bin_size
-
-    # Collect all variables to plot in heatmap
-    heatmap_vars = []
-    heatmap_labels = []
-    for graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high in plot_jobs:
-        for y_disp in [y1_disp, y2_disp]:
-            if y_disp:
-                y_int = _display_to_internal(app, y_disp)
-                if y_int and y_int in df.columns:
-                    heatmap_vars.append((y_int, y_disp, y_min, y_max, min_low, min_high, max_low, max_high))
-                    heatmap_labels.append(y_disp)
-
-    if heatmap_vars:
-        heatmap_data = []
-        bin_labels = []
-
-        for bin_idx in range(n_bins):
-            start_idx = bin_idx * bin_size
-            end_idx = min((bin_idx + 1) * bin_size, num_cycles)
-            bin_df = df.iloc[start_idx:end_idx]
-
-            bin_start_cycle = int(bin_df[cycle_internal].iloc[0])
-            bin_end_cycle = int(bin_df[cycle_internal].iloc[-1])
-            bin_labels.append(f"{bin_start_cycle}-{bin_end_cycle}")
-
-            row_data = []
-            for y_int, y_disp, y_min, y_max, min_low, min_high, max_low, max_high in heatmap_vars:
-                y_vals = pd.to_numeric(bin_df[y_int], errors="coerce").dropna()
-                if len(y_vals) > 0:
-                    avg_val = y_vals.mean()
-                    row_data.append(avg_val)
-                else:
-                    row_data.append(0)
-
-            heatmap_data.append(row_data)
-
-        heatmap_array = pd.DataFrame(heatmap_data, columns=heatmap_labels, index=bin_labels).T
-
-        # Create heatmap
-        im = ax_heat.imshow(heatmap_array.values, aspect='auto', cmap='RdYlGn_r', interpolation='nearest')
-
-        # Set ticks
-        ax_heat.set_yticks(range(len(heatmap_labels)))
-        ax_heat.set_yticklabels(heatmap_labels, fontsize=8)
-
-        # Only show some x-axis labels to avoid crowding
-        x_tick_indices = np.linspace(0, len(bin_labels)-1, min(10, len(bin_labels)), dtype=int)
-        ax_heat.set_xticks(x_tick_indices)
-        ax_heat.set_xticklabels([bin_labels[i] for i in x_tick_indices], rotation=45, ha='right', fontsize=7)
-
-        ax_heat.set_xlabel("Cycle Range", fontsize=9, fontweight='bold')
-        ax_heat.set_title(f"Binned Average Values (Bin Size={bin_size} cycles)",
-                        fontsize=10, fontweight="bold", color=PowertechTheme.PRIMARY)
-
-        # Add colorbar
-        cbar = app.fig.colorbar(im, ax=ax_heat, orientation='vertical', pad=0.02, fraction=0.046)
-        cbar.ax.tick_params(labelsize=8)
-        cbar.set_label('Average Value', fontsize=8)
 
     app.fig.tight_layout()
     app.canvas.draw()
