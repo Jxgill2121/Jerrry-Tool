@@ -105,15 +105,27 @@ def validate_tfuel_timing(
 
     start_time = time.iloc[start_idx]
 
+    # If start_time is NaN, find the first valid time value at or after start_idx
+    if pd.isna(start_time):
+        for i in range(start_idx, len(df)):
+            if not pd.isna(time.iloc[i]):
+                start_time = time.iloc[i]
+                break
+
     # Find when tfuel reaches target
     for i in range(start_idx, len(df)):
         current_time = time.iloc[i]
         current_tfuel = tfuel.iloc[i]
 
-        if pd.isna(current_tfuel):
+        # Skip rows with invalid time or tfuel
+        if pd.isna(current_tfuel) or pd.isna(current_time):
             continue
 
         elapsed = current_time - start_time
+
+        # Skip if elapsed time is invalid
+        if pd.isna(elapsed):
+            continue
 
         if current_tfuel <= target_temp:
             if elapsed <= time_window:
