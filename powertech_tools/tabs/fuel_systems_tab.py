@@ -792,9 +792,19 @@ def _fs_plot_cycle(app, cycle_idx: int):
 
         cycle_df = df.iloc[start_idx:end_idx+1].copy()
 
-        # Get time column
+        # Get time column - handle both numeric and datetime formats
         time_col = config['time_col']
-        time = pd.to_numeric(cycle_df[time_col], errors='coerce')
+        try:
+            time = pd.to_numeric(cycle_df[time_col], errors='coerce')
+            # If all values are NaN, it's probably datetime format
+            if time.isna().all():
+                time = pd.to_datetime(cycle_df[time_col], errors='coerce')
+                # Convert to seconds elapsed from first timestamp
+                if not time.isna().all():
+                    time = (time - time.iloc[0]).dt.total_seconds()
+        except Exception:
+            time = pd.to_numeric(cycle_df[time_col], errors='coerce')
+
         start_time = time.iloc[0]
         time_relative = time - start_time  # Relative time from cycle start
 
@@ -805,60 +815,31 @@ def _fs_plot_cycle(app, cycle_idx: int):
         param_limits = config['param_limits']
         tfuel_col = config['tfuel_col']
         tfuel_window = config['tfuel_window']
+        tfuel_target = config['tfuel_target']
 
-        # Determine number of subplots (one for tfuel, one for all others)
-        other_params = [p for p in param_limits.keys() if p != tfuel_col]
-        n_plots = 1 + (1 if other_params else 0)
+        # Create single plot for ALL parameters
+        ax = app.fs_fig.add_subplot(1, 1, 1)
 
-        plot_idx = 1
+        # Plot all parameters with skinny lines
+        for param in param_limits.keys():
+            if param in cycle_df.columns:
+                param_data = pd.to_numeric(cycle_df[param], errors='coerce')
+                ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
 
-        # Plot tfuel with special handling
-        if tfuel_col in cycle_df.columns:
-            ax = app.fs_fig.add_subplot(n_plots, 1, plot_idx)
-            plot_idx += 1
+        # Mark tfuel time window boundary
+        ax.axvline(tfuel_window, linestyle='--', linewidth=1.5, color='orange', alpha=0.7, label=f'Time window ({tfuel_window}s)')
 
-            tfuel_data = pd.to_numeric(cycle_df[tfuel_col], errors='coerce')
+        # Show tfuel target
+        ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='red', alpha=0.7, label=f'Tfuel target ({tfuel_target}°C)')
 
-            # Plot tfuel data
-            ax.plot(time_relative, tfuel_data, linewidth=2, color=PowertechTheme.PRIMARY, label=tfuel_col, alpha=0.8)
-
-            # Mark tfuel time window boundary
-            ax.axvline(tfuel_window, linestyle='--', linewidth=2, color='orange', alpha=0.7, label=f'Time window ({tfuel_window}s)')
-
-            # Show tfuel target
-            tfuel_target = config['tfuel_target']
-            ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='red', alpha=0.7, label=f'Target temp ({tfuel_target}°C)')
-
-            # Show tfuel bounds (after window)
-            if tfuel_col in param_limits:
-                limits = param_limits[tfuel_col]
-                if 'min' in limits:
-                    ax.axhline(limits['min'], linestyle=':', linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.5, label=f'Min bound ({limits["min"]})')
-                if 'max' in limits:
-                    ax.axhline(limits['max'], linestyle=':', linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.5, label=f'Max bound ({limits["max"]})')
-
-            ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
-            ax.set_ylabel(f"{tfuel_col} (°C)", fontsize=10, fontweight='bold')
-            ax.set_title(f"{tfuel_col} - Timing & Bounds Check", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
-            ax.grid(True, alpha=0.3, linestyle='--')
-            ax.set_facecolor('#fafafa')
-            ax.legend(fontsize=8, loc='best')
-
-        # Plot other parameters
-        if other_params:
-            ax = app.fs_fig.add_subplot(n_plots, 1, plot_idx)
-
-            for param in other_params:
-                if param in cycle_df.columns:
-                    param_data = pd.to_numeric(cycle_df[param], errors='coerce')
-                    ax.plot(time_relative, param_data, linewidth=1.5, label=param, alpha=0.7)
-
-            ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
-            ax.set_ylabel("Value", fontsize=10, fontweight='bold')
-            ax.set_title("Other Parameters - Bounds Check", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
-            ax.grid(True, alpha=0.3, linestyle='--')
-            ax.set_facecolor('#fafafa')
-            ax.legend(fontsize=8, loc='best')
+        # Set axis scale
+        ax.set_ylim(-90, 105)
+        ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
+        ax.set_ylabel("Value", fontsize=10, fontweight='bold')
+        ax.set_title("All Parameters", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.set_facecolor('#fafafa')
+        ax.legend(fontsize=7, loc='best', ncol=2)
 
         # Overall title
         status_color = PowertechTheme.SUCCESS if result['status'] == 'PASS' else PowertechTheme.ERROR
