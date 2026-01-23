@@ -32,7 +32,18 @@ def detect_cycle_boundaries(
     """
     # Convert to numeric
     ptank = pd.to_numeric(df[ptank_col], errors='coerce')
-    time = pd.to_numeric(df[time_col], errors='coerce')
+
+    # Convert time column - handle both numeric and datetime formats
+    try:
+        time = pd.to_numeric(df[time_col], errors='coerce')
+        # If all values are NaN, it's probably datetime format
+        if time.isna().all():
+            time = pd.to_datetime(df[time_col], errors='coerce')
+            # Convert to seconds elapsed from first timestamp
+            if not time.isna().all():
+                time = (time - time.iloc[0]).dt.total_seconds()
+    except Exception:
+        time = pd.to_numeric(df[time_col], errors='coerce')
 
     # Find peak
     peak_idx = ptank.idxmax()
@@ -100,7 +111,20 @@ def validate_tfuel_timing(
     Returns:
         Tuple of (passed, time_to_target, message)
     """
-    time = pd.to_numeric(df[time_col], errors='coerce')
+    # Convert time column - handle both numeric and datetime formats
+    try:
+        # Try numeric first
+        time = pd.to_numeric(df[time_col], errors='coerce')
+
+        # If all values are NaN, it's probably datetime format
+        if time.isna().all():
+            time = pd.to_datetime(df[time_col], errors='coerce')
+            # Convert to seconds elapsed from first timestamp
+            if not time.isna().all():
+                time = (time - time.iloc[0]).dt.total_seconds()
+    except Exception:
+        time = pd.to_numeric(df[time_col], errors='coerce')
+
     tfuel = pd.to_numeric(df[tfuel_col], errors='coerce')
 
     start_time = time.iloc[start_idx]
@@ -184,7 +208,18 @@ def validate_parameter_bounds(
 
         # Special handling for tfuel - bounds only apply AFTER the time window
         if param == tfuel_col and start_time is not None:
-            time = pd.to_numeric(df[time_col], errors='coerce')
+            # Convert time column - handle both numeric and datetime formats
+            try:
+                time = pd.to_numeric(df[time_col], errors='coerce')
+                # If all values are NaN, it's probably datetime format
+                if time.isna().all():
+                    time = pd.to_datetime(df[time_col], errors='coerce')
+                    # Convert to seconds elapsed from first timestamp
+                    if not time.isna().all():
+                        time = (time - time.iloc[0]).dt.total_seconds()
+            except Exception:
+                time = pd.to_numeric(df[time_col], errors='coerce')
+
             cycle_time = time.iloc[start_idx:end_idx+1]
 
             # Only check bounds after the tfuel window period
