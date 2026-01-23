@@ -782,7 +782,7 @@ def _fs_plot_cycle(app, cycle_idx: int):
         # Load full cycle data
         df = load_table_allow_duplicate_headers(filepath)
 
-        # Extract clean cycle data
+        # Get cycle boundaries (for marking on plot)
         start_idx = result['cycle_start_idx']
         end_idx = result['cycle_end_idx']
 
@@ -790,7 +790,8 @@ def _fs_plot_cycle(app, cycle_idx: int):
             app.fs_viz_status.set("Error: Could not determine cycle boundaries")
             return
 
-        cycle_df = df.iloc[start_idx:end_idx+1].copy().reset_index(drop=True)
+        # Use ENTIRE dataframe for plotting, not just the detected cycle portion
+        cycle_df = df.copy()
 
         # Get time column - handle both numeric and datetime formats
         time_col = config['time_col']
@@ -805,13 +806,17 @@ def _fs_plot_cycle(app, cycle_idx: int):
         except Exception as e:
             time = pd.to_numeric(cycle_df[time_col], errors='coerce')
 
-        # Convert to elapsed time from cycle start
+        # Convert to elapsed time from start of file
         if not time.isna().all():
             start_time = time.iloc[0] if not pd.isna(time.iloc[0]) else 0.0
             time_relative = (time - start_time).values  # Use .values to get numpy array
         else:
             # Fallback: use row numbers as time
             time_relative = cycle_df.index.values * 0.5  # Assume 0.5s sampling
+
+        # Calculate time values at cycle boundaries for marking
+        cycle_start_time = time_relative[start_idx] if start_idx < len(time_relative) else 0
+        cycle_end_time = time_relative[end_idx] if end_idx < len(time_relative) else time_relative[-1]
 
         # Clear figure
         app.fs_fig.clear()
@@ -834,8 +839,13 @@ def _fs_plot_cycle(app, cycle_idx: int):
             if not pd.isna(param_data).all():  # Only plot if we have valid data
                 ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
 
-        # Mark tfuel time window boundary
-        ax.axvline(tfuel_window, linestyle='--', linewidth=1.5, color='orange', alpha=0.7, label=f'Time window ({tfuel_window}s)')
+        # Mark cycle boundaries with vertical lines
+        ax.axvline(cycle_start_time, linestyle='-', linewidth=2, color='green', alpha=0.6, label='Cycle start (fill begins)')
+        ax.axvline(cycle_end_time, linestyle='-', linewidth=2, color='purple', alpha=0.6, label='Cycle end (fill ends)')
+
+        # Mark tfuel time window boundary (relative to cycle start)
+        tfuel_window_time = cycle_start_time + tfuel_window
+        ax.axvline(tfuel_window_time, linestyle='--', linewidth=1.5, color='orange', alpha=0.7, label=f'Tfuel window ({tfuel_window}s from start)')
 
         # Show tfuel target
         ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='red', alpha=0.7, label=f'Tfuel target ({tfuel_target}°C)')
