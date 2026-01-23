@@ -105,16 +105,6 @@ class PowertechToolsApp(tk.Tk):
         )
         subtitle.pack(side="left", padx=(0, 30))
 
-        # Tagline
-        tagline = tk.Label(
-            header,
-            text="High Impact Test Team",
-            font=("Arial", 9, "italic"),
-            bg="white",
-            fg="#666666"
-        )
-        tagline.pack(side="left", padx=(0, 20))
-
         # Location
         location = tk.Label(
             header,
