@@ -15,6 +15,9 @@ def detect_cycle_boundaries(
     """
     Detect cycle boundaries by finding Ptank peak and working backwards/forwards to threshold.
 
+    Cycle starts when Ptank CROSSES ABOVE threshold (fill start).
+    Cycle ends when Ptank CROSSES BELOW threshold (fill end).
+
     Args:
         df: DataFrame with cycle data
         time_col: Name of time column
@@ -36,17 +39,29 @@ def detect_cycle_boundaries(
     if pd.isna(peak_value):
         raise ValueError("Could not find valid Ptank peak")
 
-    # Walk backwards to threshold
+    # Walk backwards to find where Ptank crosses ABOVE threshold
+    # This is the actual start of the fill
     start_idx = peak_idx
-    for i in range(peak_idx, -1, -1):
-        if ptank.iloc[i] <= threshold:
+    for i in range(peak_idx, 0, -1):  # Stop at 1, not 0, so we can check i-1
+        if ptank.iloc[i-1] <= threshold and ptank.iloc[i] > threshold:
+            # Found the crossing point - cycle starts here
+            start_idx = i
+            break
+        elif ptank.iloc[i] <= threshold:
+            # Went below threshold without finding crossing - use this point
             start_idx = i
             break
 
-    # Walk forwards to threshold
+    # Walk forwards to find where Ptank crosses BELOW threshold
+    # This is the end of the fill
     end_idx = peak_idx
-    for i in range(peak_idx, len(df)):
-        if ptank.iloc[i] <= threshold:
+    for i in range(peak_idx, len(df) - 1):
+        if ptank.iloc[i] > threshold and ptank.iloc[i+1] <= threshold:
+            # Found the crossing point - cycle ends here
+            end_idx = i
+            break
+        elif ptank.iloc[i] <= threshold:
+            # Already below threshold - use this point
             end_idx = i
             break
 
