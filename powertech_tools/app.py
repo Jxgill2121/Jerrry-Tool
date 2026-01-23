@@ -104,13 +104,3 @@ class PowertechToolsApp(tk.Tk):
             fg="#004E89"  # Deep blue
         )
         subtitle.pack(side="left", padx=(0, 30))
-
-        # Location
-        location = tk.Label(
-            header,
-            text="📍 Surrey, BC • HITT Squad",
-            font=("Arial", 10, "bold"),
-            bg="white",
-            fg="#FF6B35"
-        )
-        location.pack(side="right", padx=30)
