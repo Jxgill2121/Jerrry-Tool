@@ -10,7 +10,7 @@ from powertech_tools.utils.fuel_systems_presets import (
     save_preset, delete_preset, get_preset_names, get_preset
 )
 from powertech_tools.data.fuel_systems_validator import validate_fuel_system_file
-from powertech_tools.data.loader import read_headers_only
+from powertech_tools.utils.file_parser import read_headers_only
 
 
 def build_tab(parent, app):

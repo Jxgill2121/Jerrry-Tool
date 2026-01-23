@@ -4,7 +4,6 @@ import os
 from typing import List, Dict, Tuple, Optional
 import pandas as pd
 import numpy as np
-from powertech_tools.data.loader import read_headers_only
 
 
 def detect_cycle_boundaries(
@@ -177,7 +176,7 @@ def validate_fuel_system_file(
     Returns:
         Dict with validation results
     """
-    from powertech_tools.data.loader import load_table_allow_duplicate_headers
+    from powertech_tools.utils.file_parser import load_table_allow_duplicate_headers
 
     try:
         # Load file
