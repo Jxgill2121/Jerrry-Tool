@@ -15,8 +15,10 @@ def detect_cycle_boundaries(
     """
     Detect cycle boundaries by finding Ptank peak and working backwards/forwards to threshold.
 
-    Cycle starts when Ptank CROSSES ABOVE threshold (fill start).
-    Cycle ends when Ptank CROSSES BELOW threshold (fill end).
+    Cycle starts when Ptank crosses above threshold AFTER being significantly below it.
+    This avoids false detection from oscillations around the threshold value.
+
+    Cycle ends when Ptank crosses below threshold (fill end).
 
     Args:
         df: DataFrame with cycle data
@@ -39,18 +41,29 @@ def detect_cycle_boundaries(
     if pd.isna(peak_value):
         raise ValueError("Could not find valid Ptank peak")
 
-    # Walk backwards to find where Ptank crosses ABOVE threshold
-    # This is the actual start of the fill
+    # Walk backwards to find where Ptank is SIGNIFICANTLY below threshold
+    # This avoids false detections from oscillations around the threshold
+    # We look for where Ptank < (threshold - 0.3 MPa) to ensure we're past the oscillation zone
     start_idx = peak_idx
-    for i in range(peak_idx, 0, -1):  # Stop at 1, not 0, so we can check i-1
-        if ptank.iloc[i-1] <= threshold and ptank.iloc[i] > threshold:
-            # Found the crossing point - cycle starts here
-            start_idx = i
+    margin = 0.3  # MPa margin below threshold to avoid oscillations
+
+    for i in range(peak_idx, -1, -1):
+        if ptank.iloc[i] < (threshold - margin):
+            # Found where we're significantly below threshold (pre-fill region)
+            # Now walk forward to find where we cross ABOVE threshold (fill start)
+            for j in range(i, peak_idx + 1):
+                if ptank.iloc[j] > threshold:
+                    # This is the actual fill start
+                    start_idx = j
+                    break
             break
-        elif ptank.iloc[i] <= threshold:
-            # Went below threshold without finding crossing - use this point
-            start_idx = i
-            break
+
+    # Fallback: if no significant drop found, use simple threshold crossing
+    if start_idx == peak_idx:
+        for i in range(peak_idx, 0, -1):
+            if ptank.iloc[i] <= threshold:
+                start_idx = i + 1 if i + 1 < len(df) else i
+                break
 
     # Walk forwards to find where Ptank crosses BELOW threshold
     # This is the end of the fill
