@@ -4,7 +4,9 @@ import os
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from typing import List, Dict
+from datetime import datetime
 
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -682,7 +684,7 @@ def _fs_display_results(app):
 
 
 def _fs_export_results(app):
-    """Export validation results to CSV"""
+    """Export validation results to formatted text report"""
     if not app.fs_results:
         messagebox.showwarning("Warning", "No results to export. Run validation first.")
         return
@@ -690,28 +692,67 @@ def _fs_export_results(app):
     try:
         out_path = filedialog.asksaveasfilename(
             title="Export validation results",
-            defaultextension=".csv",
-            initialfile="fuel_systems_validation_results.csv",
-            filetypes=[("CSV", "*.csv"), ("All", "*.*")]
+            defaultextension=".txt",
+            initialfile="fuel_systems_validation_results.txt",
+            filetypes=[("Text File", "*.txt"), ("CSV", "*.csv"), ("All", "*.*")]
         )
         if not out_path:
             return
 
-        with open(out_path, "w", encoding="utf-8") as f:
-            # Header
-            f.write("File,Status,tfuel Check,tfuel Message,Parameter Violations,Cycle Points,Total Points\n")
+        # Count results
+        total = len(app.fs_results)
+        passed = sum(1 for r in app.fs_results if r['status'] == 'PASS')
+        failed = sum(1 for r in app.fs_results if r['status'] == 'FAIL')
+        errors = sum(1 for r in app.fs_results if r['status'] == 'ERROR')
 
-            # Data rows
-            for result in app.fs_results:
+        with open(out_path, "w", encoding="utf-8") as f:
+            # Header with branding
+            f.write("=" * 80 + "\n")
+            f.write("                  JERRY - HITT TEAM ANALYSIS TOOL\n")
+            f.write("                   FUEL SYSTEMS VALIDATION REPORT\n")
+            f.write("=" * 80 + "\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("\n")
+
+            # Summary section
+            f.write("VALIDATION SUMMARY\n")
+            f.write("-" * 80 + "\n")
+            f.write(f"Total Files: {total}\n")
+            f.write(f"PASSED: {passed}\n")
+            f.write(f"FAILED: {failed}\n")
+            f.write(f"ERRORS: {errors}\n")
+            f.write("=" * 80 + "\n\n")
+
+            # Detailed results
+            for idx, result in enumerate(app.fs_results, 1):
                 file = result['file']
                 status = result['status']
                 tfuel_check = "PASS" if result['tfuel_check'] else "FAIL"
-                tfuel_msg = result['tfuel_message'].replace(',', ';')
-                violations = " | ".join(result['param_violations']).replace(',', ';')
+                tfuel_msg = result['tfuel_message']
+                violations = result['param_violations']
                 cycle_pts = result['cycle_points']
                 total_pts = result['total_points']
 
-                f.write(f'"{file}",{status},{tfuel_check},"{tfuel_msg}","{violations}",{cycle_pts},{total_pts}\n')
+                # Status symbol
+                symbol = "✓" if status == "PASS" else "✗"
+
+                f.write(f"{symbol} {file} - {status}\n")
+                f.write(f"  Cycle: {cycle_pts} points (of {total_pts} total)\n")
+                f.write(f"  tfuel Check: {tfuel_check}\n")
+                f.write(f"    {tfuel_msg}\n")
+
+                if violations:
+                    f.write(f"  Parameter Bounds:\n")
+                    for v in violations:
+                        f.write(f"    • {v}\n")
+                else:
+                    f.write(f"  Parameter Bounds: All within limits\n")
+
+                f.write("\n")
+
+            f.write("=" * 80 + "\n")
+            f.write("END OF REPORT\n")
+            f.write("=" * 80 + "\n")
 
         messagebox.showinfo("Success", f"Results exported to:\n{out_path}")
 
