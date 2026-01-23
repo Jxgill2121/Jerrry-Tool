@@ -5,6 +5,9 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from typing import List, Dict
 
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
 from powertech_tools.utils.helpers import ScrollableFrame, natural_sort_key
 from powertech_tools.utils.fuel_systems_presets import (
     save_preset, delete_preset, get_preset_names, get_preset
@@ -230,15 +233,61 @@ def build_tab(parent, app):
 
     # Results card
     results_card = ttk.LabelFrame(f, text="Validation Results", padding=15)
-    results_card.pack(fill="both", expand=True, pady=(0, 0))
+    results_card.pack(fill="x", pady=(0, 15))
 
     app.fs_results_text = scrolledtext.ScrolledText(
         results_card,
-        height=15,
+        height=10,
         font=("Courier New", 9),
         wrap=tk.WORD
     )
     app.fs_results_text.pack(fill="both", expand=True)
+
+    # Cycle Visualization card
+    viz_card = ttk.LabelFrame(f, text="Cycle Visualization (Clean Data Only)", padding=15)
+    viz_card.pack(fill="both", expand=True, pady=(0, 0))
+
+    # Navigation controls
+    nav_frame = ttk.Frame(viz_card)
+    nav_frame.pack(fill="x", pady=(0, 10))
+
+    ttk.Button(
+        nav_frame,
+        text="◀ Previous",
+        command=lambda: _fs_show_cycle(app, -1)
+    ).pack(side="left", padx=5)
+
+    ttk.Button(
+        nav_frame,
+        text="Next ▶",
+        command=lambda: _fs_show_cycle(app, 1)
+    ).pack(side="left", padx=5)
+
+    ttk.Label(nav_frame, text="Cycle:", width=10).pack(side="left", padx=(20, 5))
+    app.fs_cycle_var = tk.StringVar(value="")
+    app.fs_cycle_combo = ttk.Combobox(nav_frame, state="disabled", width=30, textvariable=app.fs_cycle_var)
+    app.fs_cycle_combo.pack(side="left", padx=5)
+    app.fs_cycle_combo.bind("<<ComboboxSelected>>", lambda e: _fs_show_selected_cycle(app))
+
+    app.fs_viz_status = tk.StringVar(value="No data to visualize")
+    ttk.Label(nav_frame, textvariable=app.fs_viz_status, foreground="#666").pack(side="left", padx=15)
+
+    # Plot area
+    from powertech_tools.config.theme import PowertechTheme
+    app.fs_fig = plt.Figure(figsize=(14, 8), dpi=100)
+    app.fs_fig.patch.set_facecolor(PowertechTheme.BG_CARD)
+    app.fs_canvas = FigureCanvasTkAgg(app.fs_fig, master=viz_card)
+    app.fs_canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+    toolbar = NavigationToolbar2Tk(app.fs_canvas, viz_card)
+    toolbar.update()
+
+    # Store cycle data for visualization
+    app.fs_cycle_data = []
+    app.fs_current_cycle_idx = 0
+
+    # Bind arrow keys for navigation
+    app.bind("<Left>", lambda e: _fs_show_cycle(app, -1))
+    app.bind("<Right>", lambda e: _fs_show_cycle(app, 1))
 
 
 def _fs_choose_files(app):
@@ -535,10 +584,22 @@ def _fs_validate(app):
 
         # Run validation
         app.fs_results = []
+        app.fs_cycle_data = []
         app.fs_results_text.delete("1.0", tk.END)
         app.fs_results_text.insert(tk.END, "Validating files...\n\n")
         app.fs_status.set("Validating...")
         app.update_idletasks()
+
+        # Store configuration for visualization
+        validation_config = {
+            'time_col': time_col,
+            'ptank_col': ptank_col,
+            'tfuel_col': tfuel_col,
+            'param_limits': param_limits,
+            'ptank_threshold': ptank_threshold,
+            'tfuel_target': tfuel_target,
+            'tfuel_window': tfuel_window
+        }
 
         for i, filepath in enumerate(app.fs_files, start=1):
             app.fs_status.set(f"Validating {i}/{len(app.fs_files)}")
@@ -557,6 +618,14 @@ def _fs_validate(app):
 
             app.fs_results.append(result)
 
+            # Store cycle data for visualization
+            if result['status'] != 'ERROR':
+                app.fs_cycle_data.append({
+                    'filepath': filepath,
+                    'result': result,
+                    'config': validation_config
+                })
+
         # Display results
         _fs_display_results(app)
 
@@ -565,6 +634,10 @@ def _fs_validate(app):
         error_count = sum(1 for r in app.fs_results if r['status'] == 'ERROR')
 
         app.fs_status.set(f"✓ Complete: {pass_count} passed, {fail_count} failed, {error_count} errors")
+
+        # Setup visualization
+        if app.fs_cycle_data:
+            _fs_setup_visualization(app)
 
     except Exception as e:
         app.fs_status.set("Error")
@@ -644,3 +717,164 @@ def _fs_export_results(app):
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to export results: {e}")
+
+
+def _fs_setup_visualization(app):
+    """Setup cycle visualization after validation"""
+    # Populate cycle dropdown
+    cycle_names = [os.path.basename(d['filepath']) for d in app.fs_cycle_data]
+    app.fs_cycle_combo["values"] = cycle_names
+    app.fs_cycle_combo["state"] = "readonly"
+
+    # Show first cycle
+    app.fs_current_cycle_idx = 0
+    app.fs_cycle_var.set(cycle_names[0])
+    _fs_plot_cycle(app, 0)
+
+
+def _fs_show_cycle(app, direction: int):
+    """Navigate to previous or next cycle"""
+    if not app.fs_cycle_data:
+        return
+
+    app.fs_current_cycle_idx += direction
+
+    # Wrap around
+    if app.fs_current_cycle_idx < 0:
+        app.fs_current_cycle_idx = len(app.fs_cycle_data) - 1
+    elif app.fs_current_cycle_idx >= len(app.fs_cycle_data):
+        app.fs_current_cycle_idx = 0
+
+    # Update dropdown and plot
+    cycle_names = app.fs_cycle_combo["values"]
+    app.fs_cycle_var.set(cycle_names[app.fs_current_cycle_idx])
+    _fs_plot_cycle(app, app.fs_current_cycle_idx)
+
+
+def _fs_show_selected_cycle(app):
+    """Show cycle selected from dropdown"""
+    if not app.fs_cycle_data:
+        return
+
+    cycle_name = app.fs_cycle_var.get()
+    cycle_names = app.fs_cycle_combo["values"]
+
+    if cycle_name in cycle_names:
+        app.fs_current_cycle_idx = cycle_names.index(cycle_name)
+        _fs_plot_cycle(app, app.fs_current_cycle_idx)
+
+
+def _fs_plot_cycle(app, cycle_idx: int):
+    """Plot a specific cycle with all validated parameters"""
+    if cycle_idx < 0 or cycle_idx >= len(app.fs_cycle_data):
+        return
+
+    from powertech_tools.config.theme import PowertechTheme
+    from powertech_tools.utils.file_parser import load_table_allow_duplicate_headers
+    import pandas as pd
+
+    try:
+        cycle_info = app.fs_cycle_data[cycle_idx]
+        filepath = cycle_info['filepath']
+        result = cycle_info['result']
+        config = cycle_info['config']
+
+        # Load full cycle data
+        df = load_table_allow_duplicate_headers(filepath)
+
+        # Extract clean cycle data
+        start_idx = result['cycle_start_idx']
+        end_idx = result['cycle_end_idx']
+
+        if start_idx is None or end_idx is None:
+            app.fs_viz_status.set("Error: Could not determine cycle boundaries")
+            return
+
+        cycle_df = df.iloc[start_idx:end_idx+1].copy()
+
+        # Get time column
+        time_col = config['time_col']
+        time = pd.to_numeric(cycle_df[time_col], errors='coerce')
+        start_time = time.iloc[0]
+        time_relative = time - start_time  # Relative time from cycle start
+
+        # Clear figure
+        app.fs_fig.clear()
+
+        # Get parameters to plot
+        param_limits = config['param_limits']
+        tfuel_col = config['tfuel_col']
+        tfuel_window = config['tfuel_window']
+
+        # Determine number of subplots (one for tfuel, one for all others)
+        other_params = [p for p in param_limits.keys() if p != tfuel_col]
+        n_plots = 1 + (1 if other_params else 0)
+
+        plot_idx = 1
+
+        # Plot tfuel with special handling
+        if tfuel_col in cycle_df.columns:
+            ax = app.fs_fig.add_subplot(n_plots, 1, plot_idx)
+            plot_idx += 1
+
+            tfuel_data = pd.to_numeric(cycle_df[tfuel_col], errors='coerce')
+
+            # Plot tfuel data
+            ax.plot(time_relative, tfuel_data, linewidth=2, color=PowertechTheme.PRIMARY, label=tfuel_col, alpha=0.8)
+
+            # Mark tfuel time window boundary
+            ax.axvline(tfuel_window, linestyle='--', linewidth=2, color='orange', alpha=0.7, label=f'Time window ({tfuel_window}s)')
+
+            # Show tfuel target
+            tfuel_target = config['tfuel_target']
+            ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='red', alpha=0.7, label=f'Target temp ({tfuel_target}°C)')
+
+            # Show tfuel bounds (after window)
+            if tfuel_col in param_limits:
+                limits = param_limits[tfuel_col]
+                if 'min' in limits:
+                    ax.axhline(limits['min'], linestyle=':', linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.5, label=f'Min bound ({limits["min"]})')
+                if 'max' in limits:
+                    ax.axhline(limits['max'], linestyle=':', linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.5, label=f'Max bound ({limits["max"]})')
+
+            ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
+            ax.set_ylabel(f"{tfuel_col} (°C)", fontsize=10, fontweight='bold')
+            ax.set_title(f"{tfuel_col} - Timing & Bounds Check", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
+            ax.grid(True, alpha=0.3, linestyle='--')
+            ax.set_facecolor('#fafafa')
+            ax.legend(fontsize=8, loc='best')
+
+        # Plot other parameters
+        if other_params:
+            ax = app.fs_fig.add_subplot(n_plots, 1, plot_idx)
+
+            for param in other_params:
+                if param in cycle_df.columns:
+                    param_data = pd.to_numeric(cycle_df[param], errors='coerce')
+                    ax.plot(time_relative, param_data, linewidth=1.5, label=param, alpha=0.7)
+
+            ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
+            ax.set_ylabel("Value", fontsize=10, fontweight='bold')
+            ax.set_title("Other Parameters - Bounds Check", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
+            ax.grid(True, alpha=0.3, linestyle='--')
+            ax.set_facecolor('#fafafa')
+            ax.legend(fontsize=8, loc='best')
+
+        # Overall title
+        status_color = PowertechTheme.SUCCESS if result['status'] == 'PASS' else PowertechTheme.ERROR
+        app.fs_fig.suptitle(
+            f"Cycle {cycle_idx + 1}/{len(app.fs_cycle_data)}: {os.path.basename(filepath)} - {result['status']}",
+            fontsize=12,
+            fontweight='bold',
+            color=status_color
+        )
+
+        app.fs_fig.tight_layout()
+        app.fs_canvas.draw()
+
+        # Update status
+        app.fs_viz_status.set(f"Showing cycle {cycle_idx + 1} of {len(app.fs_cycle_data)}")
+
+    except Exception as e:
+        app.fs_viz_status.set(f"Error plotting cycle: {e}")
+        messagebox.showerror("Visualization Error", f"Failed to plot cycle: {e}")
