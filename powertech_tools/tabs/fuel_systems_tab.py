@@ -790,7 +790,7 @@ def _fs_plot_cycle(app, cycle_idx: int):
             app.fs_viz_status.set("Error: Could not determine cycle boundaries")
             return
 
-        cycle_df = df.iloc[start_idx:end_idx+1].copy()
+        cycle_df = df.iloc[start_idx:end_idx+1].copy().reset_index(drop=True)
 
         # Get time column - handle both numeric and datetime formats
         time_col = config['time_col']
@@ -802,11 +802,16 @@ def _fs_plot_cycle(app, cycle_idx: int):
                 # Convert to seconds elapsed from first timestamp
                 if not time.isna().all():
                     time = (time - time.iloc[0]).dt.total_seconds()
-        except Exception:
+        except Exception as e:
             time = pd.to_numeric(cycle_df[time_col], errors='coerce')
 
-        start_time = time.iloc[0]
-        time_relative = time - start_time  # Relative time from cycle start
+        # Convert to elapsed time from cycle start
+        if not time.isna().all():
+            start_time = time.iloc[0] if not pd.isna(time.iloc[0]) else 0.0
+            time_relative = (time - start_time).values  # Use .values to get numpy array
+        else:
+            # Fallback: use row numbers as time
+            time_relative = cycle_df.index.values * 0.5  # Assume 0.5s sampling
 
         # Clear figure
         app.fs_fig.clear()
@@ -820,10 +825,13 @@ def _fs_plot_cycle(app, cycle_idx: int):
         # Create single plot for ALL parameters
         ax = app.fs_fig.add_subplot(1, 1, 1)
 
-        # Plot all parameters with skinny lines
-        for param in param_limits.keys():
-            if param in cycle_df.columns:
-                param_data = pd.to_numeric(cycle_df[param], errors='coerce')
+        # Get all numeric columns to plot (exclude Time column)
+        plot_params = [col for col in cycle_df.columns if col != time_col and col in param_limits.keys()]
+
+        # Plot all validated parameters with skinny lines
+        for param in plot_params:
+            param_data = pd.to_numeric(cycle_df[param], errors='coerce').values
+            if not pd.isna(param_data).all():  # Only plot if we have valid data
                 ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
 
         # Mark tfuel time window boundary
