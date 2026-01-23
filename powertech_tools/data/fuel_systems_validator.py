@@ -15,8 +15,9 @@ def detect_cycle_boundaries(
     """
     Detect cycle boundaries by finding Ptank peak and working backwards/forwards to threshold.
 
-    Cycle starts when Ptank crosses above threshold AFTER being significantly below it.
-    This avoids false detection from oscillations around the threshold value.
+    Cycle start uses the 2→3 MPa rapid spike as reference (not oscillations around 2 MPa).
+    We walk backward from peak to find where Ptank is below 3 MPa - this is right before
+    the rapid fill spike begins.
 
     Cycle ends when Ptank crosses below threshold (fill end).
 
@@ -41,24 +42,20 @@ def detect_cycle_boundaries(
     if pd.isna(peak_value):
         raise ValueError("Could not find valid Ptank peak")
 
-    # Walk backwards to find where Ptank is SIGNIFICANTLY below threshold
-    # This avoids false detections from oscillations around the threshold
-    # We look for where Ptank < (threshold - 0.3 MPa) to ensure we're past the oscillation zone
+    # Walk backwards to find where Ptank crosses BELOW 3 MPa
+    # The rapid spike from 2 MPa to 3 MPa is the actual fill start
+    # We use 3 MPa as reference to avoid oscillations around 2 MPa threshold
     start_idx = peak_idx
-    margin = 0.3  # MPa margin below threshold to avoid oscillations
+    fill_marker = 3.0  # MPa - use 3 MPa to identify rapid fill spike
 
-    for i in range(peak_idx, -1, -1):
-        if ptank.iloc[i] < (threshold - margin):
-            # Found where we're significantly below threshold (pre-fill region)
-            # Now walk forward to find where we cross ABOVE threshold (fill start)
-            for j in range(i, peak_idx + 1):
-                if ptank.iloc[j] > threshold:
-                    # This is the actual fill start
-                    start_idx = j
-                    break
+    for i in range(peak_idx, 0, -1):
+        if ptank.iloc[i] < fill_marker and ptank.iloc[i-1] < fill_marker:
+            # Found where we're below 3 MPa (before the rapid spike)
+            # The fill starts here - right before the 2→3 MPa spike
+            start_idx = i
             break
 
-    # Fallback: if no significant drop found, use simple threshold crossing
+    # Fallback: if no crossing found, use threshold
     if start_idx == peak_idx:
         for i in range(peak_idx, 0, -1):
             if ptank.iloc[i] <= threshold:
