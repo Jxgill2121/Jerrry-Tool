@@ -153,7 +153,13 @@ def read_headers_only(path: str) -> Tuple[List[str], str, int, List[str]]:
 def load_table_allow_duplicate_headers(path: str) -> pd.DataFrame:
     """Load a table from file, allowing duplicate column headers"""
     headers, delim, header_idx, lines = read_headers_only(path)
-    data_text = "".join(lines[header_idx + 1:])
+
+    # Read the ENTIRE file, not just the first 400 lines
+    with open(path, "r", errors="ignore") as f:
+        all_lines = f.readlines()
+
+    # Use all data lines after the header
+    data_text = "".join(all_lines[header_idx + 1:])
 
     parse_headers = make_unique_names(headers)
 
