@@ -185,7 +185,7 @@ def build_tab(parent, app):
 
     params_desc = ttk.Label(
         card3,
-        text="Select parameters to validate and set their min/max bounds. Parameters will be checked throughout the cycle.",
+        text="Select parameters to validate and set their min/max bounds. NOTE: tfuel bounds apply AFTER the time window.",
         font=(PowertechTheme.FONT_FAMILY, 8),
         foreground="#666"
     )
@@ -321,8 +321,9 @@ def _fs_build_param_checkboxes(app, headers: List[str]):
     ttk.Label(header_frame, text="Min", width=12, font=("Arial", 9, "bold")).grid(row=0, column=1, sticky="w", padx=5)
     ttk.Label(header_frame, text="Max", width=12, font=("Arial", 9, "bold")).grid(row=0, column=2, sticky="w", padx=5)
 
-    # Skip time, ptank, tfuel columns (they're handled separately)
-    exclude_cols = {"time", "elapsed", "ptank", "tfuel"}
+    # Skip time, ptank columns (handled separately)
+    # Include tfuel - it has both timing check AND bounds check
+    exclude_cols = {"time", "elapsed", "ptank"}
     param_headers = [h for h in headers if h.lower() not in exclude_cols]
 
     # Create rows
@@ -335,7 +336,12 @@ def _fs_build_param_checkboxes(app, headers: List[str]):
         app.fs_param_min_vars[param] = min_var
         app.fs_param_max_vars[param] = max_var
 
-        cb = ttk.Checkbutton(scrollable_frame, text=param, variable=var)
+        # Add special indicator for tfuel
+        param_display = param
+        if param.lower() == "tfuel":
+            param_display = f"{param} (bounds after window)"
+
+        cb = ttk.Checkbutton(scrollable_frame, text=param_display, variable=var)
         cb.grid(row=idx, column=0, sticky="w", padx=5, pady=2)
 
         ttk.Entry(scrollable_frame, textvariable=min_var, width=12).grid(row=idx, column=1, sticky="w", padx=5, pady=2)

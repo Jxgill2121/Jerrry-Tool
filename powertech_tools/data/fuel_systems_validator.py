@@ -105,18 +105,28 @@ def validate_tfuel_timing(
 
 def validate_parameter_bounds(
     df: pd.DataFrame,
+    time_col: str,
     start_idx: int,
     end_idx: int,
-    param_limits: Dict[str, Dict[str, float]]
+    param_limits: Dict[str, Dict[str, float]],
+    tfuel_col: Optional[str] = None,
+    tfuel_window: float = 30.0,
+    start_time: Optional[float] = None
 ) -> List[str]:
     """
     Validate that parameters stay within min/max bounds during cycle.
 
+    Special handling for tfuel: bounds only apply AFTER the tfuel_window period.
+
     Args:
         df: DataFrame with cycle data
+        time_col: Name of time column
         start_idx: Cycle start index
         end_idx: Cycle end index
         param_limits: Dict mapping param name to {'min': value, 'max': value}
+        tfuel_col: Name of tfuel column (for special handling)
+        tfuel_window: Time window for tfuel timing check (seconds)
+        start_time: Cycle start time (for tfuel window calculation)
 
     Returns:
         List of violation messages
@@ -135,17 +145,40 @@ def validate_parameter_bounds(
             violations.append(f"{param}: No valid data")
             continue
 
-        param_min = values.min()
-        param_max = values.max()
+        # Special handling for tfuel - bounds only apply AFTER the time window
+        if param == tfuel_col and start_time is not None:
+            time = pd.to_numeric(df[time_col], errors='coerce')
+            cycle_time = time.iloc[start_idx:end_idx+1]
+
+            # Only check bounds after the tfuel window period
+            mask = (cycle_time - start_time) > tfuel_window
+            values_after_window = values[mask]
+
+            if values_after_window.empty:
+                # No data after window, skip bounds check for tfuel
+                continue
+
+            param_min = values_after_window.min()
+            param_max = values_after_window.max()
+        else:
+            # For all other parameters, check entire cycle
+            param_min = values.min()
+            param_max = values.max()
 
         min_limit = limits.get('min')
         max_limit = limits.get('max')
 
         if min_limit is not None and param_min < min_limit:
-            violations.append(f"{param}: Min {param_min:.2f} < {min_limit:.2f}")
+            if param == tfuel_col:
+                violations.append(f"{param}: Min {param_min:.2f} < {min_limit:.2f} (after {tfuel_window}s window)")
+            else:
+                violations.append(f"{param}: Min {param_min:.2f} < {min_limit:.2f}")
 
         if max_limit is not None and param_max > max_limit:
-            violations.append(f"{param}: Max {param_max:.2f} > {max_limit:.2f}")
+            if param == tfuel_col:
+                violations.append(f"{param}: Max {param_max:.2f} > {max_limit:.2f} (after {tfuel_window}s window)")
+            else:
+                violations.append(f"{param}: Max {param_max:.2f} > {max_limit:.2f}")
 
     return violations
 
@@ -202,14 +235,18 @@ def validate_fuel_system_file(
             df, time_col, ptank_col, ptank_threshold
         )
 
+        # Get cycle start time
+        time = pd.to_numeric(df[time_col], errors='coerce')
+        start_time = time.iloc[start_idx]
+
         # Validate tfuel timing
         tfuel_pass, tfuel_time, tfuel_msg = validate_tfuel_timing(
             df, time_col, tfuel_col, start_idx, tfuel_target, tfuel_window
         )
 
-        # Validate parameter bounds
+        # Validate parameter bounds (tfuel bounds only checked after tfuel_window)
         param_violations = validate_parameter_bounds(
-            df, start_idx, end_idx, param_limits
+            df, time_col, start_idx, end_idx, param_limits, tfuel_col, tfuel_window, start_time
         )
 
         # Overall status
