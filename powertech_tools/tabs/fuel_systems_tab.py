@@ -830,14 +830,18 @@ def _fs_plot_cycle(app, cycle_idx: int):
         # Create single plot for ALL parameters
         ax = app.fs_fig.add_subplot(1, 1, 1)
 
-        # Get all numeric columns to plot (exclude Time column)
-        plot_params = [col for col in cycle_df.columns if col != time_col and col in param_limits.keys()]
+        # Get ALL columns to plot (exclude Time column)
+        plot_params = [col for col in cycle_df.columns if col != time_col]
 
-        # Plot all validated parameters with skinny lines
+        # Plot all parameters with skinny lines
         for param in plot_params:
-            param_data = pd.to_numeric(cycle_df[param], errors='coerce').values
-            if not pd.isna(param_data).all():  # Only plot if we have valid data
-                ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
+            try:
+                param_data = pd.to_numeric(cycle_df[param], errors='coerce').values
+                if not pd.isna(param_data).all():  # Only plot if we have valid numeric data
+                    ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
+            except Exception:
+                # Skip columns that can't be converted to numeric
+                pass
 
         # Mark cycle boundaries with vertical lines
         ax.axvline(cycle_start_time, linestyle='-', linewidth=2, color='green', alpha=0.6, label='Cycle start (fill begins)')
