@@ -42,23 +42,31 @@ def build_tab(parent, app):
     mode_card = ttk.LabelFrame(f, text="Input Mode", padding=20)
     mode_card.pack(fill="x", pady=(0, 15))
 
-    app.mm_mode = tk.StringVar(value="multiple")
+    app.mm_mode = tk.StringVar(value="multiple_single_cycle")
     mode_frame = ttk.Frame(mode_card)
     mode_frame.pack(fill="x")
 
     ttk.Radiobutton(
         mode_frame,
-        text="Multiple Cycle Files (Recommended)",
+        text="If you have one cycle per file",
         variable=app.mm_mode,
-        value="multiple",
+        value="multiple_single_cycle",
         command=lambda: _mm_mode_changed(app)
     ).pack(anchor="w", pady=2)
 
     ttk.Radiobutton(
         mode_frame,
-        text="Single Merged File",
+        text="If this TXT holds multiple cycles (ASR files in this)",
         variable=app.mm_mode,
         value="single",
+        command=lambda: _mm_mode_changed(app)
+    ).pack(anchor="w", pady=2)
+
+    ttk.Radiobutton(
+        mode_frame,
+        text="If you have multiple files, each with multiple cycles (each has Cycle column)",
+        variable=app.mm_mode,
+        value="multiple_multi_cycle",
         command=lambda: _mm_mode_changed(app)
     ).pack(anchor="w", pady=2)
 
@@ -73,7 +81,7 @@ def build_tab(parent, app):
 
     app.mm_choose_btn = ttk.Button(
         btn_frame,
-        text="📁 Choose Cycle Files",
+        text="📁 Choose Multiple TXT Files (Each = 1 cycle)",
         command=lambda: _mm_choose_files(app),
         style='Action.TButton'
     )
@@ -107,10 +115,10 @@ def build_tab(parent, app):
     app.cb_mm_cycle = ttk.Combobox(cycle_row, state="disabled", width=40, textvariable=app.mm_cycle_col, values=[])
     app.cb_mm_cycle.pack(side="left", padx=10)
 
-    # Note for multiple files mode
+    # Note for mode selection
     app.mm_mode_note = ttk.Label(
         card2,
-        text="Note: In Multiple Files mode, each file = one cycle.\nSelect the time column from your files (optional). All other columns will be analyzed for min/max.",
+        text="Note: Mode 1 = Each TXT is one complete cycle\n      Mode 2 = One file with all cycles (ASR files)\n      Mode 3 = Multiple files, each containing multiple cycles",
         font=(PowertechTheme.FONT_FAMILY, 8),
         foreground="#666",
         justify="left"
@@ -149,20 +157,23 @@ def build_tab(parent, app):
 def _mm_mode_changed(app):
     """Handle mode change between single/multiple files"""
     mode = app.mm_mode.get()
-    if mode == "multiple":
-        app.mm_choose_btn["text"] = "📁 Choose Cycle Files"
+    if mode == "multiple_single_cycle":
+        app.mm_choose_btn["text"] = "📁 Choose Multiple TXT Files (Each = 1 cycle)"
         app.cb_mm_cycle["state"] = "disabled"
-    else:
-        app.mm_choose_btn["text"] = "📁 Choose Merged File"
+    elif mode == "single":
+        app.mm_choose_btn["text"] = "📁 Choose Single File (Has Cycle column)"
         app.cb_mm_cycle["state"] = "readonly" if app.mm_df is not None else "disabled"
+    else:  # multiple_multi_cycle
+        app.mm_choose_btn["text"] = "📁 Choose Multiple Files (Each has Cycle column)"
+        app.cb_mm_cycle["state"] = "readonly" if app.mm_infiles else "disabled"
 
 
 def _mm_choose_files(app):
     """Handle file selection for max/min analysis"""
     mode = app.mm_mode.get()
 
-    if mode == "multiple":
-        # Select multiple cycle files
+    if mode == "multiple_single_cycle":
+        # Select multiple cycle files (each file = 1 cycle)
         paths = filedialog.askopenfilenames(
             title="Select cycle files (one file per cycle)",
             filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
@@ -199,7 +210,55 @@ def _mm_choose_files(app):
         for i, p in enumerate(sorted(app.mm_infiles), start=1):
             app.mm_preview.insert(tk.END, f"Cycle {i}: {os.path.basename(p)}\n")
         app.mm_status.set("Ready to create max/min file")
-    else:
+
+    elif mode == "multiple_multi_cycle":
+        # Select multiple files, each with multiple cycles
+        paths = filedialog.askopenfilenames(
+            title="Select files (each file has multiple cycles with Cycle column)",
+            filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
+        )
+        if not paths:
+            return
+        app.mm_infiles = list(paths)
+        app.mm_infile.set(f"✓ {len(paths)} files selected")
+        app.mm_df = None
+
+        # Load first file to get column names
+        try:
+            from powertech_tools.utils.file_parser import read_headers_only
+            headers, _, _, _ = read_headers_only(paths[0])
+            app.cb_mm_time["values"] = headers
+            app.cb_mm_cycle["values"] = headers
+            app.cb_mm_time["state"] = "readonly"
+            app.cb_mm_cycle["state"] = "readonly"
+
+            # Try to auto-select Time and Cycle columns
+            if "Time" in headers:
+                app.mm_time_col.set("Time")
+            elif "time" in headers:
+                app.mm_time_col.set("time")
+            elif len(headers) > 0:
+                app.mm_time_col.set(headers[0])
+
+            if "Cycle" in headers:
+                app.mm_cycle_col.set("Cycle")
+            elif "cycle" in headers:
+                app.mm_cycle_col.set("cycle")
+            elif len(headers) > 0:
+                app.mm_cycle_col.set(headers[-1])
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not read file headers: {e}")
+            return
+
+        app.mm_preview.delete("1.0", tk.END)
+        app.mm_preview.insert(tk.END, f"✓ {len(paths)} files selected (each with multiple cycles)\n\n")
+        app.mm_preview.insert(tk.END, f"Columns detected: {', '.join(headers)}\n\n")
+        app.mm_preview.insert(tk.END, "Files:\n")
+        for i, p in enumerate(sorted(app.mm_infiles), start=1):
+            app.mm_preview.insert(tk.END, f"{i}. {os.path.basename(p)}\n")
+        app.mm_status.set("Ready to create max/min file")
+
+    else:  # single
         # Select single merged file
         path = filedialog.askopenfilename(
             title="Select merged log file",
@@ -248,7 +307,7 @@ def _mm_make(app):
     try:
         mode = app.mm_mode.get()
 
-        if mode == "multiple":
+        if mode == "multiple_single_cycle":
             # Multiple files mode - each file is one cycle
             if not app.mm_infiles:
                 messagebox.showerror("Error", "Please select cycle files first")
@@ -294,7 +353,79 @@ def _mm_make(app):
             app.mm_status.set(f"✓ File created successfully")
             messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}\n\n{len(app.mm_infiles)} cycles processed")
 
-        else:
+        elif mode == "multiple_multi_cycle":
+            # Multiple files mode - each file has multiple cycles
+            if not app.mm_infiles:
+                messagebox.showerror("Error", "Please select files first")
+                return
+
+            time_c = app.mm_time_col.get().strip()
+            cycle_c = app.mm_cycle_col.get().strip()
+
+            if not cycle_c:
+                messagebox.showerror("Error", "Please select a Cycle column")
+                return
+
+            # Load all files and concatenate them with renumbered cycles
+            app.mm_status.set("Loading files...")
+            all_dfs = []
+            total_cycles = 0
+
+            for file_idx, filepath in enumerate(sorted(app.mm_infiles), start=1):
+                try:
+                    df = load_table_allow_duplicate_headers(filepath)
+
+                    if cycle_c not in df.columns:
+                        messagebox.showerror("Error", f"Cycle column '{cycle_c}' not found in {os.path.basename(filepath)}")
+                        return
+
+                    # Renumber cycles to be sequential across files
+                    df_copy = df.copy()
+                    unique_cycles = sorted(df[cycle_c].unique())
+                    cycle_map = {old: total_cycles + i + 1 for i, old in enumerate(unique_cycles)}
+                    df_copy[cycle_c] = df_copy[cycle_c].map(cycle_map)
+
+                    all_dfs.append(df_copy)
+                    total_cycles += len(unique_cycles)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load {os.path.basename(filepath)}: {e}")
+                    return
+
+            # Concatenate all files
+            merged_df = pd.concat(all_dfs, ignore_index=True)
+
+            # Compute maxmin
+            out_df = compute_maxmin_template(merged_df, time_c, cycle_c)
+
+            # Show summary
+            summary = f"Processed {len(app.mm_infiles)} files with {total_cycles} total cycles\n"
+            summary += f"Value columns: {(len(out_df.columns) - 2) // 2}\n"
+            summary += f"Columns: {', '.join([c for c in out_df.columns[2::2]])}"
+            app.mm_preview.delete("1.0", tk.END)
+            app.mm_preview.insert(tk.END, summary)
+
+            default_name = "multi_file_cycles_maxmin.txt"
+            out_path = filedialog.asksaveasfilename(
+                title="Save max/min file",
+                defaultextension=".txt",
+                initialfile=default_name,
+                filetypes=[("Text", "*.txt"), ("All", "*.*")]
+            )
+            if not out_path:
+                return
+
+            header_block = ["Powertech Test Log", "Time step =0.10 s", "", "Cycle test"]
+
+            with open(out_path, "w", encoding="utf-8", errors="ignore") as f:
+                for line in header_block:
+                    f.write(line + "\n")
+                f.write("\t".join(list(out_df.columns)) + "\n")
+                out_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
+
+            app.mm_status.set(f"✓ File created successfully")
+            messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}\n\n{len(app.mm_infiles)} files, {total_cycles} cycles processed")
+
+        else:  # single
             # Single merged file mode
             if app.mm_df is None:
                 messagebox.showerror("Error", "Please load a file first")
