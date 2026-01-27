@@ -101,9 +101,32 @@ def convert_tdms_files_to_cycles(
             if len(df) == 0:
                 continue  # Skip empty files
 
+            # Track actual time step (for header)
+            actual_time_step = time_step
+
             # Add time column if requested
             if add_time_column:
-                time_values = np.arange(len(df)) * time_step
+                # Try to get actual time track from TDMS file
+                time_values = None
+
+                # Get time track from first valid channel
+                for ch_name in data_dict.keys():
+                    try:
+                        channel = group[ch_name]
+                        time_track = channel.time_track()
+                        if time_track is not None and len(time_track) == len(df):
+                            time_values = time_track
+                            # Get actual time step from TDMS properties
+                            if 'wf_increment' in channel.properties:
+                                actual_time_step = channel.properties['wf_increment']
+                            break
+                    except Exception:
+                        continue
+
+                # Fallback: generate synthetic time if no time track found
+                if time_values is None:
+                    time_values = np.arange(len(df)) * time_step
+
                 df.insert(0, 'Time', time_values)
 
             # Determine cycle number for output filename
@@ -122,7 +145,7 @@ def convert_tdms_files_to_cycles(
             # Write with Powertech header format
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write("Powertech Test Log\n")
-                f.write(f"Time step ={time_step:.2f} s\n")
+                f.write(f"Time step ={actual_time_step:.2f} s\n")
                 f.write("\n")
                 f.write("Cycle test\n")
                 f.write("\t".join(df.columns) + "\n")
