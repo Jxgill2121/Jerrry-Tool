@@ -48,7 +48,7 @@ def build_tab(parent, app):
 
     ttk.Radiobutton(
         mode_frame,
-        text="Multiple TXT Files - Each file is one cycle (Recommended)",
+        text="If you have one cycle per file",
         variable=app.mm_mode,
         value="multiple",
         command=lambda: _mm_mode_changed(app)
@@ -56,7 +56,7 @@ def build_tab(parent, app):
 
     ttk.Radiobutton(
         mode_frame,
-        text="Single File with Multiple Cycles - Has Cycle column",
+        text="If this TXT holds multiple cycles (ASR files in this)",
         variable=app.mm_mode,
         value="single",
         command=lambda: _mm_mode_changed(app)
@@ -110,7 +110,7 @@ def build_tab(parent, app):
     # Note for multiple files mode
     app.mm_mode_note = ttk.Label(
         card2,
-        text="Note: In Multiple TXT Files mode, each file represents one complete cycle.\nIn Single File mode, one file contains multiple cycles (requires Cycle column).",
+        text="Note: Select mode above based on your file structure.\nFor ASR files with multiple cycles in one file, use the second option.",
         font=(PowertechTheme.FONT_FAMILY, 8),
         foreground="#666",
         justify="left"
