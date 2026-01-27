@@ -71,12 +71,30 @@ def convert_tdms_files_to_cycles(
 
             # Read selected channels into DataFrame
             data_dict = {}
+            skipped_channels = []
+
             for ch_name in selected_channels:
                 if ch_name in [ch.name for ch in group.channels()]:
                     channel = group[ch_name]
-                    data_dict[ch_name] = channel[:]
+                    data = channel[:]
+
+                    # Check if channel has data
+                    if hasattr(data, '__len__') and len(data) > 0:
+                        data_dict[ch_name] = data
+                    else:
+                        skipped_channels.append(ch_name)
                 else:
                     raise ValueError(f"Channel '{ch_name}' not found in group '{group_name}'")
+
+            # Check if we have any valid channels
+            if not data_dict:
+                if progress_callback:
+                    progress_callback(file_idx, total_files, f"⚠️ Skipping {os.path.basename(filepath)} - all selected channels are empty")
+                continue
+
+            # Warn about skipped channels
+            if skipped_channels and progress_callback:
+                progress_callback(file_idx, total_files, f"⚠️ Skipped empty channels: {', '.join(skipped_channels)}")
 
             df = pd.DataFrame(data_dict)
 
