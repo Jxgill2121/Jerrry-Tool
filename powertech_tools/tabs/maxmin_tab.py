@@ -48,7 +48,7 @@ def build_tab(parent, app):
 
     ttk.Radiobutton(
         mode_frame,
-        text="Multiple Cycle Files (Recommended)",
+        text="Multiple TXT Files - Each file is one cycle (Recommended)",
         variable=app.mm_mode,
         value="multiple",
         command=lambda: _mm_mode_changed(app)
@@ -56,7 +56,7 @@ def build_tab(parent, app):
 
     ttk.Radiobutton(
         mode_frame,
-        text="Single Merged File",
+        text="Single File with Multiple Cycles - Has Cycle column",
         variable=app.mm_mode,
         value="single",
         command=lambda: _mm_mode_changed(app)
@@ -73,7 +73,7 @@ def build_tab(parent, app):
 
     app.mm_choose_btn = ttk.Button(
         btn_frame,
-        text="📁 Choose Cycle Files",
+        text="📁 Choose Multiple TXT Files (Each = 1 cycle)",
         command=lambda: _mm_choose_files(app),
         style='Action.TButton'
     )
@@ -110,7 +110,7 @@ def build_tab(parent, app):
     # Note for multiple files mode
     app.mm_mode_note = ttk.Label(
         card2,
-        text="Note: In Multiple Files mode, each file = one cycle.\nSelect the time column from your files (optional). All other columns will be analyzed for min/max.",
+        text="Note: In Multiple TXT Files mode, each file represents one complete cycle.\nIn Single File mode, one file contains multiple cycles (requires Cycle column).",
         font=(PowertechTheme.FONT_FAMILY, 8),
         foreground="#666",
         justify="left"
@@ -150,10 +150,10 @@ def _mm_mode_changed(app):
     """Handle mode change between single/multiple files"""
     mode = app.mm_mode.get()
     if mode == "multiple":
-        app.mm_choose_btn["text"] = "📁 Choose Cycle Files"
+        app.mm_choose_btn["text"] = "📁 Choose Multiple TXT Files (Each = 1 cycle)"
         app.cb_mm_cycle["state"] = "disabled"
     else:
-        app.mm_choose_btn["text"] = "📁 Choose Merged File"
+        app.mm_choose_btn["text"] = "📁 Choose Single File (Has Cycle column)"
         app.cb_mm_cycle["state"] = "readonly" if app.mm_df is not None else "disabled"
 
 
