@@ -100,8 +100,8 @@ def build_tab(parent, app):
     app.cb_fs_tfuel = ttk.Combobox(col_frame, state="disabled", width=20, textvariable=app.fs_tfuel_col, values=[])
     app.cb_fs_tfuel.pack(side="left", padx=5)
 
-    # Cycle detection settings
-    cycle_frame = ttk.LabelFrame(config_frame, text="Cycle Detection (Ptank-based)", padding=10)
+    # Fill detection settings
+    cycle_frame = ttk.LabelFrame(config_frame, text="Fill Detection", padding=10)
     cycle_frame.pack(fill="x", pady=(10, 5))
 
     ptank_row = ttk.Frame(cycle_frame)
@@ -109,11 +109,34 @@ def build_tab(parent, app):
     ttk.Label(ptank_row, text="Ptank Threshold (MPa):").pack(side="left")
     app.fs_ptank_threshold = tk.StringVar(value="2.0")
     ttk.Entry(ptank_row, textvariable=app.fs_ptank_threshold, width=10).pack(side="left", padx=10)
-    ttk.Label(ptank_row, text="(Cycle boundaries detected at this pressure)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
+    ttk.Label(ptank_row, text="(Fill start detected from Ptank)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
 
-    # tfuel timing check settings
-    tfuel_frame = ttk.LabelFrame(config_frame, text="tfuel Timing Check", padding=10)
+    end_row = ttk.Frame(cycle_frame)
+    end_row.pack(fill="x", pady=5)
+    ttk.Label(end_row, text="End of Fill Based On:").pack(side="left")
+    app.fs_end_mode = tk.StringVar(value="Ptank")
+    ttk.Radiobutton(end_row, text="Ptank", variable=app.fs_end_mode, value="Ptank").pack(side="left", padx=(10, 5))
+    ttk.Radiobutton(end_row, text="SOC", variable=app.fs_end_mode, value="SOC").pack(side="left", padx=5)
+
+    soc_row = ttk.Frame(cycle_frame)
+    soc_row.pack(fill="x", pady=2)
+    ttk.Label(soc_row, text="SOC Column:").pack(side="left")
+    app.fs_soc_col = tk.StringVar(value="")
+    app.cb_fs_soc = ttk.Combobox(soc_row, state="disabled", width=20, textvariable=app.fs_soc_col, values=[])
+    app.cb_fs_soc.pack(side="left", padx=10)
+    ttk.Label(soc_row, text="SOC Threshold (%):").pack(side="left", padx=(10, 0))
+    app.fs_soc_threshold = tk.StringVar(value="100")
+    ttk.Entry(soc_row, textvariable=app.fs_soc_threshold, width=10).pack(side="left", padx=10)
+    ttk.Label(soc_row, text="(only used in SOC mode)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
+
+    # tfuel timing check settings (optional)
+    tfuel_frame = ttk.LabelFrame(config_frame, text="tfuel Timing Check (Optional)", padding=10)
     tfuel_frame.pack(fill="x", pady=(10, 5))
+
+    tfuel_enable_row = ttk.Frame(tfuel_frame)
+    tfuel_enable_row.pack(fill="x", pady=2)
+    app.fs_enable_tfuel_check = tk.BooleanVar(value=True)
+    ttk.Checkbutton(tfuel_enable_row, text="Enable tfuel timing check", variable=app.fs_enable_tfuel_check).pack(side="left")
 
     tfuel_row1 = ttk.Frame(tfuel_frame)
     tfuel_row1.pack(fill="x", pady=2)
@@ -127,11 +150,27 @@ def build_tab(parent, app):
 
     tfuel_desc = ttk.Label(
         tfuel_frame,
-        text="tfuel must reach target temperature within time window from cycle start",
+        text="tfuel must reach and hold target temperature within time window from fill start",
         font=(PowertechTheme.FONT_FAMILY, 8),
         foreground="#666"
     )
     tfuel_desc.pack(anchor="w", pady=(5, 0))
+
+    # Average pressure ramp rate check (optional)
+    ramp_frame = ttk.LabelFrame(config_frame, text="Average Pressure Ramp Rate Check (Optional)", padding=10)
+    ramp_frame.pack(fill="x", pady=(10, 5))
+
+    ramp_enable_row = ttk.Frame(ramp_frame)
+    ramp_enable_row.pack(fill="x", pady=2)
+    app.fs_enable_ramp_check = tk.BooleanVar(value=False)
+    ttk.Checkbutton(ramp_enable_row, text="Enable average ramp rate check", variable=app.fs_enable_ramp_check).pack(side="left")
+
+    ramp_row = ttk.Frame(ramp_frame)
+    ramp_row.pack(fill="x", pady=2)
+    ttk.Label(ramp_row, text="Max Ramp Rate (MPa/min):").pack(side="left")
+    app.fs_ramp_limit = tk.StringVar(value="")
+    ttk.Entry(ramp_row, textvariable=app.fs_ramp_limit, width=10).pack(side="left", padx=10)
+    ttk.Label(ramp_row, text="(leave blank to report only, no pass/fail)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
 
     # Preset management section
     preset_frame = ttk.LabelFrame(config_frame, text="Configuration Presets", padding=15)
@@ -313,9 +352,11 @@ def _fs_choose_files(app):
         app.cb_fs_time["values"] = headers
         app.cb_fs_ptank["values"] = headers
         app.cb_fs_tfuel["values"] = headers
+        app.cb_fs_soc["values"] = headers
         app.cb_fs_time["state"] = "readonly"
         app.cb_fs_ptank["state"] = "readonly"
         app.cb_fs_tfuel["state"] = "readonly"
+        app.cb_fs_soc["state"] = "readonly"
 
         # Auto-select common columns
         headers_lower = [h.lower() for h in headers]
@@ -330,6 +371,9 @@ def _fs_choose_files(app):
 
         if "tfuel" in headers_lower:
             app.fs_tfuel_col.set(headers[headers_lower.index("tfuel")])
+
+        if "soc" in headers_lower:
+            app.fs_soc_col.set(headers[headers_lower.index("soc")])
 
         # Build parameter selection UI
         _fs_build_param_checkboxes(app, headers)
@@ -554,11 +598,46 @@ def _fs_validate(app):
         # Get thresholds
         try:
             ptank_threshold = float(app.fs_ptank_threshold.get())
-            tfuel_target = float(app.fs_tfuel_target.get())
-            tfuel_window = float(app.fs_tfuel_window.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid threshold values. Please enter numbers.")
+            messagebox.showerror("Error", "Invalid Ptank threshold. Please enter a number.")
             return
+
+        enable_tfuel_check = app.fs_enable_tfuel_check.get()
+        tfuel_target = 0.0
+        tfuel_window = 0.0
+        if enable_tfuel_check:
+            try:
+                tfuel_target = float(app.fs_tfuel_target.get())
+                tfuel_window = float(app.fs_tfuel_window.get())
+            except ValueError:
+                messagebox.showerror("Error", "tfuel check is enabled but target/window values are invalid.")
+                return
+
+        # Fill end mode
+        end_mode = app.fs_end_mode.get()
+        soc_col = app.fs_soc_col.get().strip() if end_mode == "SOC" else None
+        soc_threshold = 100.0
+        if end_mode == "SOC":
+            if not soc_col:
+                messagebox.showerror("Error", "SOC end mode selected but no SOC column chosen")
+                return
+            try:
+                soc_threshold = float(app.fs_soc_threshold.get())
+            except ValueError:
+                messagebox.showerror("Error", "Invalid SOC threshold value.")
+                return
+
+        # Ramp rate check
+        enable_ramp_check = app.fs_enable_ramp_check.get()
+        ramp_limit = None
+        if enable_ramp_check:
+            ramp_str = app.fs_ramp_limit.get().strip()
+            if ramp_str:
+                try:
+                    ramp_limit = float(ramp_str)
+                except ValueError:
+                    messagebox.showerror("Error", "Invalid ramp rate limit. Please enter a number or leave blank.")
+                    return
 
         # Get parameter limits
         param_limits = {}
@@ -615,7 +694,13 @@ def _fs_validate(app):
                 param_limits,
                 ptank_threshold,
                 tfuel_target,
-                tfuel_window
+                tfuel_window,
+                enable_tfuel_check=enable_tfuel_check,
+                end_mode=end_mode,
+                soc_col=soc_col,
+                soc_threshold=soc_threshold,
+                enable_ramp_check=enable_ramp_check,
+                ramp_limit=ramp_limit
             )
 
             app.fs_results.append(result)
@@ -669,9 +754,14 @@ def _fs_display_results(app):
         status_symbol = "✓" if result['status'] == 'PASS' else ("✗" if result['status'] == 'FAIL' else "⚠")
 
         app.fs_results_text.insert(tk.END, f"{status_symbol} {result['file']} - {result['status']}\n")
-        app.fs_results_text.insert(tk.END, f"  Cycle: {result['cycle_points']} points (of {result['total_points']} total)\n")
+        app.fs_results_text.insert(tk.END, f"  Fill: {result['cycle_points']} points (of {result['total_points']} total)\n")
         app.fs_results_text.insert(tk.END, f"  tfuel Check: {'PASS' if result['tfuel_check'] else 'FAIL'}\n")
         app.fs_results_text.insert(tk.END, f"    {result['tfuel_message']}\n")
+
+        if result.get('ramp_message'):
+            ramp_status = 'PASS' if result.get('ramp_pass', True) else 'FAIL'
+            app.fs_results_text.insert(tk.END, f"  Ramp Rate: {ramp_status}\n")
+            app.fs_results_text.insert(tk.END, f"    {result['ramp_message']}\n")
 
         if result['param_violations']:
             app.fs_results_text.insert(tk.END, f"  Parameter Violations:\n")
