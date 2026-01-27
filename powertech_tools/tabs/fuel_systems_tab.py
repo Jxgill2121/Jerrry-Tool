@@ -758,6 +758,10 @@ def _fs_display_results(app):
         app.fs_results_text.insert(tk.END, f"  tfuel Check: {'PASS' if result['tfuel_check'] else 'FAIL'}\n")
         app.fs_results_text.insert(tk.END, f"    {result['tfuel_message']}\n")
 
+        if result.get('soc_message'):
+            soc_icon = "✓" if result.get('soc_reached_100') else "✗"
+            app.fs_results_text.insert(tk.END, f"  SOC: {soc_icon} {result['soc_message']}\n")
+
         if result.get('ramp_message'):
             ramp_status = 'PASS' if result.get('ramp_pass', True) else 'FAIL'
             app.fs_results_text.insert(tk.END, f"  Ramp Rate: {ramp_status}\n")

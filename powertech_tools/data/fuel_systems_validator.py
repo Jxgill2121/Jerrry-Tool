@@ -408,7 +408,10 @@ def validate_fuel_system_file(
                     'cycle_points': 0,
                     'avg_ramp_rate': None,
                     'ramp_message': '',
-                    'ramp_pass': True
+                    'ramp_pass': True,
+                    'soc_max': None,
+                    'soc_reached_100': False,
+                    'soc_message': ''
                 }
 
         # Detect fill boundaries
@@ -435,6 +438,33 @@ def validate_fuel_system_file(
         param_violations = validate_parameter_bounds(
             df, time_col, start_idx, end_idx, param_limits, tfuel_col, tfuel_window, start_time
         )
+
+        # SOC check — report max SOC during fill
+        soc_max = None
+        soc_reached_100 = False
+        soc_message = ''
+
+        # Check for SOC column in the data (use soc_col if provided, otherwise auto-detect)
+        check_soc_col = soc_col
+        if not check_soc_col:
+            for c in df.columns:
+                if c.lower() == 'soc':
+                    check_soc_col = c
+                    break
+
+        if check_soc_col and check_soc_col in df.columns:
+            soc_data = pd.to_numeric(df[check_soc_col].iloc[start_idx:end_idx+1], errors='coerce')
+            if not soc_data.isna().all():
+                soc_max = float(soc_data.max())
+                soc_reached_100 = soc_max >= 100.0
+                if soc_reached_100:
+                    soc_message = f"SOC reached {soc_max:.1f}% (hit 100%)"
+                else:
+                    soc_message = f"SOC peaked at {soc_max:.1f}% (did NOT reach 100%)"
+            else:
+                soc_message = "SOC column has no valid data"
+        else:
+            soc_message = "No SOC column available"
 
         # Average ramp rate check
         avg_ramp_rate = None
@@ -470,7 +500,10 @@ def validate_fuel_system_file(
             'cycle_points': end_idx - start_idx + 1,
             'avg_ramp_rate': avg_ramp_rate,
             'ramp_message': ramp_message,
-            'ramp_pass': ramp_pass
+            'ramp_pass': ramp_pass,
+            'soc_max': soc_max,
+            'soc_reached_100': soc_reached_100,
+            'soc_message': soc_message
         }
 
     except Exception as e:
@@ -486,5 +519,8 @@ def validate_fuel_system_file(
             'cycle_points': 0,
             'avg_ramp_rate': None,
             'ramp_message': '',
-            'ramp_pass': True
+            'ramp_pass': True,
+            'soc_max': None,
+            'soc_reached_100': False,
+            'soc_message': ''
         }
