@@ -46,10 +46,10 @@ class PowertechToolsApp(tk.Tk):
 
         # Add tabs to notebook
         self.nb.add(self.tab_merge, text="  1) TDMS CONVERSION  ")
-        self.nb.add(self.tab_maxmin, text="  2) MAX/MIN ANALYSIS  ")
+        self.nb.add(self.tab_maxmin, text="  2) MAXMIN CONVERTER  ")
         self.nb.add(self.tab_plot, text="  3) PLOT DATA  ")
         self.nb.add(self.tab_avg, text="  4) CYCLE AVERAGES  ")
-        self.nb.add(self.tab_val, text="  5) VALIDATION  ")
+        self.nb.add(self.tab_val, text="  5) CYLINDERS VALIDATION  ")
         self.nb.add(self.tab_fuel_systems, text="  6) FUEL SYSTEMS  ")
 
         # Build each tab using modular functions
