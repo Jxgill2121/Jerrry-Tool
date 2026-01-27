@@ -277,7 +277,7 @@ def build_tab(parent, app):
     # Plot area
     from powertech_tools.config.theme import PowertechTheme
     app.fs_fig = plt.Figure(figsize=(14, 8), dpi=100)
-    app.fs_fig.patch.set_facecolor(PowertechTheme.BG_CARD)
+    app.fs_fig.patch.set_facecolor('#1a1a2e')
     app.fs_canvas = FigureCanvasTkAgg(app.fs_fig, master=viz_card)
     app.fs_canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
     toolbar = NavigationToolbar2Tk(app.fs_canvas, viz_card)
@@ -868,44 +868,74 @@ def _fs_plot_cycle(app, cycle_idx: int):
         tfuel_window = config['tfuel_window']
         tfuel_target = config['tfuel_target']
 
+        # Dark theme colors
+        DARK_BG = '#1a1a2e'
+        PLOT_BG = '#16213e'
+        GRID_COLOR = '#334155'
+        TEXT_COLOR = '#e2e8f0'
+        TEXT_DIM = '#94a3b8'
+
+        # Bright contrasting line colors for dark background
+        dark_line_colors = [
+            '#00d4ff',  # Cyan
+            '#ff6bcb',  # Pink
+            '#00ff88',  # Green
+            '#ffd93d',  # Yellow
+            '#ff8a50',  # Orange
+            '#a78bfa',  # Purple
+            '#34d399',  # Emerald
+            '#f472b6',  # Rose
+            '#60a5fa',  # Blue
+            '#fb923c',  # Amber
+            '#c084fc',  # Violet
+            '#4ade80',  # Lime
+        ]
+
+        app.fs_fig.patch.set_facecolor(DARK_BG)
+
         # Create single plot for ALL parameters
         ax = app.fs_fig.add_subplot(1, 1, 1)
 
         # Get ALL columns to plot (exclude Time column)
         plot_params = [col for col in cycle_df.columns if col != time_col]
 
-        # Plot all parameters with skinny lines
-        for param in plot_params:
+        # Plot all parameters with bright colors on dark background
+        for i, param in enumerate(plot_params):
             try:
                 param_data = pd.to_numeric(cycle_df[param], errors='coerce').values
-                if not pd.isna(param_data).all():  # Only plot if we have valid numeric data
-                    ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
+                if not pd.isna(param_data).all():
+                    color = dark_line_colors[i % len(dark_line_colors)]
+                    ax.plot(time_relative, param_data, linewidth=1.0, label=param, alpha=0.85, color=color)
             except Exception:
-                # Skip columns that can't be converted to numeric
                 pass
 
         # Mark cycle boundaries with vertical lines
-        ax.axvline(cycle_start_time, linestyle='-', linewidth=2, color='green', alpha=0.6, label='Cycle start (fill begins)')
-        ax.axvline(cycle_end_time, linestyle='-', linewidth=2, color='purple', alpha=0.6, label='Cycle end (fill ends)')
+        ax.axvline(cycle_start_time, linestyle='-', linewidth=2, color='#00ff88', alpha=0.8, label='Cycle start (fill begins)')
+        ax.axvline(cycle_end_time, linestyle='-', linewidth=2, color='#c084fc', alpha=0.8, label='Cycle end (fill ends)')
 
         # Mark tfuel time window boundary (relative to cycle start)
         tfuel_window_time = cycle_start_time + tfuel_window
-        ax.axvline(tfuel_window_time, linestyle='--', linewidth=1.5, color='orange', alpha=0.7, label=f'Tfuel window ({tfuel_window}s from start)')
+        ax.axvline(tfuel_window_time, linestyle='--', linewidth=1.5, color='#ffd93d', alpha=0.8, label=f'Tfuel window ({tfuel_window}s from start)')
 
         # Show tfuel target
-        ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='red', alpha=0.7, label=f'Tfuel target ({tfuel_target}°C)')
+        ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='#ff4d4d', alpha=0.8, label=f'Tfuel target ({tfuel_target}°C)')
 
-        # Set axis scale
+        # Dark theme axis styling
         ax.set_ylim(-90, 105)
-        ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
-        ax.set_ylabel("Value", fontsize=10, fontweight='bold')
-        ax.set_title("All Parameters", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
-        ax.grid(True, alpha=0.3, linestyle='--')
-        ax.set_facecolor('#fafafa')
-        ax.legend(fontsize=7, loc='best', ncol=2)
+        ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold', color=TEXT_COLOR)
+        ax.set_ylabel("Value", fontsize=10, fontweight='bold', color=TEXT_COLOR)
+        ax.set_title("All Parameters", fontsize=11, fontweight="bold", color='#00d4ff')
+        ax.grid(True, alpha=0.25, linestyle='--', color=GRID_COLOR)
+        ax.set_facecolor(PLOT_BG)
+        ax.tick_params(colors=TEXT_DIM, which='both')
+        ax.spines['bottom'].set_color(GRID_COLOR)
+        ax.spines['top'].set_color(GRID_COLOR)
+        ax.spines['left'].set_color(GRID_COLOR)
+        ax.spines['right'].set_color(GRID_COLOR)
+        legend = ax.legend(fontsize=7, loc='best', ncol=2, facecolor=DARK_BG, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
 
         # Overall title
-        status_color = PowertechTheme.SUCCESS if result['status'] == 'PASS' else PowertechTheme.ERROR
+        status_color = '#00ff88' if result['status'] == 'PASS' else '#ff4d4d'
         app.fs_fig.suptitle(
             f"Cycle {cycle_idx + 1}/{len(app.fs_cycle_data)}: {os.path.basename(filepath)} - {result['status']}",
             fontsize=12,
