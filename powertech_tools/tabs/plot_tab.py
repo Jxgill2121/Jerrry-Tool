@@ -162,14 +162,15 @@ def build_tab(parent, app):
     hdr = ttk.Frame(app.graph_rows_box)
     hdr.pack(fill="x", pady=(0, 8))
     ttk.Label(hdr, text="#", width=3, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w")
-    ttk.Label(hdr, text="Y-Axis Variable 1", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Variable 2", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y Min", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y Max", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5)
-    ttk.Label(hdr, text="Min Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5)
-    ttk.Label(hdr, text="Min Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5)
-    ttk.Label(hdr, text="Max Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5)
-    ttk.Label(hdr, text="Max Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5)
+    ttk.Label(hdr, text="Title", width=20, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y-Axis Variable 1", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y-Axis Variable 2", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y Min", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y Max", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5)
+    ttk.Label(hdr, text="Min Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5)
+    ttk.Label(hdr, text="Min Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5)
+    ttk.Label(hdr, text="Max Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5)
+    ttk.Label(hdr, text="Max Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5)
 
     app.graph_selectors = []
 
@@ -185,6 +186,12 @@ def build_tab(parent, app):
         style='Action.TButton'
     )
     app.plot_btn.pack(side="left")
+
+    ttk.Button(
+        action_card,
+        text="📷 Export Plot as Image",
+        command=lambda: _plot_export_image(app)
+    ).pack(side="left", padx=10)
 
     # Plot area
     plot_card = ttk.LabelFrame(inner_frame, text="Visualization", padding=15)
@@ -266,6 +273,7 @@ def _plot_rebuild_graph_rows(app):
 
         ttk.Label(rowf, text=str(i + 1), width=3).grid(row=0, column=0, sticky="w")
 
+        title_var = tk.StringVar(value="")
         y1_var = tk.StringVar(value="")
         y2_var = tk.StringVar(value="")
         y_min_var = tk.StringVar(value="")
@@ -275,19 +283,22 @@ def _plot_rebuild_graph_rows(app):
         max_low_var = tk.StringVar(value="")
         max_high_var = tk.StringVar(value="")
 
+        ttk.Entry(rowf, width=20, textvariable=title_var).grid(row=0, column=1, padx=5, sticky="w")
+
         y1_cb = ttk.Combobox(rowf, state="disabled", width=30, textvariable=y1_var, values=[])
         y2_cb = ttk.Combobox(rowf, state="disabled", width=30, textvariable=y2_var, values=[""])
-        y1_cb.grid(row=0, column=1, padx=5, sticky="w")
-        y2_cb.grid(row=0, column=2, padx=5, sticky="w")
+        y1_cb.grid(row=0, column=2, padx=5, sticky="w")
+        y2_cb.grid(row=0, column=3, padx=5, sticky="w")
 
-        ttk.Entry(rowf, width=8, textvariable=y_min_var).grid(row=0, column=3, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=y_max_var).grid(row=0, column=4, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=min_low_var).grid(row=0, column=5, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=min_high_var).grid(row=0, column=6, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=max_low_var).grid(row=0, column=7, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=max_high_var).grid(row=0, column=8, padx=5, sticky="w")
+        ttk.Entry(rowf, width=8, textvariable=y_min_var).grid(row=0, column=4, padx=5, sticky="w")
+        ttk.Entry(rowf, width=8, textvariable=y_max_var).grid(row=0, column=5, padx=5, sticky="w")
+        ttk.Entry(rowf, width=8, textvariable=min_low_var).grid(row=0, column=6, padx=5, sticky="w")
+        ttk.Entry(rowf, width=8, textvariable=min_high_var).grid(row=0, column=7, padx=5, sticky="w")
+        ttk.Entry(rowf, width=8, textvariable=max_low_var).grid(row=0, column=8, padx=5, sticky="w")
+        ttk.Entry(rowf, width=8, textvariable=max_high_var).grid(row=0, column=9, padx=5, sticky="w")
 
         app.graph_selectors.append({
+            "title_var": title_var,
             "y1_var": y1_var, "y2_var": y2_var,
             "y_min_var": y_min_var, "y_max_var": y_max_var,
             "min_low_var": min_low_var, "min_high_var": min_high_var,
@@ -305,8 +316,8 @@ def _plot_refresh_graph_row_values(app):
     display_list = [app.plot_internal_to_display[c] for c in app.plot_internal_cols]
     for i, _sel in enumerate(app.graph_selectors):
         row = app.graph_rows_box.winfo_children()[i + 1]
-        y1_cb = row.grid_slaves(row=0, column=1)[0]
-        y2_cb = row.grid_slaves(row=0, column=2)[0]
+        y1_cb = row.grid_slaves(row=0, column=2)[0]
+        y2_cb = row.grid_slaves(row=0, column=3)[0]
         y1_cb.configure(values=display_list, state="readonly")
         y2_cb.configure(values=[""] + display_list, state="readonly")
 
@@ -472,8 +483,10 @@ def _plot_make(app):
                 messagebox.showerror("Error", f"Graph {i+1}: limits must be numeric")
                 return
 
+            custom_title = sel["title_var"].get().strip()
+
             if y1_disp or y2_disp:
-                plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high))
+                plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title))
 
         if not plot_jobs:
             messagebox.showwarning("Warning", "Please select at least one variable")
@@ -493,7 +506,7 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
     app.fig.clear()
     n = len(plot_jobs)
 
-    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high) in enumerate(plot_jobs, start=1):
+    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title) in enumerate(plot_jobs, start=1):
         ax = app.fig.add_subplot(n, 1, idx)
 
         x = df[cycle_internal]
@@ -524,8 +537,13 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
         ax.set_xlabel("Cycle", fontsize=10, fontweight='bold')
         ax.set_ylabel("Value", fontsize=10, fontweight='bold')
         ax.grid(True, alpha=0.3, linestyle='--')
-        ax.set_title(" | ".join(labels_for_title) if labels_for_title else f"Graph {graph_num}",
-                     fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
+        if custom_title:
+            plot_title = custom_title
+        elif labels_for_title:
+            plot_title = " | ".join(labels_for_title)
+        else:
+            plot_title = f"Graph {graph_num}"
+        ax.set_title(plot_title, fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
         ax.set_facecolor('#fafafa')
 
         # Set Y-axis limits if specified
@@ -550,3 +568,26 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
 
     app.fig.tight_layout()
     app.canvas.draw()
+
+
+def _plot_export_image(app):
+    """Export the current plot as an image file"""
+    try:
+        if not app.fig.get_axes():
+            messagebox.showwarning("Warning", "No plot to export. Create plots first.")
+            return
+
+        out_path = filedialog.asksaveasfilename(
+            title="Export Plot Image",
+            defaultextension=".png",
+            initialfile="plot_export.png",
+            filetypes=[("PNG Image", "*.png"), ("JPEG Image", "*.jpg"), ("PDF", "*.pdf"), ("SVG", "*.svg"), ("All", "*.*")]
+        )
+        if not out_path:
+            return
+
+        app.fig.savefig(out_path, dpi=200, bbox_inches='tight', facecolor=app.fig.get_facecolor())
+        messagebox.showinfo("Success", f"Plot exported to:\n{out_path}")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to export plot: {e}")
