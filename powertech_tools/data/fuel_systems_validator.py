@@ -116,14 +116,11 @@ def validate_tfuel_timing(
     time_window: float = 30.0
 ) -> Tuple[bool, Optional[float], str]:
     """
-    Validate that tfuel reaches target temperature within time window from fill start
-    AND stays at or below that target for the remainder of the fill.
+    Validate that tfuel reaches target temperature within time window from fill start.
 
     Logic:
       1. Walk forward from fill start looking for tfuel <= target.
-      2. If found within the time window, check that tfuel stays <= target
-         from that point through end of fill.
-      3. If tfuel warms back above target before end of fill, it fails.
+      2. If found within the time window, pass.
 
     Args:
         df: DataFrame with cycle data
@@ -189,21 +186,7 @@ def validate_tfuel_timing(
     if reached_elapsed > time_window:
         return False, reached_elapsed, f"tfuel reached {target_temp}°C at {reached_elapsed:.2f}s (exceeded {time_window}s window)"
 
-    # Step 2: Check that tfuel stays at or below target from reached point through end of fill
-    for i in range(reached_idx, min(end_idx + 1, len(df))):
-        current_tfuel = tfuel.iloc[i]
-        if pd.isna(current_tfuel):
-            continue
-        if current_tfuel > target_temp:
-            current_time = time.iloc[i]
-            warm_elapsed = current_time - start_time if not pd.isna(current_time) else None
-            warm_str = f" at {warm_elapsed:.2f}s" if warm_elapsed is not None else ""
-            return False, reached_elapsed, (
-                f"tfuel reached {target_temp}°C at {reached_elapsed:.2f}s but warmed back to "
-                f"{current_tfuel:.2f}°C{warm_str} before end of fill"
-            )
-
-    return True, reached_elapsed, f"tfuel reached {target_temp}°C at {reached_elapsed:.2f}s (within {time_window}s window) and held through fill"
+    return True, reached_elapsed, f"tfuel reached {target_temp}°C at {reached_elapsed:.2f}s (within {time_window}s window)"
 
 
 def calculate_avg_ramp_rate(
@@ -379,7 +362,7 @@ def validate_fuel_system_file(
         soc_col: SOC column name (for SOC end mode)
         soc_threshold: SOC percentage threshold
         enable_ramp_check: Whether to check average ramp rate
-        ramp_limit: Max allowed avg ramp rate in MPa/min (None = no limit, just report)
+        ramp_limit: Min required avg ramp rate in MPa/min (None = no limit, just report)
 
     Returns:
         Dict with validation results
@@ -476,11 +459,11 @@ def validate_fuel_system_file(
                 df, time_col, ptank_col, start_idx, end_idx
             )
             if ramp_limit is not None and avg_ramp_rate is not None:
-                if avg_ramp_rate > ramp_limit:
+                if avg_ramp_rate < ramp_limit:
                     ramp_pass = False
-                    ramp_message += f" — EXCEEDS limit of {ramp_limit:.2f} MPa/min"
+                    ramp_message += f" — BELOW minimum of {ramp_limit:.2f} MPa/min"
                 else:
-                    ramp_message += f" — within limit of {ramp_limit:.2f} MPa/min"
+                    ramp_message += f" — meets minimum of {ramp_limit:.2f} MPa/min"
 
         # Overall status
         if tfuel_pass and len(param_violations) == 0 and ramp_pass:

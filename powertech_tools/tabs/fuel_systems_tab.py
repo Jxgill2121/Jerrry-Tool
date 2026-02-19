@@ -167,7 +167,7 @@ def build_tab(parent, app):
 
     ramp_row = ttk.Frame(ramp_frame)
     ramp_row.pack(fill="x", pady=2)
-    ttk.Label(ramp_row, text="Max Ramp Rate (MPa/min):").pack(side="left")
+    ttk.Label(ramp_row, text="Min Ramp Rate (MPa/min):").pack(side="left")
     app.fs_ramp_limit = tk.StringVar(value="")
     ttk.Entry(ramp_row, textvariable=app.fs_ramp_limit, width=10).pack(side="left", padx=10)
     ttk.Label(ramp_row, text="(leave blank to report only, no pass/fail)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
