@@ -323,7 +323,8 @@ def _mm_make(app):
                 if not response:
                     return
 
-            out_df = compute_maxmin_from_multiple_files(app.mm_infiles, time_c)
+            # Skip files with fewer than 10 data points (likely partial cycles)
+            out_df = compute_maxmin_from_multiple_files(app.mm_infiles, time_c, min_points_per_file=10)
 
             # Show summary
             summary = f"Processed {len(app.mm_infiles)} cycles\n"
@@ -394,8 +395,13 @@ def _mm_make(app):
             # Concatenate all files
             merged_df = pd.concat(all_dfs, ignore_index=True)
 
-            # Compute maxmin
-            out_df = compute_maxmin_template(merged_df, time_c, cycle_c)
+            # Compute maxmin with validation
+            # Skip cycles with fewer than 10 data points (likely partial cycles at file boundaries)
+            out_df = compute_maxmin_template(
+                merged_df, time_c, cycle_c,
+                min_points_per_cycle=10,
+                skip_cycle_zero=True
+            )
 
             # Show summary
             summary = f"Processed {len(app.mm_infiles)} files with {total_cycles} total cycles\n"
@@ -439,7 +445,11 @@ def _mm_make(app):
                 messagebox.showerror("Error", "Invalid column selection")
                 return
 
-            out_df = compute_maxmin_template(df, time_c, cycle_c)
+            out_df = compute_maxmin_template(
+                df, time_c, cycle_c,
+                min_points_per_cycle=10,
+                skip_cycle_zero=True
+            )
 
             default_name = os.path.splitext(os.path.basename(app.mm_infile.get().strip()))[0] + "_maxmin.txt"
             out_path = filedialog.asksaveasfilename(
