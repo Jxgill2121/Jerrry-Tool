@@ -367,10 +367,12 @@ def _mm_make(app):
                 messagebox.showerror("Error", "Please select a Cycle column")
                 return
 
-            # Load all files and concatenate them with renumbered cycles
+            # Load all files and concatenate them
+            # Track cycles globally to detect duplicates across files
             app.mm_status.set("Loading files...")
             all_dfs = []
-            total_cycles = 0
+            global_cycles_seen = set()
+            duplicate_cycles = []
 
             for file_idx, filepath in enumerate(sorted(app.mm_infiles), start=1):
                 try:
@@ -380,20 +382,34 @@ def _mm_make(app):
                         messagebox.showerror("Error", f"Cycle column '{cycle_c}' not found in {os.path.basename(filepath)}")
                         return
 
-                    # Renumber cycles to be sequential across files
-                    df_copy = df.copy()
-                    unique_cycles = sorted(df[cycle_c].unique())
-                    cycle_map = {old: total_cycles + i + 1 for i, old in enumerate(unique_cycles)}
-                    df_copy[cycle_c] = df_copy[cycle_c].map(cycle_map)
+                    # Track unique cycles and detect duplicates
+                    file_cycles = set(df[cycle_c].dropna().unique())
+                    file_duplicates = file_cycles & global_cycles_seen
+                    if file_duplicates:
+                        for dup in sorted(file_duplicates):
+                            duplicate_cycles.append((os.path.basename(filepath), dup))
+                    global_cycles_seen.update(file_cycles)
 
-                    all_dfs.append(df_copy)
-                    total_cycles += len(unique_cycles)
+                    all_dfs.append(df)
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to load {os.path.basename(filepath)}: {e}")
                     return
 
-            # Concatenate all files
+            # Report duplicate cycles found
+            if duplicate_cycles:
+                print(f"\n=== DUPLICATE CYCLES DETECTED ===")
+                print(f"Found {len(duplicate_cycles)} duplicate cycle numbers across files:")
+                for fname, cyc in duplicate_cycles[:20]:
+                    print(f"  - Cycle {cyc} in {fname}")
+                if len(duplicate_cycles) > 20:
+                    print(f"  ... and {len(duplicate_cycles) - 20} more")
+                print(f"These duplicates will be merged (not double-counted)")
+
+            # Concatenate all files (duplicates will be merged by compute_maxmin_template)
             merged_df = pd.concat(all_dfs, ignore_index=True)
+
+            # Count actual unique cycles (after dedup)
+            total_cycles = len(global_cycles_seen)
 
             # Compute maxmin with validation
             # Skip cycles with fewer than 10 data points (likely partial cycles at file boundaries)
@@ -404,8 +420,13 @@ def _mm_make(app):
             )
 
             # Show summary
-            summary = f"Processed {len(app.mm_infiles)} files with {total_cycles} total cycles\n"
-            summary += f"Value columns: {(len(out_df.columns) - 2) // 2}\n"
+            output_cycles = len(out_df)
+            summary = f"Processed {len(app.mm_infiles)} files\n"
+            summary += f"Unique cycles in files: {total_cycles}\n"
+            summary += f"Output cycles (after validation): {output_cycles}\n"
+            if duplicate_cycles:
+                summary += f"Duplicate cycles merged: {len(duplicate_cycles)}\n"
+            summary += f"\nValue columns: {(len(out_df.columns) - 2) // 2}\n"
             summary += f"Columns: {', '.join([c for c in out_df.columns[2::2]])}"
             app.mm_preview.delete("1.0", tk.END)
             app.mm_preview.insert(tk.END, summary)
@@ -429,7 +450,13 @@ def _mm_make(app):
                 out_df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
 
             app.mm_status.set(f"✓ File created successfully")
-            messagebox.showinfo("Complete", f"Max/Min file created:\n{out_path}\n\n{len(app.mm_infiles)} files, {total_cycles} cycles processed")
+            msg = f"Max/Min file created:\n{out_path}\n\n"
+            msg += f"{len(app.mm_infiles)} files processed\n"
+            msg += f"{total_cycles} unique cycles in input\n"
+            msg += f"{output_cycles} cycles in output"
+            if duplicate_cycles:
+                msg += f"\n{len(duplicate_cycles)} duplicate cycles were merged"
+            messagebox.showinfo("Complete", msg)
 
         else:  # single
             # Single merged file mode
