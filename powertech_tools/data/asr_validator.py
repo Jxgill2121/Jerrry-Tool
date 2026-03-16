@@ -16,114 +16,81 @@ def validate_asr_temperature(
 ) -> Tuple[Dict, pd.DataFrame]:
     """
     Validate ASR test data by calculating cumulative time within temperature band.
-
-    ASR tests measure how long a tank sustains exposure to a target temperature range.
-    Unlike cycle validation (pass/fail), ASR tracks cumulative duration within the band.
-
-    Args:
-        df: DataFrame with time series data
-        time_col: Name of the time column
-        temp_col: Name of the temperature column to validate
-        temp_min: Minimum acceptable temperature (e.g., 83.0)
-        temp_max: Maximum acceptable temperature (e.g., 87.0)
-        time_unit: Unit of time in results ("seconds", "minutes", "hours")
-
-    Returns:
-        Tuple of (summary_dict, detail_df) where:
-        - summary_dict contains: total_duration, time_in_band, time_out_band,
-                                 percent_in_band, excursion_count, etc.
-        - detail_df contains time series with in_band status for each point
+    Optimized for large datasets using vectorized numpy operations.
     """
-    # Ensure numeric types
-    time_values = pd.to_numeric(df[time_col], errors='coerce')
-    temp_values = pd.to_numeric(df[temp_col], errors='coerce')
+    # Get numpy arrays for speed
+    time_values = pd.to_numeric(df[time_col], errors='coerce').values
+    temp_values = pd.to_numeric(df[temp_col], errors='coerce').values
 
-    # Create detail dataframe
-    detail_df = pd.DataFrame({
-        'Time': time_values,
-        'Temperature': temp_values,
-    })
+    # Calculate in_band mask (vectorized)
+    in_band = (temp_values >= temp_min) & (temp_values <= temp_max)
 
-    # Calculate if each point is within the band
-    detail_df['In_Band'] = (temp_values >= temp_min) & (temp_values <= temp_max)
-    detail_df['Status'] = detail_df['In_Band'].apply(lambda x: 'IN BAND' if x else 'OUT OF BAND')
+    # Calculate time deltas (vectorized)
+    time_deltas = np.diff(time_values, prepend=time_values[0] if len(time_values) > 0 else 0)
+    time_deltas = np.maximum(time_deltas, 0)  # No negative deltas
+    time_deltas[0] = 0  # First point has no delta
 
-    # Calculate time deltas between consecutive points
-    time_deltas = time_values.diff().fillna(0)
+    # Calculate totals (vectorized)
+    time_in_band = np.sum(time_deltas[in_band])
+    time_out_band = np.sum(time_deltas[~in_band])
+    total_duration = np.sum(time_deltas)
 
-    # Handle potential negative time deltas (shouldn't happen, but safety check)
-    time_deltas = time_deltas.clip(lower=0)
-
-    detail_df['Time_Delta'] = time_deltas
-
-    # Calculate cumulative time in band
-    in_band_mask = detail_df['In_Band']
-    time_in_band = time_deltas[in_band_mask].sum()
-    time_out_band = time_deltas[~in_band_mask].sum()
-    total_duration = time_deltas.sum()
-
-    # If total duration is 0, use time span instead
+    # If total duration is 0, estimate from time span
     if total_duration == 0 and len(time_values) > 1:
-        total_duration = time_values.iloc[-1] - time_values.iloc[0]
-        # Estimate based on proportion
-        n_in_band = in_band_mask.sum()
-        n_total = len(in_band_mask)
+        total_duration = time_values[-1] - time_values[0]
+        n_in_band = np.sum(in_band)
+        n_total = len(in_band)
         if n_total > 0:
             time_in_band = total_duration * (n_in_band / n_total)
             time_out_band = total_duration - time_in_band
 
-    # Count excursions (transitions from in-band to out-of-band)
-    in_band_shifted = detail_df['In_Band'].shift(1).fillna(True)
-    excursion_starts = (~detail_df['In_Band']) & in_band_shifted
-    excursion_count = excursion_starts.sum()
+    # Find excursions using vectorized operations
+    # Excursion starts when in_band transitions from True to False
+    in_band_shifted = np.roll(in_band, 1)
+    in_band_shifted[0] = True  # Assume starts in band
+    excursion_starts = (~in_band) & in_band_shifted
+    excursion_ends = in_band & (~in_band_shifted)
 
-    # Find excursion details (when temperature went out of band)
+    excursion_count = int(np.sum(excursion_starts))
+
+    # Build excursion list (limit to first 100 for performance)
     excursions = []
-    in_excursion = False
-    excursion_start_time = None
-    excursion_start_idx = None
+    start_indices = np.where(excursion_starts)[0]
+    end_indices = np.where(excursion_ends)[0]
 
-    for idx, row in detail_df.iterrows():
-        if not row['In_Band'] and not in_excursion:
-            # Start of excursion
-            in_excursion = True
-            excursion_start_time = row['Time']
-            excursion_start_idx = idx
-        elif row['In_Band'] and in_excursion:
-            # End of excursion
-            in_excursion = False
-            excursion_duration = row['Time'] - excursion_start_time
+    for i, start_idx in enumerate(start_indices[:100]):
+        # Find matching end
+        matching_ends = end_indices[end_indices > start_idx]
+        if len(matching_ends) > 0:
+            end_idx = matching_ends[0]
+        else:
+            end_idx = len(time_values) - 1
 
-            # Get temperature range during excursion
-            excursion_temps = detail_df.loc[excursion_start_idx:idx-1, 'Temperature']
-
-            excursions.append({
-                'start_time': excursion_start_time,
-                'end_time': row['Time'],
-                'duration': excursion_duration,
-                'min_temp': excursion_temps.min() if len(excursion_temps) > 0 else None,
-                'max_temp': excursion_temps.max() if len(excursion_temps) > 0 else None,
-            })
-
-    # Handle case where data ends during an excursion
-    if in_excursion and excursion_start_time is not None:
-        last_time = detail_df['Time'].iloc[-1]
-        excursion_temps = detail_df.loc[excursion_start_idx:, 'Temperature']
+        exc_temps = temp_values[start_idx:end_idx]
         excursions.append({
-            'start_time': excursion_start_time,
-            'end_time': last_time,
-            'duration': last_time - excursion_start_time,
-            'min_temp': excursion_temps.min() if len(excursion_temps) > 0 else None,
-            'max_temp': excursion_temps.max() if len(excursion_temps) > 0 else None,
+            'start_time': float(time_values[start_idx]),
+            'end_time': float(time_values[end_idx]),
+            'duration': float(time_values[end_idx] - time_values[start_idx]),
+            'min_temp': float(np.min(exc_temps)) if len(exc_temps) > 0 else None,
+            'max_temp': float(np.max(exc_temps)) if len(exc_temps) > 0 else None,
         })
 
-    # Calculate statistics
+    # Calculate statistics (vectorized)
+    valid_temps = temp_values[~np.isnan(temp_values)]
     temp_stats = {
-        'min': temp_values.min(),
-        'max': temp_values.max(),
-        'mean': temp_values.mean(),
-        'std': temp_values.std(),
+        'min': float(np.min(valid_temps)) if len(valid_temps) > 0 else 0,
+        'max': float(np.max(valid_temps)) if len(valid_temps) > 0 else 0,
+        'mean': float(np.mean(valid_temps)) if len(valid_temps) > 0 else 0,
+        'std': float(np.std(valid_temps)) if len(valid_temps) > 0 else 0,
     }
+
+    # Create minimal detail_df (only if needed for export)
+    detail_df = pd.DataFrame({
+        'Time': time_values,
+        'Temperature': temp_values,
+        'In_Band': in_band,
+        'Status': np.where(in_band, 'IN BAND', 'OUT OF BAND'),
+    })
 
     # Percentage in band
     percent_in_band = (time_in_band / total_duration * 100) if total_duration > 0 else 0
