@@ -1,5 +1,5 @@
 # ASR (Accelerated Stress Rupture) Validation tab
-# Validates tank temperature hold duration for ASR testing
+# Validates cumulative time within value bands for ASR testing
 
 import os
 import tkinter as tk
@@ -32,18 +32,18 @@ def build_tab(parent, app):
     # Import theme for styling
     from powertech_tools.config.theme import PowertechTheme
 
-    title_label = ttk.Label(f, text="ASR Temperature Validation", style='Title.TLabel')
+    title_label = ttk.Label(f, text="ASR Validation", style='Title.TLabel')
     title_label.pack(anchor="w", pady=(0, 5))
 
     desc_label = ttk.Label(
         f,
-        text="Accelerated Stress Rupture - Calculate cumulative time within temperature band",
+        text="Accelerated Stress Rupture - Calculate cumulative time within a value band for any data column",
         style='Subtitle.TLabel'
     )
     desc_label.pack(anchor="w", pady=(0, 20))
 
     # File selection
-    card1 = ttk.LabelFrame(f, text="Step 1: Load Test Data", padding=20)
+    card1 = ttk.LabelFrame(f, text="Step 1: Load Test Data (use TDMS Conversion tab first for TDMS files)", padding=20)
     card1.pack(fill="x", pady=(0, 12))
 
     app.asr_infile = tk.StringVar(value="")
@@ -56,12 +56,6 @@ def build_tab(parent, app):
         command=lambda: _asr_choose_txt(app),
         style='Action.TButton'
     ).pack(side="left", padx=(0, 10))
-
-    ttk.Button(
-        btn_frame,
-        text="Load TDMS File",
-        command=lambda: _asr_choose_tdms(app),
-    ).pack(side="left")
 
     file_label_frame = ttk.Frame(card1)
     file_label_frame.pack(fill="x", pady=(10, 0))
@@ -82,16 +76,16 @@ def build_tab(parent, app):
     app.cb_asr_time = ttk.Combobox(time_row, state="disabled", width=35, textvariable=app.asr_time_col, values=[])
     app.cb_asr_time.pack(side="left", padx=10)
 
-    # Temperature column
-    temp_row = ttk.Frame(col_frame)
-    temp_row.pack(fill="x", pady=5)
-    ttk.Label(temp_row, text="Temperature Column:", width=20).pack(side="left")
-    app.asr_temp_col = tk.StringVar(value="")
-    app.cb_asr_temp = ttk.Combobox(temp_row, state="disabled", width=35, textvariable=app.asr_temp_col, values=[])
-    app.cb_asr_temp.pack(side="left", padx=10)
+    # Data column (any column to validate)
+    data_row = ttk.Frame(col_frame)
+    data_row.pack(fill="x", pady=5)
+    ttk.Label(data_row, text="Data Column:", width=20).pack(side="left")
+    app.asr_data_col = tk.StringVar(value="")
+    app.cb_asr_data = ttk.Combobox(data_row, state="disabled", width=35, textvariable=app.asr_data_col, values=[])
+    app.cb_asr_data.pack(side="left", padx=10)
 
-    # Temperature band configuration
-    card3 = ttk.LabelFrame(f, text="Step 3: Set Temperature Band", padding=20)
+    # Band configuration
+    card3 = ttk.LabelFrame(f, text="Step 3: Set Value Band", padding=20)
     card3.pack(fill="x", pady=(0, 12))
 
     band_frame = ttk.Frame(card3)
@@ -99,25 +93,27 @@ def build_tab(parent, app):
 
     ttk.Label(
         card3,
-        text="Set the acceptable temperature range. Time within this band counts toward ASR duration.",
+        text="Set the acceptable value range. Time within this band counts toward ASR duration.",
         style='Subtitle.TLabel'
     ).pack(anchor="w", pady=(0, 10))
 
-    # Min temp
+    # Min value
     min_row = ttk.Frame(band_frame)
     min_row.pack(fill="x", pady=5)
-    ttk.Label(min_row, text="Minimum Temperature:", width=20).pack(side="left")
-    app.asr_temp_min = tk.StringVar(value="83")
-    ttk.Entry(min_row, textvariable=app.asr_temp_min, width=15).pack(side="left", padx=10)
-    ttk.Label(min_row, text="C").pack(side="left")
+    ttk.Label(min_row, text="Minimum Value:", width=20).pack(side="left")
+    app.asr_val_min = tk.StringVar(value="83")
+    ttk.Entry(min_row, textvariable=app.asr_val_min, width=15).pack(side="left", padx=10)
+    app.asr_unit_label_min = ttk.Label(min_row, text="")
+    app.asr_unit_label_min.pack(side="left")
 
-    # Max temp
+    # Max value
     max_row = ttk.Frame(band_frame)
     max_row.pack(fill="x", pady=5)
-    ttk.Label(max_row, text="Maximum Temperature:", width=20).pack(side="left")
-    app.asr_temp_max = tk.StringVar(value="87")
-    ttk.Entry(max_row, textvariable=app.asr_temp_max, width=15).pack(side="left", padx=10)
-    ttk.Label(max_row, text="C").pack(side="left")
+    ttk.Label(max_row, text="Maximum Value:", width=20).pack(side="left")
+    app.asr_val_max = tk.StringVar(value="87")
+    ttk.Entry(max_row, textvariable=app.asr_val_max, width=15).pack(side="left", padx=10)
+    app.asr_unit_label_max = ttk.Label(max_row, text="")
+    app.asr_unit_label_max.pack(side="left")
 
     # Target duration (optional reference)
     target_row = ttk.Frame(band_frame)
@@ -173,6 +169,7 @@ def build_tab(parent, app):
     app.asr_df = None
     app.asr_summary = None
     app.asr_detail_df = None
+    app.asr_selected_col_name = None
 
 
 def _asr_choose_txt(app):
@@ -192,8 +189,8 @@ def _asr_choose_txt(app):
         # Update column dropdowns
         app.cb_asr_time["values"] = columns
         app.cb_asr_time["state"] = "readonly"
-        app.cb_asr_temp["values"] = columns
-        app.cb_asr_temp["state"] = "readonly"
+        app.cb_asr_data["values"] = columns
+        app.cb_asr_data["state"] = "readonly"
 
         # Auto-select time column
         time_candidates = ['time', 'Time', 'TIME', 't', 'T', 'Elapsed Time', 'Elapsed_Time']
@@ -205,15 +202,20 @@ def _asr_choose_txt(app):
             if columns:
                 app.asr_time_col.set(columns[0])
 
-        # Auto-select temperature column (look for common temp names)
-        temp_candidates = ['twall', 'Twall', 'TWALL', 'Temperature', 'Temp', 'temp', 'T_wall']
+        # Auto-select data column (look for common temp names first, then just pick second column)
+        temp_candidates = ['tskin', 'Tskin', 'twall', 'Twall', 'TWALL', 'Temperature', 'Temp', 'temp', 'T_wall', 'Tfluid']
+        selected = False
         for tc in temp_candidates:
             for col in columns:
                 if tc.lower() in col.lower():
-                    app.asr_temp_col.set(col)
+                    app.asr_data_col.set(col)
+                    selected = True
                     break
-            if app.asr_temp_col.get():
+            if selected:
                 break
+
+        if not selected and len(columns) > 1:
+            app.asr_data_col.set(columns[1])
 
         app.asr_status.set(f"Loaded {len(df)} data points, {len(columns)} columns")
 
@@ -221,125 +223,35 @@ def _asr_choose_txt(app):
         messagebox.showerror("Error", f"Failed to load file: {e}")
 
 
-def _asr_choose_tdms(app):
-    """Load TDMS file for ASR validation"""
-    path = filedialog.askopenfilename(
-        title="Select TDMS file",
-        filetypes=[("TDMS", "*.tdms"), ("All", "*.*")]
-    )
-    if not path:
-        return
-
-    try:
-        from nptdms import TdmsFile
-
-        tdms_file = TdmsFile.read(path)
-
-        # Get all groups and channels
-        all_channels = []
-        channel_data = {}
-
-        for group in tdms_file.groups():
-            for channel in group.channels():
-                full_name = f"{group.name}/{channel.name}"
-                all_channels.append(full_name)
-
-                # Get data
-                data = channel[:]
-                if hasattr(data, '__len__') and len(data) > 0:
-                    channel_data[full_name] = data
-
-                    # Try to get time track
-                    try:
-                        time_track = channel.time_track()
-                        if time_track is not None and len(time_track) == len(data):
-                            channel_data[f"{full_name}_time"] = time_track
-                    except Exception:
-                        pass
-
-        # Build DataFrame from all channels with same length
-        if channel_data:
-            # Find most common length
-            lengths = [len(v) for v in channel_data.values()]
-            common_len = max(set(lengths), key=lengths.count)
-
-            # Filter to channels with common length
-            filtered_data = {k: v for k, v in channel_data.items() if len(v) == common_len}
-
-            df = pd.DataFrame(filtered_data)
-
-            # If no time column, generate one
-            if 'Time' not in df.columns:
-                # Look for any time track
-                time_cols = [c for c in df.columns if '_time' in c.lower()]
-                if time_cols:
-                    df['Time'] = df[time_cols[0]]
-                else:
-                    # Generate synthetic time (0.1s intervals)
-                    df.insert(0, 'Time', range(len(df)) * 0.1)
-
-            app.asr_df = df
-            columns = list(df.columns)
-
-            app.asr_infile.set(path)
-            app.cb_asr_time["values"] = columns
-            app.cb_asr_time["state"] = "readonly"
-            app.cb_asr_temp["values"] = columns
-            app.cb_asr_temp["state"] = "readonly"
-
-            # Auto-select time
-            if 'Time' in columns:
-                app.asr_time_col.set('Time')
-            elif columns:
-                app.asr_time_col.set(columns[0])
-
-            # Auto-select temp
-            temp_candidates = ['twall', 'Twall', 'TWALL', 'Temperature', 'Temp']
-            for tc in temp_candidates:
-                for col in columns:
-                    if tc.lower() in col.lower():
-                        app.asr_temp_col.set(col)
-                        break
-                if app.asr_temp_col.get():
-                    break
-
-            app.asr_status.set(f"Loaded {len(df)} data points from TDMS")
-
-    except ImportError:
-        messagebox.showerror("Missing Library", "nptdms required for TDMS files\n\nInstall: pip install nptdms")
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to load TDMS: {e}")
-
-
 def _asr_validate(app):
-    """Run ASR temperature validation"""
+    """Run ASR validation"""
     try:
         if app.asr_df is None:
             messagebox.showerror("Error", "Please load a data file first")
             return
 
         time_col = app.asr_time_col.get().strip()
-        temp_col = app.asr_temp_col.get().strip()
+        data_col = app.asr_data_col.get().strip()
 
         if not time_col or time_col not in app.asr_df.columns:
             messagebox.showerror("Error", "Please select a valid time column")
             return
 
-        if not temp_col or temp_col not in app.asr_df.columns:
-            messagebox.showerror("Error", "Please select a valid temperature column")
+        if not data_col or data_col not in app.asr_df.columns:
+            messagebox.showerror("Error", "Please select a valid data column")
             return
 
-        # Parse temperature band
-        temp_min = safe_float(app.asr_temp_min.get())
-        temp_max = safe_float(app.asr_temp_max.get())
+        # Parse value band
+        val_min = safe_float(app.asr_val_min.get())
+        val_max = safe_float(app.asr_val_max.get())
 
-        if temp_min == "INVALID" or temp_min is None:
-            messagebox.showerror("Error", "Invalid minimum temperature")
+        if val_min == "INVALID" or val_min is None:
+            messagebox.showerror("Error", "Invalid minimum value")
             return
-        if temp_max == "INVALID" or temp_max is None:
-            messagebox.showerror("Error", "Invalid maximum temperature")
+        if val_max == "INVALID" or val_max is None:
+            messagebox.showerror("Error", "Invalid maximum value")
             return
-        if temp_min >= temp_max:
+        if val_min >= val_max:
             messagebox.showerror("Error", "Minimum must be less than maximum")
             return
 
@@ -348,13 +260,16 @@ def _asr_validate(app):
         if target_hours == "INVALID":
             target_hours = None
 
+        # Store selected column name for display
+        app.asr_selected_col_name = data_col
+
         # Run validation
         summary, detail_df = validate_asr_temperature(
             app.asr_df,
             time_col,
-            temp_col,
-            temp_min,
-            temp_max,
+            data_col,
+            val_min,
+            val_max,
             time_unit="seconds"  # Keep in seconds for precision
         )
 
@@ -378,9 +293,10 @@ def _asr_validate(app):
 
         results_text = (
             "=" * 60 + "\n"
-            "        ASR TEMPERATURE VALIDATION RESULTS\n"
+            f"        ASR VALIDATION RESULTS - {data_col}\n"
             "=" * 60 + "\n\n"
-            f"Temperature Band: {temp_min}C - {temp_max}C\n"
+            f"Data Column: {data_col}\n"
+            f"Value Band: {val_min} - {val_max}\n"
             f"Data Points: {summary['data_points']:,}\n\n"
             "-" * 40 + "\n"
             "          DURATION SUMMARY\n"
@@ -410,16 +326,16 @@ def _asr_validate(app):
                 results_text += f"  Remaining:              {remaining:.4f} hours\n"
             results_text += "\n"
 
-        # Temperature statistics
+        # Data statistics
         stats = summary['temp_stats']
         results_text += (
             "-" * 40 + "\n"
-            "          TEMPERATURE STATISTICS\n"
+            f"          {data_col.upper()} STATISTICS\n"
             "-" * 40 + "\n\n"
-            f"  Minimum:    {stats['min']:.2f}C\n"
-            f"  Maximum:    {stats['max']:.2f}C\n"
-            f"  Mean:       {stats['mean']:.2f}C\n"
-            f"  Std Dev:    {stats['std']:.2f}C\n\n"
+            f"  Minimum:    {stats['min']:.2f}\n"
+            f"  Maximum:    {stats['max']:.2f}\n"
+            f"  Mean:       {stats['mean']:.2f}\n"
+            f"  Std Dev:    {stats['std']:.2f}\n\n"
         )
 
         # Excursion summary
@@ -433,20 +349,20 @@ def _asr_validate(app):
         # List first 20 excursions
         excursions = summary['excursions']
         if excursions:
-            results_text += "  Time (s)        Duration      Temp Range\n"
+            results_text += "  Time (s)        Duration      Value Range\n"
             results_text += "  " + "-" * 50 + "\n"
             for i, exc in enumerate(excursions[:20]):
                 start = exc['start_time']
                 dur = format_duration(exc['duration'], "auto")
                 min_t = exc['min_temp']
                 max_t = exc['max_temp']
-                temp_range = f"{min_t:.1f} - {max_t:.1f}C" if min_t and max_t else "N/A"
-                results_text += f"  {start:>10.1f}     {dur:<12}  {temp_range}\n"
+                val_range = f"{min_t:.1f} - {max_t:.1f}" if min_t and max_t else "N/A"
+                results_text += f"  {start:>10.1f}     {dur:<12}  {val_range}\n"
 
             if len(excursions) > 20:
                 results_text += f"\n  ... and {len(excursions) - 20} more excursions\n"
         else:
-            results_text += "  No excursions - temperature stayed within band entire test!\n"
+            results_text += "  No excursions - value stayed within band entire test!\n"
 
         results_text += "\n" + "=" * 60 + "\n"
 
@@ -489,13 +405,15 @@ def _asr_export_excel(app):
         ws_summary.title = "Summary"
 
         summary = app.asr_summary
+        col_name = getattr(app, 'asr_selected_col_name', 'Data')
         in_band_hours = summary['time_in_band'] / 3600
         total_hours = summary['total_duration'] / 3600
 
         summary_data = [
             ["ASR VALIDATION SUMMARY"],
             [""],
-            ["Temperature Band", f"{summary['temp_band'][0]}C - {summary['temp_band'][1]}C"],
+            ["Data Column", col_name],
+            ["Value Band", f"{summary['temp_band'][0]} - {summary['temp_band'][1]}"],
             ["Data Points", summary['data_points']],
             [""],
             ["DURATION RESULTS"],
@@ -504,11 +422,11 @@ def _asr_export_excel(app):
             ["Time Out of Band (hours)", f"{(summary['time_out_band'] / 3600):.4f}"],
             ["Percent In Band", f"{summary['percent_in_band']:.2f}%"],
             [""],
-            ["TEMPERATURE STATISTICS"],
-            ["Minimum", f"{summary['temp_stats']['min']:.2f}C"],
-            ["Maximum", f"{summary['temp_stats']['max']:.2f}C"],
-            ["Mean", f"{summary['temp_stats']['mean']:.2f}C"],
-            ["Std Dev", f"{summary['temp_stats']['std']:.2f}C"],
+            [f"{col_name} STATISTICS"],
+            ["Minimum", f"{summary['temp_stats']['min']:.2f}"],
+            ["Maximum", f"{summary['temp_stats']['max']:.2f}"],
+            ["Mean", f"{summary['temp_stats']['mean']:.2f}"],
+            ["Std Dev", f"{summary['temp_stats']['std']:.2f}"],
             [""],
             ["Excursion Count", summary['excursion_count']],
         ]
@@ -524,7 +442,7 @@ def _asr_export_excel(app):
 
         # Excursions sheet
         ws_exc = wb.create_sheet("Excursions")
-        ws_exc.append(["Start Time (s)", "End Time (s)", "Duration (s)", "Min Temp (C)", "Max Temp (C)"])
+        ws_exc.append(["Start Time (s)", "End Time (s)", "Duration (s)", "Min Value", "Max Value"])
 
         for exc in summary['excursions']:
             ws_exc.append([
