@@ -13,6 +13,7 @@ from powertech_tools.tabs import (
     build_plot_tab,
     build_avg_tab,
     build_validation_tab,
+    build_asr_tab,
     build_fuel_systems_tab
 )
 
@@ -42,6 +43,7 @@ class PowertechToolsApp(tk.Tk):
         self.tab_plot = ttk.Frame(self.nb)
         self.tab_avg = ttk.Frame(self.nb)
         self.tab_val = ttk.Frame(self.nb)
+        self.tab_asr = ttk.Frame(self.nb)
         self.tab_fuel_systems = ttk.Frame(self.nb)
 
         # Add tabs to notebook
@@ -50,7 +52,8 @@ class PowertechToolsApp(tk.Tk):
         self.nb.add(self.tab_plot, text="  3) PLOT DATA  ")
         self.nb.add(self.tab_avg, text="  4) CYCLE AVERAGES  ")
         self.nb.add(self.tab_val, text="  5) CYLINDERS VALIDATION  ")
-        self.nb.add(self.tab_fuel_systems, text="  6) FUEL SYSTEMS  ")
+        self.nb.add(self.tab_asr, text="  6) ASR VALIDATION  ")
+        self.nb.add(self.tab_fuel_systems, text="  7) FUEL SYSTEMS  ")
 
         # Build each tab using modular functions
         build_merge_tab(self.tab_merge, self)
@@ -58,6 +61,7 @@ class PowertechToolsApp(tk.Tk):
         build_plot_tab(self.tab_plot, self)
         build_avg_tab(self.tab_avg, self)
         build_validation_tab(self.tab_val, self)
+        build_asr_tab(self.tab_asr, self)
         build_fuel_systems_tab(self.tab_fuel_systems, self)
 
     def _build_header(self):
