@@ -330,6 +330,21 @@ def _asr_validate(app):
         results_text += f"                    Files: {len(app.asr_files)}\n"
         results_text += "=" * 70 + "\n\n"
 
+        # Try to find date range from DateTime column
+        date_range_str = None
+        datetime_cols = [c for c in app.asr_df.columns if 'datetime' in c.lower() or 'date' in c.lower()]
+        if datetime_cols:
+            try:
+                dt_col = datetime_cols[0]
+                dt_values = pd.to_datetime(app.asr_df[dt_col], errors='coerce')
+                dt_valid = dt_values.dropna()
+                if len(dt_valid) > 0:
+                    start_dt = dt_valid.min()
+                    end_dt = dt_valid.max()
+                    date_range_str = f"{start_dt.strftime('%Y-%m-%d %H:%M')} to {end_dt.strftime('%Y-%m-%d %H:%M')}"
+            except:
+                pass
+
         # Validate each selected parameter
         for param in selected_params:
             if param not in app.asr_df.columns:
@@ -377,6 +392,8 @@ def _asr_validate(app):
             results_text += f"  {param.upper()}\n"
             results_text += "-" * 50 + "\n"
             results_text += f"  Band:           {val_min} - {val_max}\n"
+            if date_range_str:
+                results_text += f"  Dates:          {date_range_str}\n"
             results_text += f"  Total Duration: {total_fmt}\n"
             results_text += f"  Time IN BAND:   {in_band_fmt} ({summary['percent_in_band']:.2f}%)\n"
             results_text += f"  In Band (hrs):  {in_band_hours:.4f}\n"
@@ -387,10 +404,7 @@ def _asr_validate(app):
                 status = "MET" if in_band_hours >= target_hours else "NOT MET"
                 results_text += f"  Target:         {target_hours:.2f} hrs - {status} ({progress:.1f}%)\n"
 
-            # Statistics
-            stats = summary['temp_stats']
-            results_text += f"  Range:          {stats['min']:.2f} - {stats['max']:.2f}\n"
-            results_text += f"  Mean:           {stats['mean']:.2f}\n"
+            results_text += f"  Mean:           {summary['temp_stats']['mean']:.2f}\n"
             results_text += f"  Excursions:     {summary['excursion_count']}\n"
             results_text += "\n"
 
