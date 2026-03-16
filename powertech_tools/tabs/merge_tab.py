@@ -70,14 +70,13 @@ def build_tab(parent, app):
     config_frame = ttk.Frame(card2)
     config_frame.pack(fill="x")
 
-    # Group selection
+    # Group selection (hidden - auto-selected)
+    app.tdms_group = tk.StringVar(value="")
+    app.tdms_group_label = tk.StringVar(value="")
     group_row = ttk.Frame(config_frame)
     group_row.pack(fill="x", pady=5)
     ttk.Label(group_row, text="Data Group:", width=20).pack(side="left")
-    app.tdms_group = tk.StringVar(value="")
-    app.cb_tdms_group = ttk.Combobox(group_row, state="disabled", width=40, textvariable=app.tdms_group, values=[])
-    app.cb_tdms_group.pack(side="left", padx=10)
-    app.cb_tdms_group.bind("<<ComboboxSelected>>", lambda e: _tdms_group_changed(app))
+    ttk.Label(group_row, textvariable=app.tdms_group_label, style='Status.TLabel').pack(side="left", padx=10)
 
     # Time generation options
     time_frame = ttk.LabelFrame(config_frame, text="Time Column", padding=10)
@@ -172,13 +171,11 @@ def _tdms_choose_files(app):
         app.tdms_groups = groups
         app.tdms_channels_dict = channels_dict
 
-        # Update group dropdown
-        app.cb_tdms_group["values"] = groups
-        app.cb_tdms_group["state"] = "readonly"
-
-        # Auto-select first group if available
+        # Auto-select group (prefer "Measurements" if exists, otherwise first)
         if groups:
-            app.tdms_group.set(groups[0])
+            selected_group = "Measurements" if "Measurements" in groups else groups[0]
+            app.tdms_group.set(selected_group)
+            app.tdms_group_label.set(f"✓ {selected_group}")
             _tdms_group_changed(app)
 
         app.tdms_status.set("Ready to configure conversion")
