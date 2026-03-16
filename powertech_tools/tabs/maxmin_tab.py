@@ -31,19 +31,27 @@ def build_tab(parent, app):
     )
     desc_label.pack(anchor="w", pady=(0, 20))
 
-    # Mode selection - simplified to 2 options
+    # Mode selection
     mode_card = ttk.LabelFrame(f, text="Input Type", padding=20)
     mode_card.pack(fill="x", pady=(0, 15))
 
-    app.mm_mode = tk.StringVar(value="multiple")
+    app.mm_mode = tk.StringVar(value="multi_single")
     mode_frame = ttk.Frame(mode_card)
     mode_frame.pack(fill="x")
 
     ttk.Radiobutton(
         mode_frame,
-        text="Multiple TXT files (each file = 1 cycle)",
+        text="Multiple files, each file = 1 cycle",
         variable=app.mm_mode,
-        value="multiple",
+        value="multi_single",
+        command=lambda: _mm_mode_changed(app)
+    ).pack(anchor="w", pady=2)
+
+    ttk.Radiobutton(
+        mode_frame,
+        text="Multiple files, each file has multiple cycles (Cycle column)",
+        variable=app.mm_mode,
+        value="multi_multi",
         command=lambda: _mm_mode_changed(app)
     ).pack(anchor="w", pady=2)
 
@@ -135,10 +143,15 @@ def build_tab(parent, app):
 def _mm_mode_changed(app):
     """Handle mode change"""
     mode = app.mm_mode.get()
-    if mode == "multiple":
+    if mode == "multi_single":
         app.mm_cycle_row.pack_forget()
         app.mm_choose_btn["text"] = "Select TXT Files"
-    else:
+    elif mode == "multi_multi":
+        app.mm_cycle_row.pack(fill="x", pady=5)
+        app.mm_choose_btn["text"] = "Select TXT Files"
+        if app.mm_infiles:
+            app.cb_mm_cycle["state"] = "readonly"
+    else:  # single
         app.mm_cycle_row.pack(fill="x", pady=5)
         app.mm_choose_btn["text"] = "Select File"
         if app.mm_df is not None:
@@ -149,9 +162,9 @@ def _mm_choose_files(app):
     """Handle file selection"""
     mode = app.mm_mode.get()
 
-    if mode == "multiple":
+    if mode in ("multi_single", "multi_multi"):
         paths = filedialog.askopenfilenames(
-            title="Select cycle files (one per cycle)",
+            title="Select TXT files",
             filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
         )
         if not paths:
@@ -176,6 +189,15 @@ def _mm_choose_files(app):
                 if headers:
                     app.mm_time_col.set(headers[0])
 
+            # For multi_multi mode, also set up cycle column
+            if mode == "multi_multi":
+                app.cb_mm_cycle["values"] = headers
+                app.cb_mm_cycle["state"] = "readonly"
+                for cc in ["Cycle", "cycle", "CYCLE"]:
+                    if cc in headers:
+                        app.mm_cycle_col.set(cc)
+                        break
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not read headers: {e}")
             return
@@ -188,7 +210,7 @@ def _mm_choose_files(app):
             app.mm_preview.insert(tk.END, f"  {i}. {os.path.basename(p)}\n")
         app.mm_status.set("Ready")
 
-    else:
+    else:  # single
         path = filedialog.askopenfilename(
             title="Select file with Cycle column",
             filetypes=[("Text/Log", "*.txt *.log *.dat *.csv *.tsv"), ("All", "*.*")]
@@ -235,7 +257,8 @@ def _mm_make(app):
         mode = app.mm_mode.get()
         time_c = app.mm_time_col.get().strip()
 
-        if mode == "multiple":
+        if mode == "multi_single":
+            # Multiple files, each = 1 cycle
             if not app.mm_infiles:
                 messagebox.showerror("Error", "Select files first")
                 return
@@ -246,7 +269,39 @@ def _mm_make(app):
             app.mm_preview.insert(tk.END, f"Processed {len(app.mm_infiles)} cycles\n")
             app.mm_preview.insert(tk.END, f"Parameters: {(len(out_df.columns) - 2) // 2}\n")
 
-        else:
+        elif mode == "multi_multi":
+            # Multiple files, each has multiple cycles
+            if not app.mm_infiles:
+                messagebox.showerror("Error", "Select files first")
+                return
+
+            cycle_c = app.mm_cycle_col.get().strip()
+            if not cycle_c:
+                messagebox.showerror("Error", "Select a Cycle column")
+                return
+
+            # Load and concatenate all files
+            all_dfs = []
+            for filepath in sorted(app.mm_infiles):
+                df = load_table_allow_duplicate_headers(filepath)
+                if cycle_c not in df.columns:
+                    messagebox.showerror("Error", f"Cycle column '{cycle_c}' not in {os.path.basename(filepath)}")
+                    return
+                all_dfs.append(df)
+
+            merged_df = pd.concat(all_dfs, ignore_index=True)
+
+            out_df = compute_maxmin_template(
+                merged_df, time_c, cycle_c,
+                min_points_per_cycle=10,
+                skip_cycle_zero=True
+            )
+
+            app.mm_preview.delete("1.0", tk.END)
+            app.mm_preview.insert(tk.END, f"Processed {len(app.mm_infiles)} files\n")
+            app.mm_preview.insert(tk.END, f"Output: {len(out_df)} cycles\n")
+
+        else:  # single
             if app.mm_df is None:
                 messagebox.showerror("Error", "Load a file first")
                 return
