@@ -96,6 +96,13 @@ def build_tab(parent, app):
     app.tdms_time_step = tk.StringVar(value="0.10")
     ttk.Entry(timestep_row, textvariable=app.tdms_time_step, width=10).pack(side="left", padx=10)
 
+    app.tdms_add_datetime = tk.BooleanVar(value=True)
+    ttk.Checkbutton(
+        time_frame,
+        text="Include DateTime column (actual timestamps from TDMS)",
+        variable=app.tdms_add_datetime
+    ).pack(anchor="w", pady=(5, 0))
+
     # Cycle number column (optional)
     cycle_row = ttk.Frame(config_frame)
     cycle_row.pack(fill="x", pady=5)
@@ -270,6 +277,7 @@ def _tdms_convert(app):
 
         # Get time generation options
         add_time = app.tdms_add_time.get()
+        add_datetime = app.tdms_add_datetime.get()
         try:
             time_step = float(app.tdms_time_step.get())
             if time_step <= 0:
@@ -308,6 +316,7 @@ def _tdms_convert(app):
             add_time,
             time_step,
             cycle_col,
+            add_datetime,
             progress
         )
 
