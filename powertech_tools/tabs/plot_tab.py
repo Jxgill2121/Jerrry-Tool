@@ -159,18 +159,26 @@ def build_tab(parent, app):
     app.graph_rows_box = ttk.LabelFrame(config_card, text="Graph Variables", padding=15)
     app.graph_rows_box.pack(fill="x", pady=(10, 0))
 
-    hdr = ttk.Frame(app.graph_rows_box)
-    hdr.pack(fill="x", pady=(0, 8))
-    ttk.Label(hdr, text="Graph", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w")
-    ttk.Label(hdr, text="Title", width=18, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Variable 1", width=25, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Variable 2 (opt)", width=25, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Min", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Max", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5)
-    ttk.Label(hdr, text="Min Lower", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5)
-    ttk.Label(hdr, text="Min Upper", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5)
-    ttk.Label(hdr, text="Max Lower", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5)
-    ttk.Label(hdr, text="Max Upper", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5)
+    # Container frame for grid layout - headers and rows share the same grid
+    app.graph_grid_container = ttk.Frame(app.graph_rows_box)
+    app.graph_grid_container.pack(fill="x")
+
+    # Configure column widths for alignment
+    col_widths = [70, 130, 180, 180, 80, 80, 100, 100, 100, 100]
+    for col, w in enumerate(col_widths):
+        app.graph_grid_container.grid_columnconfigure(col, minsize=w)
+
+    # Header row
+    ttk.Label(app.graph_grid_container, text="Graph", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w", padx=(0,5), pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Title", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Variable 1", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Variable 2 (opt)", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Min", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Max", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Min Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Min Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Max Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Max Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5, pady=(0,8))
 
     app.graph_selectors = []
 
@@ -260,18 +268,20 @@ def _plot_rebuild_graph_rows(app):
     """Rebuild the graph configuration rows"""
     from powertech_tools.config.theme import PowertechTheme
 
-    kids = app.graph_rows_box.winfo_children()
-    for w in kids[1:]:
-        w.destroy()
+    # Remove old data rows (keep header row 0)
+    container = app.graph_grid_container
+    for widget in container.winfo_children():
+        info = widget.grid_info()
+        if info and int(info.get('row', 0)) > 0:
+            widget.destroy()
 
     app.graph_selectors.clear()
 
     n = int(app.num_graphs_var.get() or 1)
     for i in range(n):
-        rowf = ttk.Frame(app.graph_rows_box)
-        rowf.pack(fill="x", pady=3)
+        row_num = i + 1  # Row 0 is header
 
-        ttk.Label(rowf, text=f"Graph {i + 1}", width=8).grid(row=0, column=0, sticky="w")
+        ttk.Label(container, text=f"Graph {i + 1}").grid(row=row_num, column=0, sticky="w", padx=(0,5), pady=3)
 
         title_var = tk.StringVar(value="")
         y1_var = tk.StringVar(value="")
@@ -283,23 +293,24 @@ def _plot_rebuild_graph_rows(app):
         max_low_var = tk.StringVar(value="")
         max_high_var = tk.StringVar(value="")
 
-        ttk.Entry(rowf, width=18, textvariable=title_var).grid(row=0, column=1, padx=5, sticky="w")
+        ttk.Entry(container, width=15, textvariable=title_var).grid(row=row_num, column=1, padx=5, pady=3, sticky="w")
 
-        y1_cb = ttk.Combobox(rowf, state="disabled", width=25, textvariable=y1_var, values=[])
-        y2_cb = ttk.Combobox(rowf, state="disabled", width=25, textvariable=y2_var, values=[""])
-        y1_cb.grid(row=0, column=2, padx=5, sticky="w")
-        y2_cb.grid(row=0, column=3, padx=5, sticky="w")
+        y1_cb = ttk.Combobox(container, state="disabled", width=22, textvariable=y1_var, values=[])
+        y2_cb = ttk.Combobox(container, state="disabled", width=22, textvariable=y2_var, values=[""])
+        y1_cb.grid(row=row_num, column=2, padx=5, pady=3, sticky="w")
+        y2_cb.grid(row=row_num, column=3, padx=5, pady=3, sticky="w")
 
-        ttk.Entry(rowf, width=10, textvariable=y_min_var).grid(row=0, column=4, padx=5, sticky="w")
-        ttk.Entry(rowf, width=10, textvariable=y_max_var).grid(row=0, column=5, padx=5, sticky="w")
-        ttk.Entry(rowf, width=10, textvariable=min_low_var).grid(row=0, column=6, padx=5, sticky="w")
-        ttk.Entry(rowf, width=10, textvariable=min_high_var).grid(row=0, column=7, padx=5, sticky="w")
-        ttk.Entry(rowf, width=10, textvariable=max_low_var).grid(row=0, column=8, padx=5, sticky="w")
-        ttk.Entry(rowf, width=10, textvariable=max_high_var).grid(row=0, column=9, padx=5, sticky="w")
+        ttk.Entry(container, width=8, textvariable=y_min_var).grid(row=row_num, column=4, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=8, textvariable=y_max_var).grid(row=row_num, column=5, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=min_low_var).grid(row=row_num, column=6, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=min_high_var).grid(row=row_num, column=7, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=max_low_var).grid(row=row_num, column=8, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=max_high_var).grid(row=row_num, column=9, padx=5, pady=3, sticky="w")
 
         app.graph_selectors.append({
             "title_var": title_var,
             "y1_var": y1_var, "y2_var": y2_var,
+            "y1_cb": y1_cb, "y2_cb": y2_cb,
             "y_min_var": y_min_var, "y_max_var": y_max_var,
             "min_low_var": min_low_var, "min_high_var": min_high_var,
             "max_low_var": max_low_var, "max_high_var": max_high_var
@@ -314,10 +325,9 @@ def _plot_refresh_graph_row_values(app):
         return
 
     display_list = [app.plot_internal_to_display[c] for c in app.plot_internal_cols]
-    for i, _sel in enumerate(app.graph_selectors):
-        row = app.graph_rows_box.winfo_children()[i + 1]
-        y1_cb = row.grid_slaves(row=0, column=2)[0]
-        y2_cb = row.grid_slaves(row=0, column=3)[0]
+    for sel in app.graph_selectors:
+        y1_cb = sel["y1_cb"]
+        y2_cb = sel["y2_cb"]
         y1_cb.configure(values=display_list, state="readonly")
         y2_cb.configure(values=[""] + display_list, state="readonly")
 
