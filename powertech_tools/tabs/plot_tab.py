@@ -161,16 +161,16 @@ def build_tab(parent, app):
 
     hdr = ttk.Frame(app.graph_rows_box)
     hdr.pack(fill="x", pady=(0, 8))
-    ttk.Label(hdr, text="#", width=3, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w")
-    ttk.Label(hdr, text="Title", width=20, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Variable 1", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y-Axis Variable 2", width=30, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y Min", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5)
-    ttk.Label(hdr, text="Y Max", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5)
-    ttk.Label(hdr, text="Min Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5)
-    ttk.Label(hdr, text="Min Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5)
-    ttk.Label(hdr, text="Max Lower", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5)
-    ttk.Label(hdr, text="Max Upper", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5)
+    ttk.Label(hdr, text="Graph", width=8, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w")
+    ttk.Label(hdr, text="Title", width=18, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y-Axis Variable 1", width=25, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y-Axis Variable 2 (opt)", width=25, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y-Axis Min", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5)
+    ttk.Label(hdr, text="Y-Axis Max", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5)
+    ttk.Label(hdr, text="Min Lower", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5)
+    ttk.Label(hdr, text="Min Upper", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5)
+    ttk.Label(hdr, text="Max Lower", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5)
+    ttk.Label(hdr, text="Max Upper", width=10, font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5)
 
     app.graph_selectors = []
 
@@ -271,7 +271,7 @@ def _plot_rebuild_graph_rows(app):
         rowf = ttk.Frame(app.graph_rows_box)
         rowf.pack(fill="x", pady=3)
 
-        ttk.Label(rowf, text=str(i + 1), width=3).grid(row=0, column=0, sticky="w")
+        ttk.Label(rowf, text=f"Graph {i + 1}", width=8).grid(row=0, column=0, sticky="w")
 
         title_var = tk.StringVar(value="")
         y1_var = tk.StringVar(value="")
@@ -283,19 +283,19 @@ def _plot_rebuild_graph_rows(app):
         max_low_var = tk.StringVar(value="")
         max_high_var = tk.StringVar(value="")
 
-        ttk.Entry(rowf, width=20, textvariable=title_var).grid(row=0, column=1, padx=5, sticky="w")
+        ttk.Entry(rowf, width=18, textvariable=title_var).grid(row=0, column=1, padx=5, sticky="w")
 
-        y1_cb = ttk.Combobox(rowf, state="disabled", width=30, textvariable=y1_var, values=[])
-        y2_cb = ttk.Combobox(rowf, state="disabled", width=30, textvariable=y2_var, values=[""])
+        y1_cb = ttk.Combobox(rowf, state="disabled", width=25, textvariable=y1_var, values=[])
+        y2_cb = ttk.Combobox(rowf, state="disabled", width=25, textvariable=y2_var, values=[""])
         y1_cb.grid(row=0, column=2, padx=5, sticky="w")
         y2_cb.grid(row=0, column=3, padx=5, sticky="w")
 
-        ttk.Entry(rowf, width=8, textvariable=y_min_var).grid(row=0, column=4, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=y_max_var).grid(row=0, column=5, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=min_low_var).grid(row=0, column=6, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=min_high_var).grid(row=0, column=7, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=max_low_var).grid(row=0, column=8, padx=5, sticky="w")
-        ttk.Entry(rowf, width=8, textvariable=max_high_var).grid(row=0, column=9, padx=5, sticky="w")
+        ttk.Entry(rowf, width=10, textvariable=y_min_var).grid(row=0, column=4, padx=5, sticky="w")
+        ttk.Entry(rowf, width=10, textvariable=y_max_var).grid(row=0, column=5, padx=5, sticky="w")
+        ttk.Entry(rowf, width=10, textvariable=min_low_var).grid(row=0, column=6, padx=5, sticky="w")
+        ttk.Entry(rowf, width=10, textvariable=min_high_var).grid(row=0, column=7, padx=5, sticky="w")
+        ttk.Entry(rowf, width=10, textvariable=max_low_var).grid(row=0, column=8, padx=5, sticky="w")
+        ttk.Entry(rowf, width=10, textvariable=max_high_var).grid(row=0, column=9, padx=5, sticky="w")
 
         app.graph_selectors.append({
             "title_var": title_var,
