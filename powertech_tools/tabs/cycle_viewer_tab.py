@@ -189,7 +189,7 @@ def build_tab(parent, app):
 
     ttk.Radiobutton(
         mode_frame,
-        text="Over Duration (cycle range)",
+        text="Over Duration (x-axis in hours)",
         variable=app.cv_mode,
         value="duration",
         command=lambda: _cv_mode_changed(app)
@@ -222,16 +222,14 @@ def build_tab(parent, app):
         command=lambda: _cv_navigate_cycle(app, 1)
     ).pack(side="left", padx=5)
 
-    # Range selection row (Duration mode)
+    # Duration mode info row (no inputs needed, just shows all data)
     app.cv_range_row = ttk.Frame(card4)
-
-    ttk.Label(app.cv_range_row, text="From Cycle:", width=12).pack(side="left")
-    app.cv_cycle_from = tk.StringVar(value="")
-    ttk.Entry(app.cv_range_row, textvariable=app.cv_cycle_from, width=10).pack(side="left", padx=5)
-
-    ttk.Label(app.cv_range_row, text="To Cycle:", width=10).pack(side="left", padx=(15, 0))
-    app.cv_cycle_to = tk.StringVar(value="")
-    ttk.Entry(app.cv_range_row, textvariable=app.cv_cycle_to, width=10).pack(side="left", padx=5)
+    ttk.Label(
+        app.cv_range_row,
+        text="Plots all data with time in hours",
+        font=(PowertechTheme.FONT_FAMILY, 9),
+        foreground="#666"
+    ).pack(side="left")
 
     # Action buttons
     action_frame = ttk.Frame(card4)
@@ -505,64 +503,51 @@ def _cv_plot_single_cycle(app):
         time_data = np.arange(len(df))
 
     # Plot
-    _cv_render_plot(app, df, time_data, cycle_num)
+    _cv_render_plot(app, df, time_data, cycle_num, time_unit="seconds")
 
 
 def _cv_plot_duration(app):
-    """Plot over a cycle range"""
+    """Plot all data over duration with time in hours"""
     if app.cv_df is None and not app.cv_files:
         messagebox.showerror("Error", "Load data first")
         return
 
-    try:
-        cycle_from = int(app.cv_cycle_from.get())
-        cycle_to = int(app.cv_cycle_to.get())
-    except ValueError:
-        messagebox.showerror("Error", "Enter valid cycle range")
-        return
-
     if app.cv_files:
-        # Multi-file mode - concatenate files in range
+        # Multi-file mode - concatenate ALL files
         dfs = []
-        for i in range(cycle_from - 1, min(cycle_to, len(app.cv_files))):
-            df_part = load_table_allow_duplicate_headers(app.cv_files[i])
+        for filepath in app.cv_files:
+            df_part = load_table_allow_duplicate_headers(filepath)
             dfs.append(df_part)
 
         if not dfs:
-            messagebox.showerror("Error", "No files in range")
+            messagebox.showerror("Error", "No files loaded")
             return
 
         df = pd.concat(dfs, ignore_index=True)
 
     else:
-        # Single file mode
-        cycle_col = app.cv_cycle_col.get().strip()
-        if not cycle_col:
-            messagebox.showerror("Error", "Select a Cycle column")
-            return
-
-        app.cv_df[cycle_col] = pd.to_numeric(app.cv_df[cycle_col], errors='coerce')
-        df = app.cv_df[
-            (app.cv_df[cycle_col] >= cycle_from) &
-            (app.cv_df[cycle_col] <= cycle_to)
-        ].copy()
+        # Single file mode - use all data
+        df = app.cv_df.copy()
 
     if df.empty:
-        messagebox.showerror("Error", "No data in range")
+        messagebox.showerror("Error", "No data")
         return
 
-    # Get time column
+    # Get time column and convert to hours
     time_col = app.cv_time_col.get().strip()
     if time_col and time_col in df.columns:
         time_data = pd.to_numeric(df[time_col], errors='coerce').values
         time_data = time_data - time_data[0]
+        # Convert seconds to hours
+        time_data = time_data / 3600.0
     else:
-        time_data = np.arange(len(df))
+        # Assume 1 row = 1 second, convert to hours
+        time_data = np.arange(len(df)) / 3600.0
 
-    _cv_render_plot(app, df, time_data, f"{cycle_from}-{cycle_to}")
+    _cv_render_plot(app, df, time_data, "Full Duration", time_unit="hours")
 
 
-def _cv_render_plot(app, df, time_data, cycle_label):
+def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
     """Render the actual plot"""
     app.cv_fig.clear()
     ax = app.cv_fig.add_subplot(1, 1, 1)
@@ -661,7 +646,10 @@ def _cv_render_plot(app, df, time_data, cycle_label):
         legend_labels.append('T_max')
 
     # Axis labels
-    ax.set_xlabel("Time [s]", fontsize=10, fontweight='bold')
+    if time_unit == "hours":
+        ax.set_xlabel("Time [h]", fontsize=10, fontweight='bold')
+    else:
+        ax.set_xlabel("Time [s]", fontsize=10, fontweight='bold')
     ax.set_ylabel("Pressure [MPa]/ Temperature [C]", fontsize=10, fontweight='bold')
 
     # Grid
@@ -670,7 +658,10 @@ def _cv_render_plot(app, df, time_data, cycle_label):
 
     # Title
     test_name = app.cv_test_name.get().strip() or "Test"
-    title = f"{test_name} Cycle #{cycle_label}"
+    if time_unit == "hours":
+        title = f"{test_name} - {cycle_label}"
+    else:
+        title = f"{test_name} Cycle #{cycle_label}"
     ax.set_title(title, fontsize=12, fontweight='bold')
 
     # Legend at bottom
