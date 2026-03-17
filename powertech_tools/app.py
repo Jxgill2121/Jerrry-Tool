@@ -14,7 +14,8 @@ from powertech_tools.tabs import (
     build_avg_tab,
     build_validation_tab,
     build_asr_tab,
-    build_fuel_systems_tab
+    build_fuel_systems_tab,
+    build_cycle_viewer_tab
 )
 
 
@@ -45,6 +46,7 @@ class PowertechToolsApp(tk.Tk):
         self.tab_val = ttk.Frame(self.nb)
         self.tab_asr = ttk.Frame(self.nb)
         self.tab_fuel_systems = ttk.Frame(self.nb)
+        self.tab_cycle_viewer = ttk.Frame(self.nb)
 
         # Add tabs to notebook
         self.nb.add(self.tab_merge, text="  1) TDMS CONVERSION  ")
@@ -54,6 +56,7 @@ class PowertechToolsApp(tk.Tk):
         self.nb.add(self.tab_val, text="  5) CYLINDERS VALIDATION  ")
         self.nb.add(self.tab_asr, text="  6) ASR VALIDATION  ")
         self.nb.add(self.tab_fuel_systems, text="  7) FUEL SYSTEMS  ")
+        self.nb.add(self.tab_cycle_viewer, text="  8) CYCLE VIEWER  ")
 
         # Build each tab using modular functions
         build_merge_tab(self.tab_merge, self)
@@ -63,6 +66,7 @@ class PowertechToolsApp(tk.Tk):
         build_validation_tab(self.tab_val, self)
         build_asr_tab(self.tab_asr, self)
         build_fuel_systems_tab(self.tab_fuel_systems, self)
+        build_cycle_viewer_tab(self.tab_cycle_viewer, self)
 
     def _build_header(self):
         """Build professional header with company branding"""
