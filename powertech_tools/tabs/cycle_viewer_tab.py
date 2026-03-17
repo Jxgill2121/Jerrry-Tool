@@ -671,8 +671,8 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
 
     # Title
     test_name = app.cv_test_name.get().strip() or "Test"
-    if time_unit == "hours":
-        title = f"{test_name} - {cycle_label}"
+    if cycle_label == "Full Duration":
+        title = test_name
     else:
         title = f"{test_name} Cycle #{cycle_label}"
     ax_pressure.set_title(title, fontsize=12, fontweight='bold')
