@@ -548,9 +548,10 @@ def _cv_plot_duration(app):
 
 
 def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
-    """Render the actual plot"""
+    """Render the actual plot with dual y-axes (pressure left, temperature right)"""
     app.cv_fig.clear()
-    ax = app.cv_fig.add_subplot(1, 1, 1)
+    ax_pressure = app.cv_fig.add_subplot(1, 1, 1)
+    ax_temp = ax_pressure.twinx()  # Second y-axis for temperature
 
     # Define colors matching the Excel chart style
     colors = {
@@ -566,39 +567,37 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
         'T': '#333333',       # Dark gray dashed
     }
 
-    # Plot solid lines for data
+    # Collect handles for combined legend
     legend_handles = []
     legend_labels = []
 
-    # Ptank
+    # Plot Ptank on LEFT axis (pressure)
     ptank_col = app.cv_ptank_col.get().strip()
     if ptank_col and ptank_col in df.columns:
         data = pd.to_numeric(df[ptank_col], errors='coerce').values
-        line, = ax.plot(time_data, data, '-', color=colors['Ptank'], linewidth=1.5, label='Ptank')
+        line, = ax_pressure.plot(time_data, data, '-', color=colors['Ptank'], linewidth=1.5, label='Ptank')
         legend_handles.append(line)
         legend_labels.append('Ptank')
 
-    # Tskin
+    # Plot temperatures on RIGHT axis
     tskin_col = app.cv_tskin_col.get().strip()
     if tskin_col and tskin_col in df.columns:
         data = pd.to_numeric(df[tskin_col], errors='coerce').values
-        line, = ax.plot(time_data, data, '-', color=colors['Tskin'], linewidth=1.5, label='Tskin')
+        line, = ax_temp.plot(time_data, data, '-', color=colors['Tskin'], linewidth=1.5, label='Tskin')
         legend_handles.append(line)
         legend_labels.append('Tskin')
 
-    # Tfluid
     tfluid_col = app.cv_tfluid_col.get().strip()
     if tfluid_col and tfluid_col in df.columns:
         data = pd.to_numeric(df[tfluid_col], errors='coerce').values
-        line, = ax.plot(time_data, data, '-', color=colors['Tfluid'], linewidth=1.5, label='Tfluid')
+        line, = ax_temp.plot(time_data, data, '-', color=colors['Tfluid'], linewidth=1.5, label='Tfluid')
         legend_handles.append(line)
         legend_labels.append('Tfluid')
 
-    # Tair
     tair_col = app.cv_tair_col.get().strip()
     if tair_col and tair_col in df.columns:
         data = pd.to_numeric(df[tair_col], errors='coerce').values
-        line, = ax.plot(time_data, data, '-', color=colors['Tair'], linewidth=1.5, label='Tair')
+        line, = ax_temp.plot(time_data, data, '-', color=colors['Tair'], linewidth=1.5, label='Tair')
         legend_handles.append(line)
         legend_labels.append('Tair')
 
@@ -609,52 +608,57 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
         except (ValueError, AttributeError):
             return None
 
-    # Phigh limits
+    # Pressure limits on LEFT axis
     phigh_min = safe_float(app.cv_phigh_min.get())
     phigh_max = safe_float(app.cv_phigh_max.get())
     if phigh_min is not None:
-        line = ax.axhline(phigh_min, linestyle='--', color=limit_colors['Phigh'], linewidth=1, alpha=0.8)
+        line = ax_pressure.axhline(phigh_min, linestyle='--', color=limit_colors['Phigh'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('Phigh_min')
     if phigh_max is not None:
-        line = ax.axhline(phigh_max, linestyle='--', color=limit_colors['Phigh'], linewidth=1, alpha=0.8)
+        line = ax_pressure.axhline(phigh_max, linestyle='--', color=limit_colors['Phigh'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('Phigh_max')
 
-    # Plow limits
     plow_min = safe_float(app.cv_plow_min.get())
     plow_max = safe_float(app.cv_plow_max.get())
     if plow_min is not None:
-        line = ax.axhline(plow_min, linestyle='--', color=limit_colors['Plow'], linewidth=1, alpha=0.8)
+        line = ax_pressure.axhline(plow_min, linestyle='--', color=limit_colors['Plow'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('Plow_min')
     if plow_max is not None:
-        line = ax.axhline(plow_max, linestyle='--', color=limit_colors['Plow'], linewidth=1, alpha=0.8)
+        line = ax_pressure.axhline(plow_max, linestyle='--', color=limit_colors['Plow'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('Plow_max')
 
-    # Temperature limits
+    # Temperature limits on RIGHT axis
     t_min = safe_float(app.cv_t_min.get())
     t_max = safe_float(app.cv_t_max.get())
     if t_min is not None:
-        line = ax.axhline(t_min, linestyle='--', color=limit_colors['T'], linewidth=1, alpha=0.8)
+        line = ax_temp.axhline(t_min, linestyle='--', color=limit_colors['T'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('T_min')
     if t_max is not None:
-        line = ax.axhline(t_max, linestyle='--', color=limit_colors['T'], linewidth=1, alpha=0.8)
+        line = ax_temp.axhline(t_max, linestyle='--', color=limit_colors['T'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('T_max')
 
     # Axis labels
     if time_unit == "hours":
-        ax.set_xlabel("Time [h]", fontsize=10, fontweight='bold')
+        ax_pressure.set_xlabel("Time [h]", fontsize=10, fontweight='bold')
     else:
-        ax.set_xlabel("Time [s]", fontsize=10, fontweight='bold')
-    ax.set_ylabel("Pressure [MPa]/ Temperature [C]", fontsize=10, fontweight='bold')
+        ax_pressure.set_xlabel("Time [s]", fontsize=10, fontweight='bold')
 
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-')
-    ax.set_facecolor('white')
+    ax_pressure.set_ylabel("Pressure [MPa]", fontsize=10, fontweight='bold', color=colors['Ptank'])
+    ax_temp.set_ylabel("Temperature [°C]", fontsize=10, fontweight='bold', color=colors['Tskin'])
+
+    # Color the tick labels to match
+    ax_pressure.tick_params(axis='y', labelcolor=colors['Ptank'])
+    ax_temp.tick_params(axis='y', labelcolor=colors['Tskin'])
+
+    # Grid (only on primary axis)
+    ax_pressure.grid(True, alpha=0.3, linestyle='-')
+    ax_pressure.set_facecolor('white')
 
     # Title
     test_name = app.cv_test_name.get().strip() or "Test"
@@ -662,11 +666,11 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
         title = f"{test_name} - {cycle_label}"
     else:
         title = f"{test_name} Cycle #{cycle_label}"
-    ax.set_title(title, fontsize=12, fontweight='bold')
+    ax_pressure.set_title(title, fontsize=12, fontweight='bold')
 
-    # Legend at bottom
+    # Legend at bottom (combined from both axes)
     if legend_handles:
-        ax.legend(
+        ax_pressure.legend(
             legend_handles,
             legend_labels,
             loc='upper center',
