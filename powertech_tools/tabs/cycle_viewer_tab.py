@@ -189,7 +189,7 @@ def build_tab(parent, app):
 
     ttk.Radiobutton(
         mode_frame,
-        text="Over Duration (x-axis in hours)",
+        text="Over Duration",
         variable=app.cv_mode,
         value="duration",
         command=lambda: _cv_mode_changed(app)
@@ -222,14 +222,17 @@ def build_tab(parent, app):
         command=lambda: _cv_navigate_cycle(app, 1)
     ).pack(side="left", padx=5)
 
-    # Duration mode info row (no inputs needed, just shows all data)
+    # Duration mode options row
     app.cv_range_row = ttk.Frame(card4)
-    ttk.Label(
+    ttk.Label(app.cv_range_row, text="Time Unit:", width=10).pack(side="left")
+    app.cv_time_unit = tk.StringVar(value="hours")
+    ttk.Combobox(
         app.cv_range_row,
-        text="Plots all data with time in hours",
-        font=(PowertechTheme.FONT_FAMILY, 9),
-        foreground="#666"
-    ).pack(side="left")
+        textvariable=app.cv_time_unit,
+        values=["seconds", "minutes", "hours"],
+        state="readonly",
+        width=10
+    ).pack(side="left", padx=5)
 
     # Action buttons
     action_frame = ttk.Frame(card4)
@@ -533,18 +536,24 @@ def _cv_plot_duration(app):
         messagebox.showerror("Error", "No data")
         return
 
-    # Get time column and convert to hours
+    # Get selected time unit
+    time_unit = app.cv_time_unit.get() if hasattr(app, 'cv_time_unit') else "hours"
+
+    # Conversion factors from seconds
+    unit_divisors = {"seconds": 1.0, "minutes": 60.0, "hours": 3600.0}
+    divisor = unit_divisors.get(time_unit, 3600.0)
+
+    # Get time column and convert to selected unit
     time_col = app.cv_time_col.get().strip()
     if time_col and time_col in df.columns:
         time_data = pd.to_numeric(df[time_col], errors='coerce').values
         time_data = time_data - time_data[0]
-        # Convert seconds to hours
-        time_data = time_data / 3600.0
+        time_data = time_data / divisor
     else:
-        # Assume 1 row = 1 second, convert to hours
-        time_data = np.arange(len(df)) / 3600.0
+        # Assume 1 row = 1 second, convert to selected unit
+        time_data = np.arange(len(df)) / divisor
 
-    _cv_render_plot(app, df, time_data, "Full Duration", time_unit="hours")
+    _cv_render_plot(app, df, time_data, "Full Duration", time_unit=time_unit)
 
 
 def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
