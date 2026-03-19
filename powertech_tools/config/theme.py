@@ -1,4 +1,4 @@
-# VERSION: 2026-01-22 v5.0 - JERRY HITT Team Theme
+# VERSION: 2026-03-19 v6.0 - JERRY HITT Team Theme (Green/Teal)
 # JERRY - HITT Team Analysis Tool (Surrey, BC)
 
 from tkinter import ttk
@@ -19,30 +19,30 @@ POWERTECH_LOGO_BASE64 = """
 # ============================================================
 
 class PowertechTheme:
-    """JERRY HITT Team - Vibrant and bold color scheme"""
+    """JERRY HITT Team - Green/Teal color scheme"""
 
-    # Main colors - vibrant orange and deep blue
-    PRIMARY = "#004E89"          # Deep blue (HITT Team blue)
-    PRIMARY_LIGHT = "#1A6BA8"    # Medium blue
-    PRIMARY_DARK = "#002E54"     # Very dark blue
+    # Main colors - teal and green
+    PRIMARY = "#0D9488"          # Teal
+    PRIMARY_LIGHT = "#14B8A6"    # Light teal
+    PRIMARY_DARK = "#0F766E"     # Dark teal
 
-    ACCENT = "#FF6B35"           # Vibrant orange (JERRY orange)
-    ACCENT_LIGHT = "#FF8C5A"     # Light orange
+    ACCENT = "#10B981"           # Emerald green
+    ACCENT_LIGHT = "#34D399"     # Light green
 
-    SUCCESS = "#38a169"          # Green for success states
-    WARNING = "#FFA500"          # Orange for warnings
-    ERROR = "#e53e3e"            # Red for errors
+    SUCCESS = "#22C55E"          # Green for success states
+    WARNING = "#F59E0B"          # Amber for warnings
+    ERROR = "#EF4444"            # Red for errors
 
     # Neutral colors
-    BG_MAIN = "#f7fafc"          # Very light gray background
-    BG_SECONDARY = "#edf2f7"     # Light gray
+    BG_MAIN = "#F0FDFA"          # Very light teal tint background
+    BG_SECONDARY = "#CCFBF1"     # Light teal
     BG_CARD = "#ffffff"          # White cards
 
-    TEXT_PRIMARY = "#1a202c"     # Almost black
-    TEXT_SECONDARY = "#4a5568"   # Medium gray
-    TEXT_LIGHT = "#718096"       # Light gray
+    TEXT_PRIMARY = "#134E4A"     # Dark teal text
+    TEXT_SECONDARY = "#5F7A78"   # Medium gray-teal
+    TEXT_LIGHT = "#7C9A97"       # Light gray-teal
 
-    BORDER = "#cbd5e0"           # Light border
+    BORDER = "#99F6E4"           # Light teal border
 
     # Fonts - clean and modern
     FONT_FAMILY = "Arial"
