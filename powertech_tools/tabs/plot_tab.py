@@ -164,21 +164,22 @@ def build_tab(parent, app):
     app.graph_grid_container.pack(fill="x")
 
     # Configure column widths for alignment
-    col_widths = [70, 130, 180, 180, 80, 80, 100, 100, 100, 100]
+    col_widths = [70, 130, 100, 180, 180, 80, 80, 100, 100, 100, 100]
     for col, w in enumerate(col_widths):
         app.graph_grid_container.grid_columnconfigure(col, minsize=w)
 
     # Header row
     ttk.Label(app.graph_grid_container, text="Graph", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky="w", padx=(0,5), pady=(0,8))
     ttk.Label(app.graph_grid_container, text="Title", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=1, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Y-Axis Variable 1", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Y-Axis Variable 2 (opt)", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Y-Axis Min", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Y-Axis Max", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Min Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Min Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Max Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Max Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Label", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=2, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Variable 1", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=3, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Variable 2 (opt)", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Min", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y-Axis Max", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Min Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Min Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Max Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Max Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=10, sticky="w", padx=5, pady=(0,8))
 
     app.graph_selectors = []
 
@@ -284,6 +285,7 @@ def _plot_rebuild_graph_rows(app):
         ttk.Label(container, text=f"Graph {i + 1}").grid(row=row_num, column=0, sticky="w", padx=(0,5), pady=3)
 
         title_var = tk.StringVar(value="")
+        y_label_var = tk.StringVar(value="Value")
         y1_var = tk.StringVar(value="")
         y2_var = tk.StringVar(value="")
         y_min_var = tk.StringVar(value="")
@@ -294,21 +296,23 @@ def _plot_rebuild_graph_rows(app):
         max_high_var = tk.StringVar(value="")
 
         ttk.Entry(container, width=15, textvariable=title_var).grid(row=row_num, column=1, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=12, textvariable=y_label_var).grid(row=row_num, column=2, padx=5, pady=3, sticky="w")
 
         y1_cb = ttk.Combobox(container, state="disabled", width=22, textvariable=y1_var, values=[])
         y2_cb = ttk.Combobox(container, state="disabled", width=22, textvariable=y2_var, values=[""])
-        y1_cb.grid(row=row_num, column=2, padx=5, pady=3, sticky="w")
-        y2_cb.grid(row=row_num, column=3, padx=5, pady=3, sticky="w")
+        y1_cb.grid(row=row_num, column=3, padx=5, pady=3, sticky="w")
+        y2_cb.grid(row=row_num, column=4, padx=5, pady=3, sticky="w")
 
-        ttk.Entry(container, width=8, textvariable=y_min_var).grid(row=row_num, column=4, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=8, textvariable=y_max_var).grid(row=row_num, column=5, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=min_low_var).grid(row=row_num, column=6, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=min_high_var).grid(row=row_num, column=7, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=max_low_var).grid(row=row_num, column=8, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=max_high_var).grid(row=row_num, column=9, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=8, textvariable=y_min_var).grid(row=row_num, column=5, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=8, textvariable=y_max_var).grid(row=row_num, column=6, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=min_low_var).grid(row=row_num, column=7, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=min_high_var).grid(row=row_num, column=8, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=max_low_var).grid(row=row_num, column=9, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=max_high_var).grid(row=row_num, column=10, padx=5, pady=3, sticky="w")
 
         app.graph_selectors.append({
             "title_var": title_var,
+            "y_label_var": y_label_var,
             "y1_var": y1_var, "y2_var": y2_var,
             "y1_cb": y1_cb, "y2_cb": y2_cb,
             "y_min_var": y_min_var, "y_max_var": y_max_var,
@@ -494,9 +498,10 @@ def _plot_make(app):
                 return
 
             custom_title = sel["title_var"].get().strip()
+            y_label = sel["y_label_var"].get().strip() or "Value"
 
             if y1_disp or y2_disp:
-                plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title))
+                plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title, y_label))
 
         if not plot_jobs:
             messagebox.showwarning("Warning", "Please select at least one variable")
@@ -513,10 +518,14 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
     """Generate scatter plots"""
     from powertech_tools.config.theme import PowertechTheme
 
+    # Colors: max = red, min = blue
+    COLOR_MAX = '#CC0000'  # Red for max
+    COLOR_MIN = '#0066CC'  # Blue for min
+
     app.fig.clear()
     n = len(plot_jobs)
 
-    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title) in enumerate(plot_jobs, start=1):
+    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title, y_label) in enumerate(plot_jobs, start=1):
         ax = app.fig.add_subplot(n, 1, idx)
 
         x = df[cycle_internal]
@@ -533,19 +542,21 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
             kind = app.plot_internal_kind.get(y_int, "other")
 
             if kind == "min":
-                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.ACCENT, label=y_disp, alpha=0.6)
+                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=COLOR_MIN, label=y_disp, alpha=0.7)
             elif kind == "max":
-                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.ERROR, label=y_disp, alpha=0.6)
+                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=COLOR_MAX, label=y_disp, alpha=0.7)
             else:
-                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.PRIMARY, label=y_disp, alpha=0.6)
+                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.PRIMARY, label=y_disp, alpha=0.7)
 
             labels_for_title.append(y_disp)
 
         plot_series(y1_disp)
         plot_series(y2_disp)
 
-        ax.set_xlabel("Cycle", fontsize=10, fontweight='bold')
-        ax.set_ylabel("Value", fontsize=10, fontweight='bold')
+        # Only show "Cycle" label on the last graph
+        if idx == n:
+            ax.set_xlabel("Cycle", fontsize=10, fontweight='bold')
+        ax.set_ylabel(y_label, fontsize=10, fontweight='bold')
         ax.grid(True, alpha=0.3, linestyle='--')
         if custom_title:
             plot_title = custom_title
@@ -564,15 +575,15 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
         elif y_max is not None:
             ax.set_ylim(top=y_max)
 
-        # Draw limit lines - separate for min and max
+        # Draw limit lines - min = blue, max = red
         if min_low is not None:
-            ax.axhline(min_low, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.7, label=f"Min Lower Limit")
+            ax.axhline(min_low, linestyle=":", linewidth=1.5, color=COLOR_MIN, alpha=0.7, label=f"Min Lower Limit")
         if min_high is not None:
-            ax.axhline(min_high, linestyle=":", linewidth=1.5, color=PowertechTheme.ACCENT, alpha=0.7, label=f"Min Upper Limit")
+            ax.axhline(min_high, linestyle=":", linewidth=1.5, color=COLOR_MIN, alpha=0.7, label=f"Min Upper Limit")
         if max_low is not None:
-            ax.axhline(max_low, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.7, label=f"Max Lower Limit")
+            ax.axhline(max_low, linestyle="--", linewidth=1.5, color=COLOR_MAX, alpha=0.7, label=f"Max Lower Limit")
         if max_high is not None:
-            ax.axhline(max_high, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.7, label=f"Max Upper Limit")
+            ax.axhline(max_high, linestyle="--", linewidth=1.5, color=COLOR_MAX, alpha=0.7, label=f"Max Upper Limit")
 
         ax.legend(fontsize=14, loc='best')
 
