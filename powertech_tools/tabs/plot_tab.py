@@ -542,11 +542,11 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
             kind = app.plot_internal_kind.get(y_int, "other")
 
             if kind == "min":
-                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=COLOR_MIN, label=y_disp, alpha=0.7)
+                ax.plot(x, y, marker="o", linestyle="None", markersize=2, color=COLOR_MIN, label=y_disp, alpha=0.7)
             elif kind == "max":
-                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=COLOR_MAX, label=y_disp, alpha=0.7)
+                ax.plot(x, y, marker="o", linestyle="None", markersize=2, color=COLOR_MAX, label=y_disp, alpha=0.7)
             else:
-                ax.plot(x, y, marker="o", linestyle="None", markersize=4, color=PowertechTheme.PRIMARY, label=y_disp, alpha=0.7)
+                ax.plot(x, y, marker="o", linestyle="None", markersize=2, color=PowertechTheme.PRIMARY, label=y_disp, alpha=0.7)
 
             labels_for_title.append(y_disp)
 
