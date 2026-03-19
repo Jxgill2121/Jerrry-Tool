@@ -1,5 +1,5 @@
-# VERSION: 2026-03-19 v6.0 - JERRY HITT Team Theme (Green/Teal)
-# JERRY - HITT Team Analysis Tool (Surrey, BC)
+# VERSION: 2026-03-19 v6.0 - Jipiti HITT Team Theme (Green/Teal)
+# Jipiti - HITT Team Analysis Tool (Surrey, BC)
 
 from tkinter import ttk
 
@@ -19,7 +19,7 @@ POWERTECH_LOGO_BASE64 = """
 # ============================================================
 
 class PowertechTheme:
-    """JERRY HITT Team - Green/Teal color scheme"""
+    """Jipiti HITT Team - Green/Teal color scheme"""
 
     # Main colors - teal and green
     PRIMARY = "#0D9488"          # Teal

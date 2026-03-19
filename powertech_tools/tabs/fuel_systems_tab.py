@@ -802,7 +802,7 @@ def _fs_export_results(app):
         with open(out_path, "w", encoding="utf-8") as f:
             # Header with branding
             f.write("=" * 80 + "\n")
-            f.write("                  JERRY - HITT TEAM ANALYSIS TOOL\n")
+            f.write("                  Jipiti - HITT TEAM ANALYSIS TOOL\n")
             f.write("                   FUEL SYSTEMS VALIDATION REPORT\n")
             f.write("=" * 80 + "\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
