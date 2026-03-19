@@ -70,49 +70,68 @@ class PowertechToolsApp(tk.Tk):
 
     def _build_header(self):
         """Build professional header with company branding"""
-        header = tk.Frame(self, bg="white", height=120)
+        header = tk.Frame(self, bg="white", height=100)
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
 
-        # Try to load embedded logo
-        logo_label = None
+        # Create a cute cat logo using Canvas
+        cat_canvas = tk.Canvas(header, width=80, height=80, bg="white", highlightthickness=0)
+        cat_canvas.pack(side="left", padx=(30, 5), pady=10)
 
-        try:
-            if POWERTECH_LOGO_BASE64.strip():
-                from PIL import Image, ImageTk
+        # Cat colors
+        cat_color = "#0D9488"  # Teal
+        cat_dark = "#0F766E"   # Dark teal
 
-                # Decode base64 to image
-                logo_data = base64.b64decode(POWERTECH_LOGO_BASE64.strip())
-                logo_img = Image.open(BytesIO(logo_data))
+        # Draw cat face (circle)
+        cat_canvas.create_oval(15, 20, 65, 70, fill=cat_color, outline=cat_dark, width=2)
 
-                # Resize to fit header (maintain aspect ratio)
-                logo_img.thumbnail((450, 100), Image.Resampling.LANCZOS)
-                logo_photo = ImageTk.PhotoImage(logo_img)
+        # Draw ears (triangles)
+        cat_canvas.create_polygon(18, 28, 28, 8, 38, 28, fill=cat_color, outline=cat_dark, width=2)  # Left ear
+        cat_canvas.create_polygon(42, 28, 52, 8, 62, 28, fill=cat_color, outline=cat_dark, width=2)  # Right ear
 
-                logo_label = tk.Label(header, image=logo_photo, bg="white")
-                logo_label.image = logo_photo  # Keep a reference
-                logo_label.pack(side="left", padx=30, pady=10)
-        except Exception as e:
-            # If logo fails to load, fall back to text
-            print(f"Logo not loaded: {e}")
+        # Inner ears (pink)
+        cat_canvas.create_polygon(23, 26, 28, 14, 33, 26, fill="#FDA4AF", outline="")  # Left inner
+        cat_canvas.create_polygon(47, 26, 52, 14, 57, 26, fill="#FDA4AF", outline="")  # Right inner
 
-        # If no logo loaded, use clean text branding
-        if logo_label is None:
-            title = tk.Label(
-                header,
-                text="JERRY",
-                font=("Arial", 32, "bold"),
-                bg="white",
-                fg="#0D9488"  # Teal (matches theme)
-            )
-            title.pack(side="left", padx=(30, 10), pady=10)
+        # Eyes (white with dark pupils)
+        cat_canvas.create_oval(25, 35, 35, 48, fill="white", outline=cat_dark, width=1)  # Left eye
+        cat_canvas.create_oval(45, 35, 55, 48, fill="white", outline=cat_dark, width=1)  # Right eye
 
-        # Subtitle with team branding
+        # Pupils
+        cat_canvas.create_oval(28, 38, 33, 46, fill=cat_dark, outline="")  # Left pupil
+        cat_canvas.create_oval(48, 38, 53, 46, fill=cat_dark, outline="")  # Right pupil
+
+        # Nose (small triangle)
+        cat_canvas.create_polygon(40, 50, 36, 55, 44, 55, fill="#FDA4AF", outline="")
+
+        # Mouth (simple smile)
+        cat_canvas.create_arc(32, 52, 42, 62, start=200, extent=140, style="arc", outline=cat_dark, width=2)
+        cat_canvas.create_arc(38, 52, 48, 62, start=200, extent=140, style="arc", outline=cat_dark, width=2)
+
+        # Whiskers
+        cat_canvas.create_line(15, 50, 28, 52, fill=cat_dark, width=1)
+        cat_canvas.create_line(15, 55, 28, 55, fill=cat_dark, width=1)
+        cat_canvas.create_line(15, 60, 28, 58, fill=cat_dark, width=1)
+        cat_canvas.create_line(65, 50, 52, 52, fill=cat_dark, width=1)
+        cat_canvas.create_line(65, 55, 52, 55, fill=cat_dark, width=1)
+        cat_canvas.create_line(65, 60, 52, 58, fill=cat_dark, width=1)
+
+        # JERRY text
+        title = tk.Label(
+            header,
+            text="JERRY",
+            font=("Arial", 36, "bold"),
+            bg="white",
+            fg="#0D9488"
+        )
+        title.pack(side="left", padx=(5, 15), pady=10)
+
+        # Subtitle
         subtitle = tk.Label(
             header,
             text="HITT Team Analysis Tool",
-            font=("Arial", 14),
+            font=("Arial", 12),
             bg="white",
-            fg="#5F7A78"  # Muted gray-teal
+            fg="#5F7A78"
         )
         subtitle.pack(side="left", padx=(0, 30))
