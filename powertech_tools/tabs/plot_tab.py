@@ -574,7 +574,7 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
         if max_high is not None:
             ax.axhline(max_high, linestyle="--", linewidth=1.5, color=PowertechTheme.ERROR, alpha=0.7, label=f"Max Upper Limit")
 
-        ax.legend(fontsize=11, loc='best')
+        ax.legend(fontsize=14, loc='best')
 
     app.fig.tight_layout()
     app.canvas.draw()

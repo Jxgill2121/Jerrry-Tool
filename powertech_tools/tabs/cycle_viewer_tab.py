@@ -685,7 +685,7 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
             loc='upper center',
             bbox_to_anchor=(0.5, -0.12),
             ncol=min(len(legend_labels), 6),
-            fontsize=11,
+            fontsize=14,
             frameon=True
         )
 
