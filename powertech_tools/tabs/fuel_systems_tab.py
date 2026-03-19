@@ -1026,7 +1026,7 @@ def _fs_plot_cycle(app, cycle_idx: int):
         ax.spines['top'].set_color(GRID_COLOR)
         ax.spines['left'].set_color(GRID_COLOR)
         ax.spines['right'].set_color(GRID_COLOR)
-        legend = ax.legend(fontsize=7, loc='best', ncol=2, facecolor=DARK_BG, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
+        legend = ax.legend(fontsize=10, loc='best', ncol=2, facecolor=DARK_BG, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
 
         # Overall title
         status_color = '#00ff88' if result['status'] == 'PASS' else '#ff4d4d'
