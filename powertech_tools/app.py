@@ -74,47 +74,55 @@ class PowertechToolsApp(tk.Tk):
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
 
-        # Create a cute cat logo using Canvas
-        cat_canvas = tk.Canvas(header, width=80, height=80, bg="white", highlightthickness=0)
-        cat_canvas.pack(side="left", padx=(30, 5), pady=10)
+        # Create Jerry the mouse logo using Canvas
+        mouse_canvas = tk.Canvas(header, width=85, height=80, bg="white", highlightthickness=0)
+        mouse_canvas.pack(side="left", padx=(30, 5), pady=10)
 
-        # Cat colors
-        cat_color = "#0D9488"  # Teal
-        cat_dark = "#0F766E"   # Dark teal
+        # Mouse colors (brown like Jerry)
+        mouse_color = "#C4A484"  # Light brown/tan
+        mouse_dark = "#8B7355"   # Darker brown
+        mouse_inner = "#F5DEB3"  # Cream/beige for inner areas
+        pink = "#FFB6C1"         # Light pink
 
-        # Draw cat face (circle)
-        cat_canvas.create_oval(15, 20, 65, 70, fill=cat_color, outline=cat_dark, width=2)
-
-        # Draw ears (triangles)
-        cat_canvas.create_polygon(18, 28, 28, 8, 38, 28, fill=cat_color, outline=cat_dark, width=2)  # Left ear
-        cat_canvas.create_polygon(42, 28, 52, 8, 62, 28, fill=cat_color, outline=cat_dark, width=2)  # Right ear
+        # Draw big round ears (behind head)
+        mouse_canvas.create_oval(5, 10, 35, 40, fill=mouse_color, outline=mouse_dark, width=2)   # Left ear
+        mouse_canvas.create_oval(50, 10, 80, 40, fill=mouse_color, outline=mouse_dark, width=2)  # Right ear
 
         # Inner ears (pink)
-        cat_canvas.create_polygon(23, 26, 28, 14, 33, 26, fill="#FDA4AF", outline="")  # Left inner
-        cat_canvas.create_polygon(47, 26, 52, 14, 57, 26, fill="#FDA4AF", outline="")  # Right inner
+        mouse_canvas.create_oval(12, 17, 28, 33, fill=pink, outline="")   # Left inner
+        mouse_canvas.create_oval(57, 17, 73, 33, fill=pink, outline="")   # Right inner
 
-        # Eyes (white with dark pupils)
-        cat_canvas.create_oval(25, 35, 35, 48, fill="white", outline=cat_dark, width=1)  # Left eye
-        cat_canvas.create_oval(45, 35, 55, 48, fill="white", outline=cat_dark, width=1)  # Right eye
+        # Draw mouse face (oval, slightly wider)
+        mouse_canvas.create_oval(18, 25, 67, 75, fill=mouse_color, outline=mouse_dark, width=2)
 
-        # Pupils
-        cat_canvas.create_oval(28, 38, 33, 46, fill=cat_dark, outline="")  # Left pupil
-        cat_canvas.create_oval(48, 38, 53, 46, fill=cat_dark, outline="")  # Right pupil
+        # Cream colored face/belly area
+        mouse_canvas.create_oval(25, 40, 60, 72, fill=mouse_inner, outline="")
 
-        # Nose (small triangle)
-        cat_canvas.create_polygon(40, 50, 36, 55, 44, 55, fill="#FDA4AF", outline="")
+        # Eyes (big and expressive like Jerry)
+        mouse_canvas.create_oval(26, 35, 40, 52, fill="white", outline=mouse_dark, width=1)  # Left eye
+        mouse_canvas.create_oval(45, 35, 59, 52, fill="white", outline=mouse_dark, width=1)  # Right eye
 
-        # Mouth (simple smile)
-        cat_canvas.create_arc(32, 52, 42, 62, start=200, extent=140, style="arc", outline=cat_dark, width=2)
-        cat_canvas.create_arc(38, 52, 48, 62, start=200, extent=140, style="arc", outline=cat_dark, width=2)
+        # Pupils (looking slightly to the side)
+        mouse_canvas.create_oval(31, 40, 38, 49, fill="black", outline="")  # Left pupil
+        mouse_canvas.create_oval(50, 40, 57, 49, fill="black", outline="")  # Right pupil
+
+        # Eye shine
+        mouse_canvas.create_oval(33, 41, 36, 44, fill="white", outline="")  # Left shine
+        mouse_canvas.create_oval(52, 41, 55, 44, fill="white", outline="")  # Right shine
+
+        # Nose (round pink nose)
+        mouse_canvas.create_oval(38, 52, 47, 60, fill=pink, outline=mouse_dark, width=1)
+
+        # Smile
+        mouse_canvas.create_arc(32, 58, 53, 72, start=200, extent=140, style="arc", outline=mouse_dark, width=2)
 
         # Whiskers
-        cat_canvas.create_line(15, 50, 28, 52, fill=cat_dark, width=1)
-        cat_canvas.create_line(15, 55, 28, 55, fill=cat_dark, width=1)
-        cat_canvas.create_line(15, 60, 28, 58, fill=cat_dark, width=1)
-        cat_canvas.create_line(65, 50, 52, 52, fill=cat_dark, width=1)
-        cat_canvas.create_line(65, 55, 52, 55, fill=cat_dark, width=1)
-        cat_canvas.create_line(65, 60, 52, 58, fill=cat_dark, width=1)
+        mouse_canvas.create_line(10, 55, 28, 58, fill=mouse_dark, width=1)
+        mouse_canvas.create_line(10, 62, 28, 62, fill=mouse_dark, width=1)
+        mouse_canvas.create_line(10, 69, 28, 66, fill=mouse_dark, width=1)
+        mouse_canvas.create_line(75, 55, 57, 58, fill=mouse_dark, width=1)
+        mouse_canvas.create_line(75, 62, 57, 62, fill=mouse_dark, width=1)
+        mouse_canvas.create_line(75, 69, 57, 66, fill=mouse_dark, width=1)
 
         # JERRY text
         title = tk.Label(
