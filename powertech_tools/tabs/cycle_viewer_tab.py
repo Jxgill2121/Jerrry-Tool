@@ -171,6 +171,15 @@ def build_tab(parent, app):
     app.cv_t_max = tk.StringVar(value="")
     ttk.Entry(limits_frame, textvariable=app.cv_t_max, width=10).grid(row=2, column=3, padx=5, pady=2)
 
+    # Y-axis ticks (number of divisions)
+    ttk.Label(limits_frame, text="P Ticks:", width=10).grid(row=3, column=0, sticky="w")
+    app.cv_p_ticks = tk.StringVar(value="")
+    ttk.Entry(limits_frame, textvariable=app.cv_p_ticks, width=10).grid(row=3, column=1, padx=5, pady=2)
+
+    ttk.Label(limits_frame, text="T Ticks:", width=10).grid(row=3, column=2, sticky="w", padx=(15, 0))
+    app.cv_t_ticks = tk.StringVar(value="")
+    ttk.Entry(limits_frame, textvariable=app.cv_t_ticks, width=10).grid(row=3, column=3, padx=5, pady=2)
+
     # Mode and cycle selection card
     card4 = ttk.LabelFrame(f, text="View Mode", padding=20)
     card4.pack(fill="x", pady=(0, 15))
@@ -664,6 +673,24 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
     # Color the tick labels to match
     ax_pressure.tick_params(axis='y', labelcolor=colors['Ptank'])
     ax_temp.tick_params(axis='y', labelcolor=colors['Tskin'])
+
+    # Apply Y-axis ticks if specified
+    def safe_int(s):
+        try:
+            return int(s) if s.strip() else None
+        except (ValueError, AttributeError):
+            return None
+
+    p_ticks = safe_int(app.cv_p_ticks.get())
+    t_ticks = safe_int(app.cv_t_ticks.get())
+
+    if p_ticks is not None and p_ticks > 1:
+        p_ylim = ax_pressure.get_ylim()
+        ax_pressure.set_yticks(np.linspace(p_ylim[0], p_ylim[1], p_ticks))
+
+    if t_ticks is not None and t_ticks > 1:
+        t_ylim = ax_temp.get_ylim()
+        ax_temp.set_yticks(np.linspace(t_ylim[0], t_ylim[1], t_ticks))
 
     # Grid (only on primary axis)
     ax_pressure.grid(True, alpha=0.3, linestyle='-')

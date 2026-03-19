@@ -164,7 +164,7 @@ def build_tab(parent, app):
     app.graph_grid_container.pack(fill="x")
 
     # Configure column widths for alignment
-    col_widths = [70, 130, 100, 180, 180, 80, 80, 100, 100, 100, 100]
+    col_widths = [70, 130, 100, 180, 180, 80, 80, 60, 100, 100, 100, 100]
     for col, w in enumerate(col_widths):
         app.graph_grid_container.grid_columnconfigure(col, minsize=w)
 
@@ -176,10 +176,11 @@ def build_tab(parent, app):
     ttk.Label(app.graph_grid_container, text="Y-Axis Variable 2 (opt)", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=4, sticky="w", padx=5, pady=(0,8))
     ttk.Label(app.graph_grid_container, text="Y-Axis Min", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=5, sticky="w", padx=5, pady=(0,8))
     ttk.Label(app.graph_grid_container, text="Y-Axis Max", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=6, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Min Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Min Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Max Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5, pady=(0,8))
-    ttk.Label(app.graph_grid_container, text="Max Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=10, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Y Ticks", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=7, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Min Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=8, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Min Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=9, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Max Lower\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=10, sticky="w", padx=5, pady=(0,8))
+    ttk.Label(app.graph_grid_container, text="Max Upper\nBound", font=(PowertechTheme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=11, sticky="w", padx=5, pady=(0,8))
 
     app.graph_selectors = []
 
@@ -290,6 +291,7 @@ def _plot_rebuild_graph_rows(app):
         y2_var = tk.StringVar(value="")
         y_min_var = tk.StringVar(value="")
         y_max_var = tk.StringVar(value="")
+        y_ticks_var = tk.StringVar(value="")
         min_low_var = tk.StringVar(value="")
         min_high_var = tk.StringVar(value="")
         max_low_var = tk.StringVar(value="")
@@ -305,10 +307,11 @@ def _plot_rebuild_graph_rows(app):
 
         ttk.Entry(container, width=8, textvariable=y_min_var).grid(row=row_num, column=5, padx=5, pady=3, sticky="w")
         ttk.Entry(container, width=8, textvariable=y_max_var).grid(row=row_num, column=6, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=min_low_var).grid(row=row_num, column=7, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=min_high_var).grid(row=row_num, column=8, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=max_low_var).grid(row=row_num, column=9, padx=5, pady=3, sticky="w")
-        ttk.Entry(container, width=10, textvariable=max_high_var).grid(row=row_num, column=10, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=6, textvariable=y_ticks_var).grid(row=row_num, column=7, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=min_low_var).grid(row=row_num, column=8, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=min_high_var).grid(row=row_num, column=9, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=max_low_var).grid(row=row_num, column=10, padx=5, pady=3, sticky="w")
+        ttk.Entry(container, width=10, textvariable=max_high_var).grid(row=row_num, column=11, padx=5, pady=3, sticky="w")
 
         app.graph_selectors.append({
             "title_var": title_var,
@@ -316,6 +319,7 @@ def _plot_rebuild_graph_rows(app):
             "y1_var": y1_var, "y2_var": y2_var,
             "y1_cb": y1_cb, "y2_cb": y2_cb,
             "y_min_var": y_min_var, "y_max_var": y_max_var,
+            "y_ticks_var": y_ticks_var,
             "min_low_var": min_low_var, "min_high_var": min_high_var,
             "max_low_var": max_low_var, "max_high_var": max_high_var
         })
@@ -488,6 +492,7 @@ def _plot_make(app):
             y2_disp = sel["y2_var"].get().strip()
             y_min = safe_float(sel["y_min_var"].get())
             y_max = safe_float(sel["y_max_var"].get())
+            y_ticks = safe_int(sel["y_ticks_var"].get())
             min_low = safe_float(sel["min_low_var"].get())
             min_high = safe_float(sel["min_high_var"].get())
             max_low = safe_float(sel["max_low_var"].get())
@@ -496,12 +501,15 @@ def _plot_make(app):
             if any(x == "INVALID" for x in [y_min, y_max, min_low, min_high, max_low, max_high]):
                 messagebox.showerror("Error", f"Graph {i+1}: limits must be numeric")
                 return
+            if y_ticks == "INVALID":
+                messagebox.showerror("Error", f"Graph {i+1}: Y Ticks must be an integer")
+                return
 
             custom_title = sel["title_var"].get().strip()
             y_label = sel["y_label_var"].get().strip() or "Value"
 
             if y1_disp or y2_disp:
-                plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title, y_label))
+                plot_jobs.append((i + 1, y1_disp, y2_disp, y_min, y_max, y_ticks, min_low, min_high, max_low, max_high, custom_title, y_label))
 
         if not plot_jobs:
             messagebox.showwarning("Warning", "Please select at least one variable")
@@ -517,6 +525,7 @@ def _plot_make(app):
 def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
     """Generate scatter plots"""
     from powertech_tools.config.theme import PowertechTheme
+    import numpy as np
 
     # Colors: max = red, min = blue
     COLOR_MAX = '#CC0000'  # Red for max
@@ -525,7 +534,7 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
     app.fig.clear()
     n = len(plot_jobs)
 
-    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, min_low, min_high, max_low, max_high, custom_title, y_label) in enumerate(plot_jobs, start=1):
+    for idx, (graph_num, y1_disp, y2_disp, y_min, y_max, y_ticks, min_low, min_high, max_low, max_high, custom_title, y_label) in enumerate(plot_jobs, start=1):
         ax = app.fig.add_subplot(n, 1, idx)
 
         x = df[cycle_internal]
@@ -574,6 +583,10 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
             ax.set_ylim(bottom=y_min)
         elif y_max is not None:
             ax.set_ylim(top=y_max)
+
+        # Set Y-axis ticks if specified
+        if y_ticks is not None and y_ticks > 1 and y_min is not None and y_max is not None:
+            ax.set_yticks(np.linspace(y_min, y_max, y_ticks))
 
         # Draw limit lines - min = blue, max = red
         if min_low is not None:
