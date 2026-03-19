@@ -96,23 +96,23 @@ class PowertechToolsApp(tk.Tk):
             # If logo fails to load, fall back to text
             print(f"Logo not loaded: {e}")
 
-        # If no logo loaded, use text with bold, fun font
+        # If no logo loaded, use clean text branding
         if logo_label is None:
             title = tk.Label(
                 header,
                 text="JERRY",
-                font=("Impact", 38, "bold"),  # Bold, impactful font
+                font=("Arial", 32, "bold"),
                 bg="white",
-                fg="#FF6B35"  # Vibrant orange
+                fg="#0D9488"  # Teal (matches theme)
             )
-            title.pack(side="left", padx=30, pady=10)
+            title.pack(side="left", padx=(30, 10), pady=10)
 
         # Subtitle with team branding
         subtitle = tk.Label(
             header,
             text="HITT Team Analysis Tool",
-            font=("Arial", 16, "bold"),
+            font=("Arial", 14),
             bg="white",
-            fg="#004E89"  # Deep blue
+            fg="#5F7A78"  # Muted gray-teal
         )
         subtitle.pack(side="left", padx=(0, 30))
