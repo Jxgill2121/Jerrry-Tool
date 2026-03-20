@@ -25,7 +25,7 @@ class PowertechToolsApp(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title("Jipiti - HITT Team Analysis Tool")
+        self.title("Jerry - HITT Team Analysis Tool")
         self.geometry("1500x950")
 
         # Apply theme
@@ -124,10 +124,10 @@ class PowertechToolsApp(tk.Tk):
         mouse_canvas.create_line(75, 62, 57, 62, fill=mouse_dark, width=1)
         mouse_canvas.create_line(75, 69, 57, 66, fill=mouse_dark, width=1)
 
-        # Jipiti text
+        # Jerry text
         title = tk.Label(
             header,
-            text="Jipiti",
+            text="Jerry",
             font=("Arial", 36, "bold"),
             bg="white",
             fg="#0D9488"
