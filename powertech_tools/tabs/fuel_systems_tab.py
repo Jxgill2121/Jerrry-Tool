@@ -465,11 +465,15 @@ def _fs_refresh_preset_list(app):
 
 
 def _fs_save_preset(app):
-    """Save current validation settings as a preset"""
+    """Save current validation settings as a preset to a user-chosen file"""
     try:
-        preset_name = app.fs_preset_name_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please enter a preset name")
+        # Ask user where to save
+        filepath = filedialog.asksaveasfilename(
+            title="Save Parameter Preset",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filepath:
             return
 
         # Collect settings
@@ -501,13 +505,12 @@ def _fs_save_preset(app):
             'param_limits': param_limits
         }
 
-        save_preset(preset_name, config)
-        _fs_refresh_preset_list(app)
-        app.fs_preset_var.set(preset_name)
-        app.fs_preset_status.set(f"✓ Saved '{preset_name}'")
-        app.fs_preset_name_var.set("")
+        import json
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
 
-        # Clear status after 3 seconds
+        import os
+        app.fs_preset_status.set(f"✓ Saved to {os.path.basename(filepath)}")
         app.after(3000, lambda: app.fs_preset_status.set(""))
 
     except Exception as e:
@@ -515,16 +518,22 @@ def _fs_save_preset(app):
 
 
 def _fs_load_preset(app):
-    """Load a preset and apply it to the validation settings"""
+    """Load a preset from a user-chosen file"""
     try:
-        preset_name = app.fs_preset_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please select a preset")
+        # Ask user which file to load
+        filepath = filedialog.askopenfilename(
+            title="Load Parameter Preset",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filepath:
             return
 
-        preset_data = get_preset(preset_name)
+        import json
+        with open(filepath, "r", encoding="utf-8") as f:
+            preset_data = json.load(f)
+
         if not preset_data:
-            messagebox.showerror("Error", f"Preset '{preset_name}' not found")
+            messagebox.showerror("Error", "Preset file is empty")
             return
 
         # Apply settings
@@ -551,7 +560,8 @@ def _fs_load_preset(app):
                 if 'max' in limits:
                     app.fs_param_max_vars[param].set(str(limits['max']))
 
-        app.fs_preset_status.set(f"✓ Loaded '{preset_name}'")
+        import os
+        app.fs_preset_status.set(f"✓ Loaded {os.path.basename(filepath)}")
         app.after(3000, lambda: app.fs_preset_status.set(""))
 
     except Exception as e:

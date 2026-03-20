@@ -368,11 +368,15 @@ def _refresh_preset_list(app):
 
 
 def _save_preset(app):
-    """Save current graph settings as a preset"""
+    """Save current graph settings as a preset to a user-chosen file"""
     try:
-        preset_name = app.preset_name_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please enter a preset name")
+        # Ask user where to save
+        filepath = filedialog.asksaveasfilename(
+            title="Save Parameter Preset",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filepath:
             return
 
         # Collect current settings from all graph rows
@@ -390,13 +394,12 @@ def _save_preset(app):
             }
             graph_configs.append(config)
 
-        save_preset(preset_name, graph_configs)
-        _refresh_preset_list(app)
-        app.preset_var.set(preset_name)
-        app.preset_status.set(f"✓ Saved '{preset_name}'")
-        app.preset_name_var.set("")
+        import json
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(graph_configs, f, indent=2)
 
-        # Clear status after 3 seconds
+        import os
+        app.preset_status.set(f"✓ Saved to {os.path.basename(filepath)}")
         app.after(3000, lambda: app.preset_status.set(""))
 
     except Exception as e:
@@ -404,16 +407,22 @@ def _save_preset(app):
 
 
 def _load_preset(app):
-    """Load a preset and apply it to the graph settings"""
+    """Load a preset from a user-chosen file"""
     try:
-        preset_name = app.preset_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please select a preset")
+        # Ask user which file to load
+        filepath = filedialog.askopenfilename(
+            title="Load Parameter Preset",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filepath:
             return
 
-        preset_data = get_preset(preset_name)
+        import json
+        with open(filepath, "r", encoding="utf-8") as f:
+            preset_data = json.load(f)
+
         if not preset_data:
-            messagebox.showerror("Error", f"Preset '{preset_name}' not found")
+            messagebox.showerror("Error", "Preset file is empty")
             return
 
         # Ensure we have enough graph rows
@@ -425,16 +434,17 @@ def _load_preset(app):
         for i, config in enumerate(preset_data):
             if i < len(app.graph_selectors):
                 sel = app.graph_selectors[i]
-                sel["y1_var"].set(config.get("y1", ""))
-                sel["y2_var"].set(config.get("y2", ""))
-                sel["y_min_var"].set(config.get("y_min", ""))
-                sel["y_max_var"].set(config.get("y_max", ""))
-                sel["min_low_var"].set(config.get("min_low", ""))
-                sel["min_high_var"].set(config.get("min_high", ""))
-                sel["max_low_var"].set(config.get("max_low", ""))
-                sel["max_high_var"].set(config.get("max_high", ""))
+                sel["y1_var"].set(config.get("y1", "") or config.get("y1_var", ""))
+                sel["y2_var"].set(config.get("y2", "") or config.get("y2_var", ""))
+                sel["y_min_var"].set(config.get("y_min", "") or config.get("y_min_var", ""))
+                sel["y_max_var"].set(config.get("y_max", "") or config.get("y_max_var", ""))
+                sel["min_low_var"].set(config.get("min_low", "") or config.get("min_low_var", ""))
+                sel["min_high_var"].set(config.get("min_high", "") or config.get("min_high_var", ""))
+                sel["max_low_var"].set(config.get("max_low", "") or config.get("max_low_var", ""))
+                sel["max_high_var"].set(config.get("max_high", "") or config.get("max_high_var", ""))
 
-        app.preset_status.set(f"✓ Loaded '{preset_name}'")
+        import os
+        app.preset_status.set(f"✓ Loaded {os.path.basename(filepath)}")
         app.after(3000, lambda: app.preset_status.set(""))
 
     except Exception as e:
