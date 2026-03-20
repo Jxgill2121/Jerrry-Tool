@@ -4,9 +4,10 @@
 import base64
 import tkinter as tk
 from io import BytesIO
-from tkinter import ttk
+from tkinter import ttk, filedialog, messagebox
 
 from powertech_tools.config.theme import PowertechTheme, apply_powertech_theme, POWERTECH_LOGO_BASE64
+from powertech_tools.utils import plot_presets, fuel_systems_presets
 from powertech_tools.tabs import (
     build_merge_tab,
     build_maxmin_tab,
@@ -143,3 +144,27 @@ class PowertechToolsApp(tk.Tk):
             fg="#5F7A78"
         )
         subtitle.pack(side="left", padx=(0, 30))
+
+        # Settings button on the right
+        settings_btn = tk.Button(
+            header,
+            text="⚙ Set Save Location",
+            font=("Arial", 10),
+            bg="#0D9488",
+            fg="white",
+            activebackground="#0F766E",
+            activeforeground="white",
+            relief="flat",
+            padx=15,
+            pady=5,
+            command=self._choose_save_location
+        )
+        settings_btn.pack(side="right", padx=30, pady=30)
+
+    def _choose_save_location(self):
+        """Let user choose where to save presets"""
+        folder = filedialog.askdirectory(title="Choose folder to save settings")
+        if folder:
+            plot_presets.set_save_location(f"{folder}/plot_presets.json")
+            fuel_systems_presets.set_save_location(f"{folder}/fuel_systems_presets.json")
+            messagebox.showinfo("Settings", f"Settings will be saved to:\n{folder}")

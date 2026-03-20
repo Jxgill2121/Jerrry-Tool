@@ -82,13 +82,13 @@ def build_tab(parent, app):
     app.cb_cv_cycle.pack(side="left", padx=5)
     app.cb_cv_cycle.bind("<<ComboboxSelected>>", lambda e: _cv_update_cycle_list(app))
 
-    # Test name entry
+    # Graph title entry
     name_frame = ttk.Frame(card1)
     name_frame.pack(fill="x", pady=5)
-    ttk.Label(name_frame, text="Test Name:", width=12).pack(side="left")
+    ttk.Label(name_frame, text="Graph Title:", width=12).pack(side="left")
     app.cv_test_name = tk.StringVar(value="")
     ttk.Entry(name_frame, textvariable=app.cv_test_name, width=60).pack(side="left", padx=5)
-    ttk.Label(name_frame, text="(appears in plot title)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left")
+    ttk.Label(name_frame, text="(e.g. PL-006117)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left")
 
     # Channel mapping card
     card2 = ttk.LabelFrame(f, text="Channel Mapping", padding=20)

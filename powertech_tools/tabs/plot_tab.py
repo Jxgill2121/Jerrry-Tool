@@ -73,6 +73,15 @@ def build_tab(parent, app):
     app.plot_cycle_from = tk.StringVar(value="")
     app.plot_cycle_to = tk.StringVar(value="")
 
+    # Main title for all plots
+    title_row = ttk.Frame(config_card)
+    title_row.pack(fill="x", pady=(0, 10))
+
+    ttk.Label(title_row, text="Main Title:", width=15).pack(side="left")
+    app.plot_main_title = tk.StringVar(value="")
+    ttk.Entry(title_row, textvariable=app.plot_main_title, width=40).pack(side="left", padx=10)
+    ttk.Label(title_row, text="(e.g. PL-006117)", style='Subtitle.TLabel').pack(side="left", padx=5)
+
     # Cycle settings
     cycle_row = ttk.Frame(config_card)
     cycle_row.pack(fill="x", pady=(0, 10))
@@ -600,7 +609,13 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
 
         ax.legend(fontsize=14, loc='best')
 
-    app.fig.tight_layout()
+    # Add main title if specified
+    main_title = app.plot_main_title.get().strip()
+    if main_title:
+        app.fig.suptitle(main_title, fontsize=14, fontweight='bold', y=0.98)
+        app.fig.tight_layout(rect=[0, 0, 1, 0.96])
+    else:
+        app.fig.tight_layout()
     app.canvas.draw()
 
 
