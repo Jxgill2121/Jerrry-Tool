@@ -580,9 +580,10 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
     }
 
     limit_colors = {
-        'Phigh': '#CC0000',   # Red dashed
-        'Plow': '#000066',    # Dark blue dashed
-        'T': '#333333',       # Dark gray dashed
+        'Phigh': '#CC0000',   # Red for Phigh pair
+        'Plow': '#9900CC',    # Purple for Plow pair
+        'Thigh': '#FF6600',   # Orange for Thigh
+        'Tlow': '#006600',    # Green for Tlow
     }
 
     # Collect handles for combined legend
@@ -653,11 +654,11 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
     t_min = safe_float(app.cv_t_min.get())
     t_max = safe_float(app.cv_t_max.get())
     if t_min is not None:
-        line = ax_temp.axhline(t_min, linestyle='--', color=limit_colors['T'], linewidth=1, alpha=0.8)
+        line = ax_temp.axhline(t_min, linestyle='--', color=limit_colors['Tlow'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('T_min')
     if t_max is not None:
-        line = ax_temp.axhline(t_max, linestyle='--', color=limit_colors['T'], linewidth=1, alpha=0.8)
+        line = ax_temp.axhline(t_max, linestyle='--', color=limit_colors['Thigh'], linewidth=1, alpha=0.8)
         legend_handles.append(line)
         legend_labels.append('T_max')
 
@@ -681,16 +682,47 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
         except (ValueError, AttributeError):
             return None
 
+    def nice_ticks(ymin, ymax, num_ticks):
+        """Generate nice round tick values (multiples of 1, 2, 5, 10, etc.)"""
+        # Calculate the range and ideal step
+        data_range = ymax - ymin
+        raw_step = data_range / (num_ticks - 1)
+
+        # Find a nice step size (1, 2, 5, 10, 20, 50, etc.)
+        magnitude = 10 ** np.floor(np.log10(raw_step))
+        residual = raw_step / magnitude
+
+        if residual <= 1:
+            nice_step = 1 * magnitude
+        elif residual <= 2:
+            nice_step = 2 * magnitude
+        elif residual <= 5:
+            nice_step = 5 * magnitude
+        else:
+            nice_step = 10 * magnitude
+
+        # Round min down and max up to nice step
+        nice_min = np.floor(ymin / nice_step) * nice_step
+        nice_max = np.ceil(ymax / nice_step) * nice_step
+
+        # Generate ticks
+        ticks = np.arange(nice_min, nice_max + nice_step / 2, nice_step)
+        return ticks, nice_min, nice_max
+
     p_ticks = safe_int(app.cv_p_ticks.get())
     t_ticks = safe_int(app.cv_t_ticks.get())
 
     if p_ticks is not None and p_ticks > 1:
         p_ylim = ax_pressure.get_ylim()
-        ax_pressure.set_yticks(np.linspace(p_ylim[0], p_ylim[1], p_ticks))
+        ticks, nice_min, nice_max = nice_ticks(p_ylim[0], p_ylim[1], p_ticks)
+        ax_pressure.set_yticks(ticks)
+        ax_pressure.set_ylim(nice_min, nice_max)
 
     if t_ticks is not None and t_ticks > 1:
         t_ylim = ax_temp.get_ylim()
-        ax_temp.set_yticks(np.linspace(t_ylim[0], t_ylim[1], t_ticks))
+        ticks, nice_min, nice_max = nice_ticks(t_ylim[0], t_ylim[1], t_ticks)
+        ax_temp.set_yticks(ticks)
+        ax_temp.set_ylim(nice_min, nice_max)
 
     # Grid (only on primary axis)
     ax_pressure.grid(True, alpha=0.3, linestyle='-')
