@@ -145,10 +145,28 @@ class PowertechToolsApp(tk.Tk):
         )
         subtitle.pack(side="left", padx=(0, 30))
 
-        # Settings button on the right
-        settings_btn = tk.Button(
-            header,
-            text="⚙ Set Save Location",
+        # Settings buttons on the right
+        settings_frame = tk.Frame(header, bg="white")
+        settings_frame.pack(side="right", padx=30, pady=30)
+
+        load_btn = tk.Button(
+            settings_frame,
+            text="📂 Load Settings",
+            font=("Arial", 10),
+            bg="#0D9488",
+            fg="white",
+            activebackground="#0F766E",
+            activeforeground="white",
+            relief="flat",
+            padx=15,
+            pady=5,
+            command=self._load_settings_file
+        )
+        load_btn.pack(side="left", padx=(0, 10))
+
+        save_btn = tk.Button(
+            settings_frame,
+            text="💾 Save Settings As",
             font=("Arial", 10),
             bg="#0D9488",
             fg="white",
@@ -159,7 +177,20 @@ class PowertechToolsApp(tk.Tk):
             pady=5,
             command=self._choose_save_location
         )
-        settings_btn.pack(side="right", padx=30, pady=30)
+        save_btn.pack(side="left")
+
+    def _load_settings_file(self):
+        """Load presets from a user-chosen file"""
+        filepath = filedialog.askopenfilename(
+            title="Load Settings File",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if filepath:
+            import os
+            folder = os.path.dirname(filepath)
+            plot_presets.set_save_location(f"{folder}/plot_presets.json")
+            fuel_systems_presets.set_save_location(f"{folder}/fuel_systems_presets.json")
+            messagebox.showinfo("Settings", f"Settings loaded from:\n{folder}")
 
     def _choose_save_location(self):
         """Let user choose where to save presets"""
