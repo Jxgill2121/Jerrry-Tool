@@ -163,8 +163,15 @@ class PowertechToolsApp(tk.Tk):
 
     def _choose_save_location(self):
         """Let user choose where to save presets"""
-        folder = filedialog.askdirectory(title="Choose folder to save settings")
-        if folder:
+        filepath = filedialog.asksaveasfilename(
+            title="Save Settings File",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialfile="jerry_settings.json"
+        )
+        if filepath:
+            import os
+            folder = os.path.dirname(filepath)
             plot_presets.set_save_location(f"{folder}/plot_presets.json")
             fuel_systems_presets.set_save_location(f"{folder}/fuel_systems_presets.json")
             messagebox.showinfo("Settings", f"Settings will be saved to:\n{folder}")
