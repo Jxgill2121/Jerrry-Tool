@@ -1,5 +1,5 @@
 # Main Application Class for Powertech Tools
-# VERSION: 2026-01-16 v4.5 - Reorganized Tab Structure
+# VERSION: 2026-01-16 v4.6 - Dropdown Category Selector
 
 import base64
 import tkinter as tk
@@ -34,17 +34,39 @@ class PowertechToolsApp(tk.Tk):
         # Add company header
         self._build_header()
 
-        # Create main notebook (3 main categories)
-        self.nb = ttk.Notebook(self)
-        self.nb.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+        # Category selector bar
+        selector_frame = ttk.Frame(self)
+        selector_frame.pack(fill="x", padx=15, pady=(10, 5))
 
-        # ========== 1) FILE CONVERSION ==========
-        self.tab_conversion = ttk.Frame(self.nb)
-        self.nb.add(self.tab_conversion, text="  FILE CONVERSION  ")
+        ttk.Label(selector_frame, text="Category:", font=("Arial", 11, "bold")).pack(side="left", padx=(0, 10))
 
-        # Sub-notebook for conversion tools
-        self.nb_conversion = ttk.Notebook(self.tab_conversion)
-        self.nb_conversion.pack(fill="both", expand=True, padx=5, pady=5)
+        self.category_var = tk.StringVar(value="File Conversion")
+        self.category_dropdown = ttk.Combobox(
+            selector_frame,
+            textvariable=self.category_var,
+            values=["File Conversion", "Report Graphs", "Validation"],
+            state="readonly",
+            width=20,
+            font=("Arial", 11)
+        )
+        self.category_dropdown.pack(side="left")
+        self.category_dropdown.bind("<<ComboboxSelected>>", lambda e: self._switch_category())
+
+        # Container for notebooks
+        self.content_frame = ttk.Frame(self)
+        self.content_frame.pack(fill="both", expand=True, padx=15, pady=(5, 15))
+
+        # Create all notebooks (hidden initially)
+        self._create_all_notebooks()
+
+        # Show initial category
+        self._switch_category()
+
+    def _create_all_notebooks(self):
+        """Create all category notebooks"""
+
+        # ========== FILE CONVERSION ==========
+        self.nb_conversion = ttk.Notebook(self.content_frame)
 
         self.tab_merge = ttk.Frame(self.nb_conversion)
         self.tab_maxmin = ttk.Frame(self.nb_conversion)
@@ -54,13 +76,12 @@ class PowertechToolsApp(tk.Tk):
         self.nb_conversion.add(self.tab_maxmin, text="  MaxMin Converter  ")
         self.nb_conversion.add(self.tab_avg, text="  Cycle Averages  ")
 
-        # ========== 2) REPORT GRAPHS ==========
-        self.tab_graphs = ttk.Frame(self.nb)
-        self.nb.add(self.tab_graphs, text="  REPORT GRAPHS  ")
+        build_merge_tab(self.tab_merge, self)
+        build_maxmin_tab(self.tab_maxmin, self)
+        build_avg_tab(self.tab_avg, self)
 
-        # Sub-notebook for graphing tools
-        self.nb_graphs = ttk.Notebook(self.tab_graphs)
-        self.nb_graphs.pack(fill="both", expand=True, padx=5, pady=5)
+        # ========== REPORT GRAPHS ==========
+        self.nb_graphs = ttk.Notebook(self.content_frame)
 
         self.tab_plot = ttk.Frame(self.nb_graphs)
         self.tab_cycle_viewer = ttk.Frame(self.nb_graphs)
@@ -68,13 +89,11 @@ class PowertechToolsApp(tk.Tk):
         self.nb_graphs.add(self.tab_plot, text="  MaxMin Grapher  ")
         self.nb_graphs.add(self.tab_cycle_viewer, text="  Cycle Plotter  ")
 
-        # ========== 3) VALIDATION ==========
-        self.tab_validation = ttk.Frame(self.nb)
-        self.nb.add(self.tab_validation, text="  VALIDATION  ")
+        build_plot_tab(self.tab_plot, self)
+        build_cycle_viewer_tab(self.tab_cycle_viewer, self)
 
-        # Sub-notebook for validation tools
-        self.nb_validation = ttk.Notebook(self.tab_validation)
-        self.nb_validation.pack(fill="both", expand=True, padx=5, pady=5)
+        # ========== VALIDATION ==========
+        self.nb_validation = ttk.Notebook(self.content_frame)
 
         self.tab_val = ttk.Frame(self.nb_validation)
         self.tab_asr = ttk.Frame(self.nb_validation)
@@ -84,15 +103,25 @@ class PowertechToolsApp(tk.Tk):
         self.nb_validation.add(self.tab_asr, text="  ASR  ")
         self.nb_validation.add(self.tab_fuel_systems, text="  Fuel Systems  ")
 
-        # Build each tab using modular functions
-        build_merge_tab(self.tab_merge, self)
-        build_maxmin_tab(self.tab_maxmin, self)
-        build_avg_tab(self.tab_avg, self)
-        build_plot_tab(self.tab_plot, self)
-        build_cycle_viewer_tab(self.tab_cycle_viewer, self)
         build_validation_tab(self.tab_val, self)
         build_asr_tab(self.tab_asr, self)
         build_fuel_systems_tab(self.tab_fuel_systems, self)
+
+    def _switch_category(self):
+        """Switch visible notebook based on dropdown selection"""
+        # Hide all notebooks
+        self.nb_conversion.pack_forget()
+        self.nb_graphs.pack_forget()
+        self.nb_validation.pack_forget()
+
+        # Show selected category
+        category = self.category_var.get()
+        if category == "File Conversion":
+            self.nb_conversion.pack(fill="both", expand=True)
+        elif category == "Report Graphs":
+            self.nb_graphs.pack(fill="both", expand=True)
+        elif category == "Validation":
+            self.nb_validation.pack(fill="both", expand=True)
 
     def _build_header(self):
         """Build professional header with company branding"""
