@@ -1,6 +1,7 @@
 # Plot tab - Data visualization with scatter and overview modes
 
 import os
+import json
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import List, Dict, Optional
@@ -8,12 +9,10 @@ from typing import List, Dict, Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from PIL import Image, PngImagePlugin
 
 from powertech_tools.utils.file_parser import load_maxmin_for_plot
 from powertech_tools.utils.helpers import safe_float, safe_int, ScrollableFrame
-from powertech_tools.utils.plot_presets import (
-    save_preset, delete_preset, get_preset_names, get_preset
-)
 
 
 def build_tab(parent, app):
@@ -96,57 +95,6 @@ def build_tab(parent, app):
     ttk.Entry(cycle_row, textvariable=app.plot_cycle_to, width=10).pack(side="left", padx=5)
     ttk.Label(cycle_row, text="(optional)", style='Subtitle.TLabel').pack(side="left", padx=5)
 
-    # Preset management section
-    preset_frame = ttk.LabelFrame(config_card, text="Parameter Presets (Save/Load Bounds)", padding=15)
-    preset_frame.pack(fill="x", pady=(15, 0))
-
-    preset_desc = ttk.Label(
-        preset_frame,
-        text="Save commonly used min/max bounds for different test types (e.g., R134a, R410A)",
-        font=(PowertechTheme.FONT_FAMILY, 8),
-        foreground="#666"
-    )
-    preset_desc.pack(anchor="w", pady=(0, 10))
-
-    preset_row1 = ttk.Frame(preset_frame)
-    preset_row1.pack(fill="x", pady=5)
-
-    ttk.Label(preset_row1, text="Select Preset:", width=15).pack(side="left")
-    app.preset_var = tk.StringVar(value="")
-    app.preset_combo = ttk.Combobox(preset_row1, state="readonly", width=30, textvariable=app.preset_var)
-    app.preset_combo.pack(side="left", padx=10)
-
-    ttk.Button(
-        preset_row1,
-        text="⬇ Load Preset",
-        command=lambda: _load_preset(app)
-    ).pack(side="left", padx=5)
-
-    ttk.Button(
-        preset_row1,
-        text="🗑 Delete",
-        command=lambda: _delete_preset(app)
-    ).pack(side="left", padx=5)
-
-    preset_row2 = ttk.Frame(preset_frame)
-    preset_row2.pack(fill="x", pady=5)
-
-    ttk.Label(preset_row2, text="Save As:", width=15).pack(side="left")
-    app.preset_name_var = tk.StringVar(value="")
-    ttk.Entry(preset_row2, textvariable=app.preset_name_var, width=30).pack(side="left", padx=10)
-
-    ttk.Button(
-        preset_row2,
-        text="💾 Save Current Settings",
-        command=lambda: _save_preset(app)
-    ).pack(side="left", padx=5)
-
-    app.preset_status = tk.StringVar(value="")
-    ttk.Label(preset_row2, textvariable=app.preset_status, foreground=PowertechTheme.ACCENT).pack(side="left", padx=10)
-
-    # Refresh preset list
-    _refresh_preset_list(app)
-
     # Graph setup
     graph_row = ttk.Frame(config_card)
     graph_row.pack(fill="x", pady=(0, 10))
@@ -208,9 +156,18 @@ def build_tab(parent, app):
 
     ttk.Button(
         action_card,
-        text="📷 Export Plot as Image",
+        text="💾 Save PNG",
         command=lambda: _plot_export_image(app)
     ).pack(side="left", padx=10)
+
+    ttk.Button(
+        action_card,
+        text="📂 Load from Graph",
+        command=lambda: _plot_load_from_graph(app)
+    ).pack(side="left", padx=10)
+
+    app.plot_status = tk.StringVar(value="")
+    ttk.Label(action_card, textvariable=app.plot_status, foreground=PowertechTheme.ACCENT).pack(side="left", padx=15)
 
     # Plot area
     plot_card = ttk.LabelFrame(inner_frame, text="Visualization", padding=15)
@@ -355,121 +312,6 @@ def _display_to_internal(app, display_name: str) -> Optional[str]:
         if v == display_name:
             return k
     return None
-
-
-def _refresh_preset_list(app):
-    """Refresh the preset dropdown list"""
-    preset_names = get_preset_names()
-    app.preset_combo["values"] = preset_names
-    if preset_names:
-        app.preset_var.set(preset_names[0])
-    else:
-        app.preset_var.set("")
-
-
-def _save_preset(app):
-    """Save current graph settings as a preset to a user-chosen file"""
-    try:
-        # Ask user where to save
-        filepath = filedialog.asksaveasfilename(
-            title="Save Parameter Preset",
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        if not filepath:
-            return
-
-        # Collect current settings from all graph rows
-        graph_configs = []
-        for sel in app.graph_selectors:
-            config = {
-                "y1_var": sel["y1_var"].get(),
-                "y2_var": sel["y2_var"].get(),
-                "y_min_var": sel["y_min_var"].get(),
-                "y_max_var": sel["y_max_var"].get(),
-                "min_low_var": sel["min_low_var"].get(),
-                "min_high_var": sel["min_high_var"].get(),
-                "max_low_var": sel["max_low_var"].get(),
-                "max_high_var": sel["max_high_var"].get()
-            }
-            graph_configs.append(config)
-
-        import json
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(graph_configs, f, indent=2)
-
-        import os
-        app.preset_status.set(f"✓ Saved to {os.path.basename(filepath)}")
-        app.after(3000, lambda: app.preset_status.set(""))
-
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to save preset: {e}")
-
-
-def _load_preset(app):
-    """Load a preset from a user-chosen file"""
-    try:
-        # Ask user which file to load
-        filepath = filedialog.askopenfilename(
-            title="Load Parameter Preset",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        if not filepath:
-            return
-
-        import json
-        with open(filepath, "r", encoding="utf-8") as f:
-            preset_data = json.load(f)
-
-        if not preset_data:
-            messagebox.showerror("Error", "Preset file is empty")
-            return
-
-        # Ensure we have enough graph rows
-        if len(preset_data) > len(app.graph_selectors):
-            app.num_graphs_var.set(len(preset_data))
-            _plot_rebuild_graph_rows(app)
-
-        # Apply preset to each graph row
-        for i, config in enumerate(preset_data):
-            if i < len(app.graph_selectors):
-                sel = app.graph_selectors[i]
-                sel["y1_var"].set(config.get("y1", "") or config.get("y1_var", ""))
-                sel["y2_var"].set(config.get("y2", "") or config.get("y2_var", ""))
-                sel["y_min_var"].set(config.get("y_min", "") or config.get("y_min_var", ""))
-                sel["y_max_var"].set(config.get("y_max", "") or config.get("y_max_var", ""))
-                sel["min_low_var"].set(config.get("min_low", "") or config.get("min_low_var", ""))
-                sel["min_high_var"].set(config.get("min_high", "") or config.get("min_high_var", ""))
-                sel["max_low_var"].set(config.get("max_low", "") or config.get("max_low_var", ""))
-                sel["max_high_var"].set(config.get("max_high", "") or config.get("max_high_var", ""))
-
-        import os
-        app.preset_status.set(f"✓ Loaded {os.path.basename(filepath)}")
-        app.after(3000, lambda: app.preset_status.set(""))
-
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to load preset: {e}")
-
-
-def _delete_preset(app):
-    """Delete the selected preset"""
-    try:
-        preset_name = app.preset_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please select a preset to delete")
-            return
-
-        # Confirm deletion
-        if not messagebox.askyesno("Confirm Delete", f"Delete preset '{preset_name}'?"):
-            return
-
-        delete_preset(preset_name)
-        _refresh_preset_list(app)
-        app.preset_status.set(f"✓ Deleted '{preset_name}'")
-        app.after(3000, lambda: app.preset_status.set(""))
-
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete preset: {e}")
 
 
 def _plot_make(app):
@@ -629,24 +471,118 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
     app.canvas.draw()
 
 
+def _plot_get_current_settings(app):
+    """Get current graph settings as a dictionary"""
+    settings = {
+        'main_title': app.plot_main_title.get(),
+        'num_graphs': app.num_graphs_var.get(),
+        'graphs': []
+    }
+
+    for sel in app.graph_selectors:
+        graph_config = {
+            'title': sel["title_var"].get(),
+            'y_label': sel["y_label_var"].get(),
+            'y1_var': sel["y1_var"].get(),
+            'y2_var': sel["y2_var"].get(),
+            'y_min': sel["y_min_var"].get(),
+            'y_max': sel["y_max_var"].get(),
+            'y_ticks': sel["y_ticks_var"].get(),
+            'min_low': sel["min_low_var"].get(),
+            'min_high': sel["min_high_var"].get(),
+            'max_low': sel["max_low_var"].get(),
+            'max_high': sel["max_high_var"].get(),
+        }
+        settings['graphs'].append(graph_config)
+
+    return settings
+
+
 def _plot_export_image(app):
-    """Export the current plot as an image file"""
+    """Export the current plot as PNG with embedded settings"""
     try:
         if not app.fig.get_axes():
             messagebox.showwarning("Warning", "No plot to export. Create plots first.")
             return
 
         out_path = filedialog.asksaveasfilename(
-            title="Export Plot Image",
+            title="Save Plot as PNG",
             defaultextension=".png",
             initialfile="plot_export.png",
-            filetypes=[("PNG Image", "*.png"), ("JPEG Image", "*.jpg"), ("PDF", "*.pdf"), ("SVG", "*.svg"), ("All", "*.*")]
+            filetypes=[("PNG Image", "*.png"), ("All", "*.*")]
         )
         if not out_path:
             return
 
+        # Save the figure first
         app.fig.savefig(out_path, dpi=200, bbox_inches='tight', facecolor=app.fig.get_facecolor())
-        messagebox.showinfo("Success", f"Plot exported to:\n{out_path}")
+
+        # Embed settings as PNG metadata
+        settings = _plot_get_current_settings(app)
+        settings_json = json.dumps(settings)
+
+        img = Image.open(out_path)
+        meta = PngImagePlugin.PngInfo()
+        meta.add_text("jerry_settings", settings_json)
+        img.save(out_path, pnginfo=meta)
+
+        app.plot_status.set(f"✓ Saved with settings")
+        app.after(3000, lambda: app.plot_status.set(""))
+        messagebox.showinfo("Success", f"Saved with settings:\n{out_path}")
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to export plot: {e}")
+
+
+def _plot_load_from_graph(app):
+    """Load settings from a previously saved graph PNG"""
+    try:
+        filepath = filedialog.askopenfilename(
+            title="Load Settings from Graph",
+            filetypes=[("PNG Image", "*.png"), ("All", "*.*")]
+        )
+        if not filepath:
+            return
+
+        # Read PNG and extract metadata
+        img = Image.open(filepath)
+        settings_json = img.info.get("jerry_settings")
+
+        if not settings_json:
+            messagebox.showwarning("Warning", "No settings found in this image.\nThis PNG was not saved with Jerry.")
+            return
+
+        settings = json.loads(settings_json)
+
+        # Apply main title
+        if 'main_title' in settings:
+            app.plot_main_title.set(settings['main_title'])
+
+        # Ensure we have enough graph rows
+        num_graphs = settings.get('num_graphs', len(settings.get('graphs', [])))
+        if num_graphs > len(app.graph_selectors):
+            app.num_graphs_var.set(num_graphs)
+            _plot_rebuild_graph_rows(app)
+
+        # Apply graph settings
+        for i, graph_config in enumerate(settings.get('graphs', [])):
+            if i < len(app.graph_selectors):
+                sel = app.graph_selectors[i]
+                sel["title_var"].set(graph_config.get("title", ""))
+                sel["y_label_var"].set(graph_config.get("y_label", ""))
+                sel["y1_var"].set(graph_config.get("y1_var", ""))
+                sel["y2_var"].set(graph_config.get("y2_var", ""))
+                sel["y_min_var"].set(graph_config.get("y_min", ""))
+                sel["y_max_var"].set(graph_config.get("y_max", ""))
+                sel["y_ticks_var"].set(graph_config.get("y_ticks", ""))
+                sel["min_low_var"].set(graph_config.get("min_low", ""))
+                sel["min_high_var"].set(graph_config.get("min_high", ""))
+                sel["max_low_var"].set(graph_config.get("max_low", ""))
+                sel["max_high_var"].set(graph_config.get("max_high", ""))
+
+        app.plot_status.set(f"✓ Loaded from {os.path.basename(filepath)}")
+        app.after(3000, lambda: app.plot_status.set(""))
+        messagebox.showinfo("Success", f"Settings loaded from:\n{os.path.basename(filepath)}")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load settings: {e}")
