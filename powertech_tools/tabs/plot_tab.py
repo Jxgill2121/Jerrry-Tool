@@ -514,17 +514,24 @@ def _plot_export_image(app):
         if not out_path:
             return
 
-        # Save the figure first
-        app.fig.savefig(out_path, dpi=200, bbox_inches='tight', facecolor=app.fig.get_facecolor())
+        # Save the figure first to a temp location
+        import tempfile
+        temp_path = tempfile.mktemp(suffix='.png')
+        app.fig.savefig(temp_path, dpi=200, bbox_inches='tight', facecolor=app.fig.get_facecolor())
 
         # Embed settings as PNG metadata
         settings = _plot_get_current_settings(app)
         settings_json = json.dumps(settings)
 
-        img = Image.open(out_path)
+        # Read temp image and save with metadata to final location
+        img = Image.open(temp_path)
         meta = PngImagePlugin.PngInfo()
         meta.add_text("jerry_settings", settings_json)
-        img.save(out_path, pnginfo=meta)
+        img.save(out_path, "PNG", pnginfo=meta)
+        img.close()
+
+        # Clean up temp file
+        os.remove(temp_path)
 
         app.plot_status.set(f"✓ Saved with settings")
         app.after(3000, lambda: app.plot_status.set(""))

@@ -798,18 +798,24 @@ def _cv_save_png(app):
         if not out_path:
             return
 
-        # Save the figure first
-        app.cv_fig.savefig(out_path, dpi=200, bbox_inches='tight', facecolor='white')
+        # Save the figure first to a temp location
+        import tempfile
+        temp_path = tempfile.mktemp(suffix='.png')
+        app.cv_fig.savefig(temp_path, dpi=200, bbox_inches='tight', facecolor='white')
 
         # Now embed settings as PNG metadata
         settings = _cv_get_current_settings(app)
         settings_json = json.dumps(settings)
 
-        # Read the saved image and add metadata
-        img = Image.open(out_path)
+        # Read the temp image and save with metadata to final location
+        img = Image.open(temp_path)
         meta = PngImagePlugin.PngInfo()
         meta.add_text("jerry_settings", settings_json)
-        img.save(out_path, pnginfo=meta)
+        img.save(out_path, "PNG", pnginfo=meta)
+        img.close()
+
+        # Clean up temp file
+        os.remove(temp_path)
 
         messagebox.showinfo("Success", f"Saved with settings: {out_path}")
 
