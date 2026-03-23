@@ -115,7 +115,8 @@ def apply_powertech_theme(root):
                    padding=[20, 10],
                    font=(PowertechTheme.FONT_FAMILY, PowertechTheme.FONT_SIZE_BODY, 'bold'))
     style.map('Action.TButton',
-             background=[('active', PowertechTheme.ACCENT_LIGHT)])
+             background=[('disabled', '#9CA3AF'), ('active', PowertechTheme.ACCENT_LIGHT)],
+             foreground=[('disabled', 'white')])
 
     # Labels
     style.configure('TLabel',
