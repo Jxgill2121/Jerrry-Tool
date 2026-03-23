@@ -1,6 +1,7 @@
 # Cycle Viewer tab - Per-cycle visualization with spec sheet limits
 
 import os
+import json
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
@@ -8,6 +9,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from PIL import Image, PngImagePlugin
 
 from powertech_tools.utils.helpers import ScrollableFrame
 from powertech_tools.utils.file_parser import load_table_allow_duplicate_headers, read_headers_only
@@ -258,6 +260,12 @@ def build_tab(parent, app):
         action_frame,
         text="Save PNG",
         command=lambda: _cv_save_png(app)
+    ).pack(side="left", padx=10)
+
+    ttk.Button(
+        action_frame,
+        text="Load from Graph",
+        command=lambda: _cv_load_from_graph(app)
     ).pack(side="left", padx=10)
 
     app.cv_status = tk.StringVar(value="")
@@ -755,8 +763,27 @@ def _cv_render_plot(app, df, time_data, cycle_label, time_unit="seconds"):
     app.cv_status.set(f"Plotted cycle {cycle_label}")
 
 
+def _cv_get_current_settings(app):
+    """Get current graph settings as a dictionary"""
+    return {
+        'graph_title': app.cv_test_name.get(),
+        'ptank_col': app.cv_ptank_col.get(),
+        'tskin_col': app.cv_tskin_col.get(),
+        'tfluid_col': app.cv_tfluid_col.get(),
+        'tair_col': app.cv_tair_col.get(),
+        'phigh_min': app.cv_phigh_min.get(),
+        'phigh_max': app.cv_phigh_max.get(),
+        'plow_min': app.cv_plow_min.get(),
+        'plow_max': app.cv_plow_max.get(),
+        't_min': app.cv_t_min.get(),
+        't_max': app.cv_t_max.get(),
+        'p_ticks': app.cv_p_ticks.get(),
+        't_ticks': app.cv_t_ticks.get(),
+    }
+
+
 def _cv_save_png(app):
-    """Save current plot as PNG"""
+    """Save current plot as PNG with embedded settings"""
     if not app.cv_fig.get_axes():
         messagebox.showwarning("Warning", "No plot to save. Create a plot first.")
         return
@@ -771,8 +798,75 @@ def _cv_save_png(app):
         if not out_path:
             return
 
+        # Save the figure first
         app.cv_fig.savefig(out_path, dpi=200, bbox_inches='tight', facecolor='white')
-        messagebox.showinfo("Success", f"Saved: {out_path}")
+
+        # Now embed settings as PNG metadata
+        settings = _cv_get_current_settings(app)
+        settings_json = json.dumps(settings)
+
+        # Read the saved image and add metadata
+        img = Image.open(out_path)
+        meta = PngImagePlugin.PngInfo()
+        meta.add_text("jerry_settings", settings_json)
+        img.save(out_path, pnginfo=meta)
+
+        messagebox.showinfo("Success", f"Saved with settings: {out_path}")
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to save: {e}")
+
+
+def _cv_load_from_graph(app):
+    """Load settings from a previously saved graph PNG"""
+    try:
+        filepath = filedialog.askopenfilename(
+            title="Load Settings from Graph",
+            filetypes=[("PNG Image", "*.png"), ("All", "*.*")]
+        )
+        if not filepath:
+            return
+
+        # Read PNG and extract metadata
+        img = Image.open(filepath)
+        settings_json = img.info.get("jerry_settings")
+
+        if not settings_json:
+            messagebox.showwarning("Warning", "No settings found in this image.\nThis PNG was not saved with Jerry.")
+            return
+
+        settings = json.loads(settings_json)
+
+        # Apply settings to the UI
+        if 'graph_title' in settings:
+            app.cv_test_name.set(settings['graph_title'])
+        if 'ptank_col' in settings:
+            app.cv_ptank_col.set(settings['ptank_col'])
+        if 'tskin_col' in settings:
+            app.cv_tskin_col.set(settings['tskin_col'])
+        if 'tfluid_col' in settings:
+            app.cv_tfluid_col.set(settings['tfluid_col'])
+        if 'tair_col' in settings:
+            app.cv_tair_col.set(settings['tair_col'])
+        if 'phigh_min' in settings:
+            app.cv_phigh_min.set(settings['phigh_min'])
+        if 'phigh_max' in settings:
+            app.cv_phigh_max.set(settings['phigh_max'])
+        if 'plow_min' in settings:
+            app.cv_plow_min.set(settings['plow_min'])
+        if 'plow_max' in settings:
+            app.cv_plow_max.set(settings['plow_max'])
+        if 't_min' in settings:
+            app.cv_t_min.set(settings['t_min'])
+        if 't_max' in settings:
+            app.cv_t_max.set(settings['t_max'])
+        if 'p_ticks' in settings:
+            app.cv_p_ticks.set(settings['p_ticks'])
+        if 't_ticks' in settings:
+            app.cv_t_ticks.set(settings['t_ticks'])
+
+        app.cv_status.set(f"Loaded settings from {os.path.basename(filepath)}")
+        messagebox.showinfo("Success", f"Settings loaded from:\n{os.path.basename(filepath)}")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load settings: {e}")
