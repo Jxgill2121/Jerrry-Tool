@@ -95,6 +95,19 @@ def build_tab(parent, app):
     ttk.Entry(cycle_row, textvariable=app.plot_cycle_to, width=10).pack(side="left", padx=5)
     ttk.Label(cycle_row, text="(optional)", style='Subtitle.TLabel').pack(side="left", padx=5)
 
+    # X-axis settings row
+    xaxis_row = ttk.Frame(config_card)
+    xaxis_row.pack(fill="x", pady=(0, 10))
+
+    ttk.Label(xaxis_row, text="X-Axis Range:", width=15).pack(side="left")
+    app.plot_x_min = tk.StringVar(value="0")
+    app.plot_x_max = tk.StringVar(value="")
+    ttk.Label(xaxis_row, text="Min:").pack(side="left", padx=(0, 5))
+    ttk.Entry(xaxis_row, textvariable=app.plot_x_min, width=10).pack(side="left", padx=5)
+    ttk.Label(xaxis_row, text="Max:").pack(side="left", padx=(10, 5))
+    ttk.Entry(xaxis_row, textvariable=app.plot_x_max, width=10).pack(side="left", padx=5)
+    ttk.Label(xaxis_row, text="(leave Max blank for auto)", style='Subtitle.TLabel').pack(side="left", padx=5)
+
     # Graph setup
     graph_row = ttk.Frame(config_card)
     graph_row.pack(fill="x", pady=(0, 10))
@@ -392,6 +405,10 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
     COLOR_MAX = '#CC0000'  # Red for max
     COLOR_MIN = '#0066CC'  # Blue for min
 
+    # Get X-axis limits
+    x_min = safe_float(app.plot_x_min.get())
+    x_max = safe_float(app.plot_x_max.get())
+
     app.fig.clear()
     n = len(plot_jobs)
 
@@ -445,6 +462,14 @@ def _plot_make_scatter(app, df, cycle_internal, plot_jobs):
         elif y_max is not None:
             ax.set_ylim(top=y_max)
 
+        # Set X-axis limits if specified
+        if x_min is not None and x_max is not None:
+            ax.set_xlim(x_min, x_max)
+        elif x_min is not None:
+            ax.set_xlim(left=x_min)
+        elif x_max is not None:
+            ax.set_xlim(right=x_max)
+
         # Set Y-axis ticks if specified
         if y_ticks is not None and y_ticks > 1 and y_min is not None and y_max is not None:
             ax.set_yticks(np.linspace(y_min, y_max, y_ticks))
@@ -476,6 +501,8 @@ def _plot_get_current_settings(app):
     settings = {
         'main_title': app.plot_main_title.get(),
         'num_graphs': app.num_graphs_var.get(),
+        'x_min': app.plot_x_min.get(),
+        'x_max': app.plot_x_max.get(),
         'graphs': []
     }
 
@@ -564,6 +591,12 @@ def _plot_load_from_graph(app):
         # Apply main title
         if 'main_title' in settings:
             app.plot_main_title.set(settings['main_title'])
+
+        # Apply X-axis settings
+        if 'x_min' in settings:
+            app.plot_x_min.set(settings['x_min'])
+        if 'x_max' in settings:
+            app.plot_x_max.set(settings['x_max'])
 
         # Ensure we have enough graph rows
         num_graphs = settings.get('num_graphs', len(settings.get('graphs', [])))
