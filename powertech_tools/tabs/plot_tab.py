@@ -69,8 +69,6 @@ def build_tab(parent, app):
     app.plot_internal_kind = {}
 
     app.plot_cycle_col = tk.StringVar(value="")
-    app.plot_cycle_from = tk.StringVar(value="")
-    app.plot_cycle_to = tk.StringVar(value="")
 
     # Main title for all plots
     title_row = ttk.Frame(config_card)
@@ -88,12 +86,6 @@ def build_tab(parent, app):
     ttk.Label(cycle_row, text="Cycle Column:", width=15).pack(side="left")
     app.cb_plot_cycle = ttk.Combobox(cycle_row, state="disabled", width=30, textvariable=app.plot_cycle_col, values=[])
     app.cb_plot_cycle.pack(side="left", padx=10)
-
-    ttk.Label(cycle_row, text="Range:", width=8).pack(side="left", padx=(20, 5))
-    ttk.Entry(cycle_row, textvariable=app.plot_cycle_from, width=10).pack(side="left", padx=5)
-    ttk.Label(cycle_row, text="to").pack(side="left", padx=5)
-    ttk.Entry(cycle_row, textvariable=app.plot_cycle_to, width=10).pack(side="left", padx=5)
-    ttk.Label(cycle_row, text="(optional)", style='Subtitle.TLabel').pack(side="left", padx=5)
 
     # X-axis settings row
     xaxis_row = ttk.Frame(config_card)
@@ -345,19 +337,8 @@ def _plot_make(app):
         df[cycle_internal] = pd.to_numeric(df[cycle_internal], errors="coerce")
         df = df[df[cycle_internal].notna()].reset_index(drop=True)
 
-        c_from = safe_int(app.plot_cycle_from.get())
-        c_to = safe_int(app.plot_cycle_to.get())
-        if c_from == "INVALID" or c_to == "INVALID":
-            messagebox.showerror("Error", "Cycle range must be integers")
-            return
-        if c_from is not None:
-            df = df[df[cycle_internal] >= c_from]
-        if c_to is not None:
-            df = df[df[cycle_internal] <= c_to]
-        df = df.reset_index(drop=True)
-
         if df.empty:
-            messagebox.showerror("Error", "No data in selected range")
+            messagebox.showerror("Error", "No data available")
             return
 
         plot_jobs = []
