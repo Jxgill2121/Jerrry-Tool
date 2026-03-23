@@ -1,5 +1,5 @@
 # Main Application Class for Powertech Tools
-# VERSION: 2026-01-16 v4.4 - Modular Architecture
+# VERSION: 2026-01-16 v4.5 - Reorganized Tab Structure
 
 import base64
 import tkinter as tk
@@ -34,39 +34,65 @@ class PowertechToolsApp(tk.Tk):
         # Add company header
         self._build_header()
 
-        # Create notebook (tabbed interface)
+        # Create main notebook (3 main categories)
         self.nb = ttk.Notebook(self)
         self.nb.pack(fill="both", expand=True, padx=15, pady=(0, 15))
 
-        # Create tab frames
-        self.tab_merge = ttk.Frame(self.nb)
-        self.tab_maxmin = ttk.Frame(self.nb)
-        self.tab_plot = ttk.Frame(self.nb)
-        self.tab_avg = ttk.Frame(self.nb)
-        self.tab_val = ttk.Frame(self.nb)
-        self.tab_asr = ttk.Frame(self.nb)
-        self.tab_fuel_systems = ttk.Frame(self.nb)
-        self.tab_cycle_viewer = ttk.Frame(self.nb)
+        # ========== 1) FILE CONVERSION ==========
+        self.tab_conversion = ttk.Frame(self.nb)
+        self.nb.add(self.tab_conversion, text="  FILE CONVERSION  ")
 
-        # Add tabs to notebook
-        self.nb.add(self.tab_merge, text="  1) TDMS CONVERSION  ")
-        self.nb.add(self.tab_maxmin, text="  2) MAXMIN CONVERTER  ")
-        self.nb.add(self.tab_plot, text="  3) PLOT DATA  ")
-        self.nb.add(self.tab_avg, text="  4) CYCLE AVERAGES  ")
-        self.nb.add(self.tab_val, text="  5) CYLINDERS VALIDATION  ")
-        self.nb.add(self.tab_asr, text="  6) ASR VALIDATION  ")
-        self.nb.add(self.tab_fuel_systems, text="  7) FUEL SYSTEMS  ")
-        self.nb.add(self.tab_cycle_viewer, text="  8) CYCLE VIEWER  ")
+        # Sub-notebook for conversion tools
+        self.nb_conversion = ttk.Notebook(self.tab_conversion)
+        self.nb_conversion.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.tab_merge = ttk.Frame(self.nb_conversion)
+        self.tab_maxmin = ttk.Frame(self.nb_conversion)
+        self.tab_avg = ttk.Frame(self.nb_conversion)
+
+        self.nb_conversion.add(self.tab_merge, text="  TDMS Conversion  ")
+        self.nb_conversion.add(self.tab_maxmin, text="  MaxMin Converter  ")
+        self.nb_conversion.add(self.tab_avg, text="  Cycle Averages  ")
+
+        # ========== 2) REPORT GRAPHS ==========
+        self.tab_graphs = ttk.Frame(self.nb)
+        self.nb.add(self.tab_graphs, text="  REPORT GRAPHS  ")
+
+        # Sub-notebook for graphing tools
+        self.nb_graphs = ttk.Notebook(self.tab_graphs)
+        self.nb_graphs.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.tab_plot = ttk.Frame(self.nb_graphs)
+        self.tab_cycle_viewer = ttk.Frame(self.nb_graphs)
+
+        self.nb_graphs.add(self.tab_plot, text="  MaxMin Grapher  ")
+        self.nb_graphs.add(self.tab_cycle_viewer, text="  Cycle Plotter  ")
+
+        # ========== 3) VALIDATION ==========
+        self.tab_validation = ttk.Frame(self.nb)
+        self.nb.add(self.tab_validation, text="  VALIDATION  ")
+
+        # Sub-notebook for validation tools
+        self.nb_validation = ttk.Notebook(self.tab_validation)
+        self.nb_validation.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.tab_val = ttk.Frame(self.nb_validation)
+        self.tab_asr = ttk.Frame(self.nb_validation)
+        self.tab_fuel_systems = ttk.Frame(self.nb_validation)
+
+        self.nb_validation.add(self.tab_val, text="  Cylinders  ")
+        self.nb_validation.add(self.tab_asr, text="  ASR  ")
+        self.nb_validation.add(self.tab_fuel_systems, text="  Fuel Systems  ")
 
         # Build each tab using modular functions
         build_merge_tab(self.tab_merge, self)
         build_maxmin_tab(self.tab_maxmin, self)
-        build_plot_tab(self.tab_plot, self)
         build_avg_tab(self.tab_avg, self)
+        build_plot_tab(self.tab_plot, self)
+        build_cycle_viewer_tab(self.tab_cycle_viewer, self)
         build_validation_tab(self.tab_val, self)
         build_asr_tab(self.tab_asr, self)
         build_fuel_systems_tab(self.tab_fuel_systems, self)
-        build_cycle_viewer_tab(self.tab_cycle_viewer, self)
 
     def _build_header(self):
         """Build professional header with company branding"""
