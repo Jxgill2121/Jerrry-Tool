@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, PngImagePlugin
 
 from powertech_tools.utils.file_parser import load_maxmin_for_plot
@@ -183,8 +183,6 @@ def build_tab(parent, app):
     app.fig.patch.set_facecolor(PowertechTheme.BG_CARD)
     app.canvas = FigureCanvasTkAgg(app.fig, master=plot_card)
     app.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
-    toolbar = NavigationToolbar2Tk(app.canvas, plot_card)
-    toolbar.update()
 
     _plot_rebuild_graph_rows(app)
 
