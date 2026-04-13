@@ -62,8 +62,15 @@ class ScrollableFrame(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
+        # Get theme background color
+        try:
+            from powertech_tools.config.theme import PowertechTheme
+            bg_color = PowertechTheme.BG_MAIN
+        except ImportError:
+            bg_color = "#F5F5F5"
+
         # Create canvas and scrollbar
-        self.canvas = tk.Canvas(self, highlightthickness=0, bg="white")
+        self.canvas = tk.Canvas(self, highlightthickness=0, bg=bg_color)
         self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
         self.content = ttk.Frame(self.canvas)
 
@@ -80,9 +87,22 @@ class ScrollableFrame(ttk.Frame):
         # Bind events
         self.content.bind("<Configure>", self._on_frame_configure)
         self.canvas.bind("<Configure>", self._on_canvas_configure)
+
+        # Bind mousewheel only when mouse is over this frame (not global)
+        self.canvas.bind("<Enter>", self._bind_mousewheel)
+        self.canvas.bind("<Leave>", self._unbind_mousewheel)
+
+    def _bind_mousewheel(self, event=None):
+        """Bind mousewheel when mouse enters canvas"""
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.canvas.bind_all("<Button-4>", self._on_mousewheel)  # Linux scroll up
         self.canvas.bind_all("<Button-5>", self._on_mousewheel)  # Linux scroll down
+
+    def _unbind_mousewheel(self, event=None):
+        """Unbind mousewheel when mouse leaves canvas"""
+        self.canvas.unbind_all("<MouseWheel>")
+        self.canvas.unbind_all("<Button-4>")
+        self.canvas.unbind_all("<Button-5>")
 
     def _on_frame_configure(self, event=None):
         """Update scroll region when content size changes"""
@@ -94,8 +114,15 @@ class ScrollableFrame(ttk.Frame):
         self.canvas.itemconfig(self.canvas_frame, width=canvas_width)
 
     def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling"""
+        """Handle mouse wheel scrolling - smoother with larger increments"""
+        # Check if scrolling is needed (content taller than viewport)
+        if self.canvas.bbox("all") is None:
+            return
+
+        # Use larger scroll increments for smoother feel (3 units instead of 1)
+        scroll_amount = 3
+
         if event.num == 5 or event.delta < 0:  # Scroll down
-            self.canvas.yview_scroll(1, "units")
+            self.canvas.yview_scroll(scroll_amount, "units")
         elif event.num == 4 or event.delta > 0:  # Scroll up
-            self.canvas.yview_scroll(-1, "units")
+            self.canvas.yview_scroll(-scroll_amount, "units")

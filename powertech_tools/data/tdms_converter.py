@@ -38,6 +38,7 @@ def convert_tdms_files_to_cycles(
     add_time_column: bool = True,
     time_step: float = 0.10,
     cycle_number_column: Optional[str] = None,
+    add_datetime_column: bool = True,
     progress_callback=None
 ) -> List[str]:
     """
@@ -52,6 +53,7 @@ def convert_tdms_files_to_cycles(
         add_time_column: If True, generate a Time column based on time_step
         time_step: Time interval in seconds between samples (default 0.10)
         cycle_number_column: Optional channel name containing cycle number for labeling
+        add_datetime_column: If True, add a DateTime column with actual timestamps
         progress_callback: Optional callback function(current, total, message)
 
     Returns:
@@ -103,6 +105,8 @@ def convert_tdms_files_to_cycles(
 
             # Track actual time step (for header)
             actual_time_step = time_step
+            start_datetime = None
+            start_datetime_str = ""
 
             # Add time column if requested
             if add_time_column:
@@ -119,6 +123,14 @@ def convert_tdms_files_to_cycles(
                             # Get actual time step from TDMS properties
                             if 'wf_increment' in channel.properties:
                                 actual_time_step = channel.properties['wf_increment']
+                            # Get start datetime
+                            if 'wf_start_time' in channel.properties:
+                                start_datetime = channel.properties['wf_start_time']
+                                # Convert numpy datetime64 to string
+                                if hasattr(start_datetime, 'astype'):
+                                    start_datetime_str = str(pd.Timestamp(start_datetime))
+                                else:
+                                    start_datetime_str = str(start_datetime)
                             break
                     except Exception:
                         continue
@@ -128,6 +140,19 @@ def convert_tdms_files_to_cycles(
                     time_values = np.arange(len(df)) * time_step
 
                 df.insert(0, 'Time', time_values)
+
+            # Add DateTime column if requested and we have start time
+            if add_datetime_column and start_datetime is not None:
+                try:
+                    # Convert start_datetime to pandas Timestamp
+                    start_ts = pd.Timestamp(start_datetime)
+                    # Generate datetime for each row
+                    time_deltas = pd.to_timedelta(df['Time'], unit='s')
+                    datetime_values = start_ts + time_deltas
+                    # Format as string for output
+                    df.insert(1, 'DateTime', datetime_values.dt.strftime('%Y-%m-%d %H:%M:%S'))
+                except Exception:
+                    pass  # Skip datetime column if conversion fails
 
             # Determine cycle number for output filename
             if cycle_number_column and cycle_number_column in df.columns:
@@ -146,6 +171,8 @@ def convert_tdms_files_to_cycles(
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write("Powertech Test Log\n")
                 f.write(f"Time step ={actual_time_step:.2f} s\n")
+                if start_datetime_str:
+                    f.write(f"Start time ={start_datetime_str}\n")
                 f.write("\n")
                 f.write("Cycle test\n")
                 f.write("\t".join(df.columns) + "\n")

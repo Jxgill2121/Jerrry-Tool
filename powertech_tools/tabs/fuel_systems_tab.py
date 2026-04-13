@@ -100,8 +100,8 @@ def build_tab(parent, app):
     app.cb_fs_tfuel = ttk.Combobox(col_frame, state="disabled", width=20, textvariable=app.fs_tfuel_col, values=[])
     app.cb_fs_tfuel.pack(side="left", padx=5)
 
-    # Cycle detection settings
-    cycle_frame = ttk.LabelFrame(config_frame, text="Cycle Detection (Ptank-based)", padding=10)
+    # Fill detection settings
+    cycle_frame = ttk.LabelFrame(config_frame, text="Fill Detection", padding=10)
     cycle_frame.pack(fill="x", pady=(10, 5))
 
     ptank_row = ttk.Frame(cycle_frame)
@@ -109,11 +109,34 @@ def build_tab(parent, app):
     ttk.Label(ptank_row, text="Ptank Threshold (MPa):").pack(side="left")
     app.fs_ptank_threshold = tk.StringVar(value="2.0")
     ttk.Entry(ptank_row, textvariable=app.fs_ptank_threshold, width=10).pack(side="left", padx=10)
-    ttk.Label(ptank_row, text="(Cycle boundaries detected at this pressure)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
+    ttk.Label(ptank_row, text="(Fill start detected from Ptank)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
 
-    # tfuel timing check settings
-    tfuel_frame = ttk.LabelFrame(config_frame, text="tfuel Timing Check", padding=10)
+    end_row = ttk.Frame(cycle_frame)
+    end_row.pack(fill="x", pady=5)
+    ttk.Label(end_row, text="End of Fill Based On:").pack(side="left")
+    app.fs_end_mode = tk.StringVar(value="Ptank")
+    ttk.Radiobutton(end_row, text="Ptank", variable=app.fs_end_mode, value="Ptank").pack(side="left", padx=(10, 5))
+    ttk.Radiobutton(end_row, text="SOC", variable=app.fs_end_mode, value="SOC").pack(side="left", padx=5)
+
+    soc_row = ttk.Frame(cycle_frame)
+    soc_row.pack(fill="x", pady=2)
+    ttk.Label(soc_row, text="SOC Column:").pack(side="left")
+    app.fs_soc_col = tk.StringVar(value="")
+    app.cb_fs_soc = ttk.Combobox(soc_row, state="disabled", width=20, textvariable=app.fs_soc_col, values=[])
+    app.cb_fs_soc.pack(side="left", padx=10)
+    ttk.Label(soc_row, text="SOC Threshold (%):").pack(side="left", padx=(10, 0))
+    app.fs_soc_threshold = tk.StringVar(value="100")
+    ttk.Entry(soc_row, textvariable=app.fs_soc_threshold, width=10).pack(side="left", padx=10)
+    ttk.Label(soc_row, text="(only used in SOC mode)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
+
+    # tfuel timing check settings (optional)
+    tfuel_frame = ttk.LabelFrame(config_frame, text="tfuel Timing Check (Optional)", padding=10)
     tfuel_frame.pack(fill="x", pady=(10, 5))
+
+    tfuel_enable_row = ttk.Frame(tfuel_frame)
+    tfuel_enable_row.pack(fill="x", pady=2)
+    app.fs_enable_tfuel_check = tk.BooleanVar(value=True)
+    ttk.Checkbutton(tfuel_enable_row, text="Enable tfuel timing check", variable=app.fs_enable_tfuel_check).pack(side="left")
 
     tfuel_row1 = ttk.Frame(tfuel_frame)
     tfuel_row1.pack(fill="x", pady=2)
@@ -127,11 +150,27 @@ def build_tab(parent, app):
 
     tfuel_desc = ttk.Label(
         tfuel_frame,
-        text="tfuel must reach target temperature within time window from cycle start",
+        text="tfuel must reach and hold target temperature within time window from fill start",
         font=(PowertechTheme.FONT_FAMILY, 8),
         foreground="#666"
     )
     tfuel_desc.pack(anchor="w", pady=(5, 0))
+
+    # Average pressure ramp rate check (optional)
+    ramp_frame = ttk.LabelFrame(config_frame, text="Average Pressure Ramp Rate Check (Optional)", padding=10)
+    ramp_frame.pack(fill="x", pady=(10, 5))
+
+    ramp_enable_row = ttk.Frame(ramp_frame)
+    ramp_enable_row.pack(fill="x", pady=2)
+    app.fs_enable_ramp_check = tk.BooleanVar(value=False)
+    ttk.Checkbutton(ramp_enable_row, text="Enable average ramp rate check", variable=app.fs_enable_ramp_check).pack(side="left")
+
+    ramp_row = ttk.Frame(ramp_frame)
+    ramp_row.pack(fill="x", pady=2)
+    ttk.Label(ramp_row, text="Min Ramp Rate (MPa/min):").pack(side="left")
+    app.fs_ramp_limit = tk.StringVar(value="")
+    ttk.Entry(ramp_row, textvariable=app.fs_ramp_limit, width=10).pack(side="left", padx=10)
+    ttk.Label(ramp_row, text="(leave blank to report only, no pass/fail)", font=(PowertechTheme.FONT_FAMILY, 8), foreground="#666").pack(side="left", padx=5)
 
     # Preset management section
     preset_frame = ttk.LabelFrame(config_frame, text="Configuration Presets", padding=15)
@@ -277,7 +316,7 @@ def build_tab(parent, app):
     # Plot area
     from powertech_tools.config.theme import PowertechTheme
     app.fs_fig = plt.Figure(figsize=(14, 8), dpi=100)
-    app.fs_fig.patch.set_facecolor(PowertechTheme.BG_CARD)
+    app.fs_fig.patch.set_facecolor('#1a1a2e')
     app.fs_canvas = FigureCanvasTkAgg(app.fs_fig, master=viz_card)
     app.fs_canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
     toolbar = NavigationToolbar2Tk(app.fs_canvas, viz_card)
@@ -313,9 +352,11 @@ def _fs_choose_files(app):
         app.cb_fs_time["values"] = headers
         app.cb_fs_ptank["values"] = headers
         app.cb_fs_tfuel["values"] = headers
+        app.cb_fs_soc["values"] = headers
         app.cb_fs_time["state"] = "readonly"
         app.cb_fs_ptank["state"] = "readonly"
         app.cb_fs_tfuel["state"] = "readonly"
+        app.cb_fs_soc["state"] = "readonly"
 
         # Auto-select common columns
         headers_lower = [h.lower() for h in headers]
@@ -330,6 +371,9 @@ def _fs_choose_files(app):
 
         if "tfuel" in headers_lower:
             app.fs_tfuel_col.set(headers[headers_lower.index("tfuel")])
+
+        if "soc" in headers_lower:
+            app.fs_soc_col.set(headers[headers_lower.index("soc")])
 
         # Build parameter selection UI
         _fs_build_param_checkboxes(app, headers)
@@ -421,11 +465,15 @@ def _fs_refresh_preset_list(app):
 
 
 def _fs_save_preset(app):
-    """Save current validation settings as a preset"""
+    """Save current validation settings as a preset to a user-chosen file"""
     try:
-        preset_name = app.fs_preset_name_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please enter a preset name")
+        # Ask user where to save
+        filepath = filedialog.asksaveasfilename(
+            title="Save Parameter Preset",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filepath:
             return
 
         # Collect settings
@@ -457,13 +505,12 @@ def _fs_save_preset(app):
             'param_limits': param_limits
         }
 
-        save_preset(preset_name, config)
-        _fs_refresh_preset_list(app)
-        app.fs_preset_var.set(preset_name)
-        app.fs_preset_status.set(f"✓ Saved '{preset_name}'")
-        app.fs_preset_name_var.set("")
+        import json
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
 
-        # Clear status after 3 seconds
+        import os
+        app.fs_preset_status.set(f"✓ Saved to {os.path.basename(filepath)}")
         app.after(3000, lambda: app.fs_preset_status.set(""))
 
     except Exception as e:
@@ -471,16 +518,22 @@ def _fs_save_preset(app):
 
 
 def _fs_load_preset(app):
-    """Load a preset and apply it to the validation settings"""
+    """Load a preset from a user-chosen file"""
     try:
-        preset_name = app.fs_preset_var.get().strip()
-        if not preset_name:
-            messagebox.showerror("Error", "Please select a preset")
+        # Ask user which file to load
+        filepath = filedialog.askopenfilename(
+            title="Load Parameter Preset",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filepath:
             return
 
-        preset_data = get_preset(preset_name)
+        import json
+        with open(filepath, "r", encoding="utf-8") as f:
+            preset_data = json.load(f)
+
         if not preset_data:
-            messagebox.showerror("Error", f"Preset '{preset_name}' not found")
+            messagebox.showerror("Error", "Preset file is empty")
             return
 
         # Apply settings
@@ -507,7 +560,8 @@ def _fs_load_preset(app):
                 if 'max' in limits:
                     app.fs_param_max_vars[param].set(str(limits['max']))
 
-        app.fs_preset_status.set(f"✓ Loaded '{preset_name}'")
+        import os
+        app.fs_preset_status.set(f"✓ Loaded {os.path.basename(filepath)}")
         app.after(3000, lambda: app.fs_preset_status.set(""))
 
     except Exception as e:
@@ -554,11 +608,46 @@ def _fs_validate(app):
         # Get thresholds
         try:
             ptank_threshold = float(app.fs_ptank_threshold.get())
-            tfuel_target = float(app.fs_tfuel_target.get())
-            tfuel_window = float(app.fs_tfuel_window.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid threshold values. Please enter numbers.")
+            messagebox.showerror("Error", "Invalid Ptank threshold. Please enter a number.")
             return
+
+        enable_tfuel_check = app.fs_enable_tfuel_check.get()
+        tfuel_target = 0.0
+        tfuel_window = 0.0
+        if enable_tfuel_check:
+            try:
+                tfuel_target = float(app.fs_tfuel_target.get())
+                tfuel_window = float(app.fs_tfuel_window.get())
+            except ValueError:
+                messagebox.showerror("Error", "tfuel check is enabled but target/window values are invalid.")
+                return
+
+        # Fill end mode
+        end_mode = app.fs_end_mode.get()
+        soc_col = app.fs_soc_col.get().strip() if end_mode == "SOC" else None
+        soc_threshold = 100.0
+        if end_mode == "SOC":
+            if not soc_col:
+                messagebox.showerror("Error", "SOC end mode selected but no SOC column chosen")
+                return
+            try:
+                soc_threshold = float(app.fs_soc_threshold.get())
+            except ValueError:
+                messagebox.showerror("Error", "Invalid SOC threshold value.")
+                return
+
+        # Ramp rate check
+        enable_ramp_check = app.fs_enable_ramp_check.get()
+        ramp_limit = None
+        if enable_ramp_check:
+            ramp_str = app.fs_ramp_limit.get().strip()
+            if ramp_str:
+                try:
+                    ramp_limit = float(ramp_str)
+                except ValueError:
+                    messagebox.showerror("Error", "Invalid ramp rate limit. Please enter a number or leave blank.")
+                    return
 
         # Get parameter limits
         param_limits = {}
@@ -615,7 +704,13 @@ def _fs_validate(app):
                 param_limits,
                 ptank_threshold,
                 tfuel_target,
-                tfuel_window
+                tfuel_window,
+                enable_tfuel_check=enable_tfuel_check,
+                end_mode=end_mode,
+                soc_col=soc_col,
+                soc_threshold=soc_threshold,
+                enable_ramp_check=enable_ramp_check,
+                ramp_limit=ramp_limit
             )
 
             app.fs_results.append(result)
@@ -669,9 +764,18 @@ def _fs_display_results(app):
         status_symbol = "✓" if result['status'] == 'PASS' else ("✗" if result['status'] == 'FAIL' else "⚠")
 
         app.fs_results_text.insert(tk.END, f"{status_symbol} {result['file']} - {result['status']}\n")
-        app.fs_results_text.insert(tk.END, f"  Cycle: {result['cycle_points']} points (of {result['total_points']} total)\n")
+        app.fs_results_text.insert(tk.END, f"  Fill: {result['cycle_points']} points (of {result['total_points']} total)\n")
         app.fs_results_text.insert(tk.END, f"  tfuel Check: {'PASS' if result['tfuel_check'] else 'FAIL'}\n")
         app.fs_results_text.insert(tk.END, f"    {result['tfuel_message']}\n")
+
+        if result.get('soc_message'):
+            soc_icon = "✓" if result.get('soc_reached_100') else "✗"
+            app.fs_results_text.insert(tk.END, f"  SOC: {soc_icon} {result['soc_message']}\n")
+
+        if result.get('ramp_message'):
+            ramp_status = 'PASS' if result.get('ramp_pass', True) else 'FAIL'
+            app.fs_results_text.insert(tk.END, f"  Ramp Rate: {ramp_status}\n")
+            app.fs_results_text.insert(tk.END, f"    {result['ramp_message']}\n")
 
         if result['param_violations']:
             app.fs_results_text.insert(tk.END, f"  Parameter Violations:\n")
@@ -708,7 +812,7 @@ def _fs_export_results(app):
         with open(out_path, "w", encoding="utf-8") as f:
             # Header with branding
             f.write("=" * 80 + "\n")
-            f.write("                  JERRY - HITT TEAM ANALYSIS TOOL\n")
+            f.write("                  Jerry - HITT TEAM ANALYSIS TOOL\n")
             f.write("                   FUEL SYSTEMS VALIDATION REPORT\n")
             f.write("=" * 80 + "\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -868,44 +972,74 @@ def _fs_plot_cycle(app, cycle_idx: int):
         tfuel_window = config['tfuel_window']
         tfuel_target = config['tfuel_target']
 
+        # Dark theme colors
+        DARK_BG = '#1a1a2e'
+        PLOT_BG = '#16213e'
+        GRID_COLOR = '#334155'
+        TEXT_COLOR = '#e2e8f0'
+        TEXT_DIM = '#94a3b8'
+
+        # Bright contrasting line colors for dark background
+        dark_line_colors = [
+            '#00d4ff',  # Cyan
+            '#ff6bcb',  # Pink
+            '#00ff88',  # Green
+            '#ffd93d',  # Yellow
+            '#ff8a50',  # Orange
+            '#a78bfa',  # Purple
+            '#34d399',  # Emerald
+            '#f472b6',  # Rose
+            '#60a5fa',  # Blue
+            '#fb923c',  # Amber
+            '#c084fc',  # Violet
+            '#4ade80',  # Lime
+        ]
+
+        app.fs_fig.patch.set_facecolor(DARK_BG)
+
         # Create single plot for ALL parameters
         ax = app.fs_fig.add_subplot(1, 1, 1)
 
         # Get ALL columns to plot (exclude Time column)
         plot_params = [col for col in cycle_df.columns if col != time_col]
 
-        # Plot all parameters with skinny lines
-        for param in plot_params:
+        # Plot all parameters with bright colors on dark background
+        for i, param in enumerate(plot_params):
             try:
                 param_data = pd.to_numeric(cycle_df[param], errors='coerce').values
-                if not pd.isna(param_data).all():  # Only plot if we have valid numeric data
-                    ax.plot(time_relative, param_data, linewidth=0.8, label=param, alpha=0.7)
+                if not pd.isna(param_data).all():
+                    color = dark_line_colors[i % len(dark_line_colors)]
+                    ax.plot(time_relative, param_data, linewidth=1.0, label=param, alpha=0.85, color=color)
             except Exception:
-                # Skip columns that can't be converted to numeric
                 pass
 
         # Mark cycle boundaries with vertical lines
-        ax.axvline(cycle_start_time, linestyle='-', linewidth=2, color='green', alpha=0.6, label='Cycle start (fill begins)')
-        ax.axvline(cycle_end_time, linestyle='-', linewidth=2, color='purple', alpha=0.6, label='Cycle end (fill ends)')
+        ax.axvline(cycle_start_time, linestyle='-', linewidth=2, color='#00ff88', alpha=0.8, label='Cycle start (fill begins)')
+        ax.axvline(cycle_end_time, linestyle='-', linewidth=2, color='#c084fc', alpha=0.8, label='Cycle end (fill ends)')
 
         # Mark tfuel time window boundary (relative to cycle start)
         tfuel_window_time = cycle_start_time + tfuel_window
-        ax.axvline(tfuel_window_time, linestyle='--', linewidth=1.5, color='orange', alpha=0.7, label=f'Tfuel window ({tfuel_window}s from start)')
+        ax.axvline(tfuel_window_time, linestyle='--', linewidth=1.5, color='#ffd93d', alpha=0.8, label=f'Tfuel window ({tfuel_window}s from start)')
 
         # Show tfuel target
-        ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='red', alpha=0.7, label=f'Tfuel target ({tfuel_target}°C)')
+        ax.axhline(tfuel_target, linestyle=':', linewidth=1.5, color='#ff4d4d', alpha=0.8, label=f'Tfuel target ({tfuel_target}°C)')
 
-        # Set axis scale
+        # Dark theme axis styling
         ax.set_ylim(-90, 105)
-        ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold')
-        ax.set_ylabel("Value", fontsize=10, fontweight='bold')
-        ax.set_title("All Parameters", fontsize=11, fontweight="bold", color=PowertechTheme.PRIMARY)
-        ax.grid(True, alpha=0.3, linestyle='--')
-        ax.set_facecolor('#fafafa')
-        ax.legend(fontsize=7, loc='best', ncol=2)
+        ax.set_xlabel("Time from cycle start (s)", fontsize=10, fontweight='bold', color=TEXT_COLOR)
+        ax.set_ylabel("Value", fontsize=10, fontweight='bold', color=TEXT_COLOR)
+        ax.set_title("All Parameters", fontsize=11, fontweight="bold", color='#00d4ff')
+        ax.grid(True, alpha=0.25, linestyle='--', color=GRID_COLOR)
+        ax.set_facecolor(PLOT_BG)
+        ax.tick_params(colors=TEXT_DIM, which='both')
+        ax.spines['bottom'].set_color(GRID_COLOR)
+        ax.spines['top'].set_color(GRID_COLOR)
+        ax.spines['left'].set_color(GRID_COLOR)
+        ax.spines['right'].set_color(GRID_COLOR)
+        legend = ax.legend(fontsize=12, loc='best', ncol=2, facecolor=DARK_BG, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
 
         # Overall title
-        status_color = PowertechTheme.SUCCESS if result['status'] == 'PASS' else PowertechTheme.ERROR
+        status_color = '#00ff88' if result['status'] == 'PASS' else '#ff4d4d'
         app.fs_fig.suptitle(
             f"Cycle {cycle_idx + 1}/{len(app.fs_cycle_data)}: {os.path.basename(filepath)} - {result['status']}",
             fontsize=12,

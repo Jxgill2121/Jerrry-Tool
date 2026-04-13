@@ -11,7 +11,8 @@ from powertech_tools.utils.helpers import natural_sort_key
 
 def compute_maxmin_from_multiple_files(
     filepaths: List[str],
-    time_col: str
+    time_col: str,
+    min_points_per_file: int = 10
 ) -> pd.DataFrame:
     """
     Compute min/max template from multiple cycle files.
@@ -22,6 +23,7 @@ def compute_maxmin_from_multiple_files(
     Args:
         filepaths: List of file paths, each containing one cycle of data
         time_col: Name of the time column (can be None or empty string to skip)
+        min_points_per_file: Minimum data points required per file (default 10)
 
     Returns:
         DataFrame with Date Time, Cycle, and alternating min/max columns
@@ -37,8 +39,10 @@ def compute_maxmin_from_multiple_files(
 
     all_rows = []
     value_cols = None
+    actual_cycle_num = 0  # Track actual cycle number (increments only for valid files)
+    skipped_files = []
 
-    for cycle_num, fp in enumerate(filepaths, start=1):
+    for file_idx, fp in enumerate(filepaths, start=1):
         # Load the file - read entire file instead of just first 400 lines
         headers, delim, header_idx, _ = read_headers_only(fp)
 
@@ -46,7 +50,7 @@ def compute_maxmin_from_multiple_files(
         with open(fp, "r", encoding="utf-8", errors="ignore") as f:
             all_lines = f.readlines()
 
-        print(f"\n=== DEBUG: Processing {os.path.basename(fp)} (Cycle {cycle_num}) ===")
+        print(f"\n=== DEBUG: Processing {os.path.basename(fp)} (File {file_idx}/{len(filepaths)}) ===")
         print(f"Headers detected: {headers}")
         print(f"Delimiter: {repr(delim)}")
         print(f"Header at line: {header_idx}")
@@ -76,7 +80,19 @@ def compute_maxmin_from_multiple_files(
         )
 
         if df.empty:
+            print(f"  SKIPPED: Empty file")
+            skipped_files.append((os.path.basename(fp), "empty"))
             continue
+
+        # Skip files with too few data points
+        if min_points_per_file > 0 and len(df) < min_points_per_file:
+            print(f"  SKIPPED: Only {len(df)} data points (min required: {min_points_per_file})")
+            skipped_files.append((os.path.basename(fp), f"{len(df)} points"))
+            continue
+
+        # Increment cycle number for valid files
+        actual_cycle_num += 1
+        print(f"  Assigned Cycle: {actual_cycle_num}")
 
         # Fix column mismatch: if 'Elapsed' is in headers but data has one fewer column
         # This happens when the header line has a phantom 'Elapsed' column
@@ -110,7 +126,7 @@ def compute_maxmin_from_multiple_files(
             last_time = ""
 
         # Compute min/max for this file (this cycle)
-        row = [last_time, cycle_num]
+        row = [last_time, actual_cycle_num]
         print(f"Computing min/max for {len(value_cols)} value columns...")
         for col in value_cols:
             if col in df.columns:
@@ -132,6 +148,17 @@ def compute_maxmin_from_multiple_files(
 
         all_rows.append(row)
 
+    # Report summary
+    print(f"\n=== PROCESSING SUMMARY ===")
+    print(f"Total files: {len(filepaths)}")
+    print(f"Valid cycles: {actual_cycle_num}")
+    print(f"Skipped files: {len(skipped_files)}")
+    if skipped_files:
+        for fname, reason in skipped_files[:10]:
+            print(f"  - {fname}: {reason}")
+        if len(skipped_files) > 10:
+            print(f"  ... and {len(skipped_files) - 10} more")
+
     if not all_rows:
         raise RuntimeError("No valid data found in any files")
 
@@ -148,7 +175,13 @@ def compute_maxmin_from_multiple_files(
     return out_df
 
 
-def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str) -> pd.DataFrame:
+def compute_maxmin_template(
+    df_raw: pd.DataFrame,
+    time_col: str,
+    cycle_col: str,
+    min_points_per_cycle: int = 10,
+    skip_cycle_zero: bool = True
+) -> pd.DataFrame:
     """
     Compute min/max template from raw data.
 
@@ -159,6 +192,8 @@ def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str)
         df_raw: Raw DataFrame with time, cycle, and value columns
         time_col: Name of the time column
         cycle_col: Name of the cycle column
+        min_points_per_cycle: Minimum data points required per cycle (default 10)
+        skip_cycle_zero: Skip cycle 0 if present (often a partial cycle)
 
     Returns:
         DataFrame with Date Time, Cycle, and alternating min/max columns
@@ -191,10 +226,45 @@ def compute_maxmin_template(df_raw: pd.DataFrame, time_col: str, cycle_col: str)
 
     # Get unique cycles for validation
     unique_cycles = sorted(df[cycle_col].unique())
-    num_unique_cycles = len(unique_cycles)
+    num_unique_cycles_raw = len(unique_cycles)
 
-    if num_unique_cycles == 0:
+    if num_unique_cycles_raw == 0:
         raise RuntimeError("No cycles found after filtering")
+
+    # Filter out cycle 0 if requested (often a partial cycle at start)
+    skipped_cycles = []
+    if skip_cycle_zero and 0 in unique_cycles:
+        count_zero = len(df[df[cycle_col] == 0])
+        skipped_cycles.append(f"Cycle 0 ({count_zero} points)")
+        df = df[df[cycle_col] != 0].reset_index(drop=True)
+        unique_cycles = [c for c in unique_cycles if c != 0]
+
+    # Filter out cycles with too few data points
+    if min_points_per_cycle > 0:
+        cycle_counts = df.groupby(cycle_col).size()
+        valid_cycles = cycle_counts[cycle_counts >= min_points_per_cycle].index.tolist()
+        invalid_cycles = cycle_counts[cycle_counts < min_points_per_cycle]
+
+        for cyc, count in invalid_cycles.items():
+            skipped_cycles.append(f"Cycle {int(cyc)} ({count} points < {min_points_per_cycle} min)")
+
+        if len(invalid_cycles) > 0:
+            df = df[df[cycle_col].isin(valid_cycles)].reset_index(drop=True)
+            unique_cycles = sorted(valid_cycles)
+
+    # Report skipped cycles
+    if skipped_cycles:
+        print(f"\n=== CYCLE VALIDATION ===")
+        print(f"Original cycle count: {num_unique_cycles_raw}")
+        print(f"Skipped {len(skipped_cycles)} cycles:")
+        for s in skipped_cycles[:20]:  # Limit output
+            print(f"  - {s}")
+        if len(skipped_cycles) > 20:
+            print(f"  ... and {len(skipped_cycles) - 20} more")
+        print(f"Valid cycles remaining: {len(unique_cycles)}")
+
+    if len(unique_cycles) == 0:
+        raise RuntimeError("No valid cycles remaining after filtering")
 
     # Get value columns (all except time and cycle)
     value_cols = [c for c in df.columns if c not in (time_col, cycle_col)]
