@@ -25,12 +25,13 @@ st.caption("Powertech – One Stop Tools (Surrey, BC)")
 
 st.divider()
 
-from tabs import merge, maxmin, avg
+from tabs import merge, maxmin, avg, asr
 
 TABS = {
     "TDMS to Cycle Files":       merge.render,
     "Max/Min Converter":         maxmin.render,
     "Cycle Averages & Stats":    avg.render,
+    "ASR Validation":            asr.render,
 }
 
 tab_objects = st.tabs(list(TABS.keys()))
