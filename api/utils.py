@@ -75,3 +75,21 @@ def excel_response(buf: io.BytesIO, filename: str) -> StreamingResponse:
 
 def zip_response(buf: io.BytesIO, filename: str) -> StreamingResponse:
     return bytes_response(buf, filename, "application/zip")
+
+
+def sanitize(obj: Any) -> Any:
+    """Recursively convert numpy scalars to native Python types for JSON serialization."""
+    import numpy as np
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj

@@ -12,7 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 
-from api.utils import save_uploads, text_response, excel_response
+from api.utils import save_uploads, text_response, excel_response, sanitize
 from powertech_tools.utils.file_parser import read_headers_only, load_table_allow_duplicate_headers
 from powertech_tools.data.fuel_systems_validator import validate_fuel_system_file
 
@@ -82,7 +82,7 @@ async def validate(
         for i, res in enumerate(results):
             res["_path"] = paths[i]
 
-        return {"results": results}
+        return sanitize({"results": results})
 
     except HTTPException:
         raise

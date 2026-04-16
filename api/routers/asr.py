@@ -9,7 +9,7 @@ from typing import List
 import pandas as pd
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 
-from api.utils import save_uploads, excel_response
+from api.utils import save_uploads, excel_response, sanitize
 from powertech_tools.utils.file_parser import read_headers_only, load_table_allow_duplicate_headers
 from powertech_tools.data.asr_validator import validate_asr_temperature
 
@@ -85,10 +85,10 @@ async def validate(
                 safe = label[:31]
                 ddf.to_excel(writer, sheet_name=safe, index=False)
 
-        return {
+        return sanitize({
             "results": results,
             "excel_available": True,
-        }
+        })
 
     except HTTPException:
         raise
