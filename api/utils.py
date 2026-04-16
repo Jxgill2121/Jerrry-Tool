@@ -78,7 +78,8 @@ def zip_response(buf: io.BytesIO, filename: str) -> StreamingResponse:
 
 
 def sanitize(obj: Any) -> Any:
-    """Recursively convert numpy scalars to native Python types for JSON serialization."""
+    """Recursively convert numpy scalars / NaN / Inf to JSON-safe Python types."""
+    import math
     import numpy as np
     if isinstance(obj, dict):
         return {k: sanitize(v) for k, v in obj.items()}
@@ -87,9 +88,12 @@ def sanitize(obj: Any) -> Any:
     if isinstance(obj, (np.integer,)):
         return int(obj)
     if isinstance(obj, (np.floating,)):
-        return float(obj)
+        v = float(obj)
+        return None if (math.isnan(v) or math.isinf(v)) else v
     if isinstance(obj, (np.bool_,)):
         return bool(obj)
     if isinstance(obj, np.ndarray):
-        return obj.tolist()
+        return sanitize(obj.tolist())
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
     return obj
