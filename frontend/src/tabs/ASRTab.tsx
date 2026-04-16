@@ -166,9 +166,9 @@ export default function ASRTab() {
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <Metric label="Target" value={`${r.target_hours}h`} />
-                  <Metric label="Actual" value={`${r.hours_in_band.toFixed(3)}h`} />
+                  <Metric label="Actual" value={r.hours_in_band!=null?`${r.hours_in_band.toFixed(3)}h`:"—"} />
                   <Metric label="Complete" value={pct!=null?`${pct.toFixed(1)}%`:"—"} />
-                  <Metric label="Excursions" value={String(r.excursions)} />
+                  <Metric label="Excursions" value={r.excursions!=null?String(r.excursions):"—"} />
                   <Metric label="Temp min" value={r.temp_min_obs!=null?`${r.temp_min_obs.toFixed(2)}°C`:"—"} />
                   <Metric label="Temp max" value={r.temp_max_obs!=null?`${r.temp_max_obs.toFixed(2)}°C`:"—"} />
                 </div>
