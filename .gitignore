@@ -19,3 +19,6 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code session state
+TASK_STATE.md
