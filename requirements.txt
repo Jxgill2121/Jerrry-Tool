@@ -19,6 +19,8 @@ Pillow>=10.0.0
 
 # Plotting
 matplotlib>=3.7.0
+plotly>=5.18.0
+kaleido>=0.2.1  # PNG export from Plotly (optional but recommended)
 
 # Development/Build Tools (optional, for building EXE)
 pyinstaller>=6.0.0
