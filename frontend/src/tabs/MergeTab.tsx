@@ -14,8 +14,6 @@ export default function MergeTab() {
   const [structure, setStructure]       = useState<Structure | null>(null);
   const [selectedGroup, setGroup]       = useState("");
   const [selectedChs, setSelectedChs]  = useState<Record<string, boolean>>({});
-  const [timeStep, setTimeStep]         = useState("0.10");
-  const [addTime, setAddTime]           = useState(true);
   const [status, setStatus]             = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
   const [loading, setLoading]           = useState(false);
 
@@ -61,8 +59,7 @@ export default function MergeTab() {
       for (const f of files) fd.append("files", f);
       fd.append("group_name", selectedGroup);
       fd.append("selected_channels", JSON.stringify(chosen));
-      fd.append("add_time_column", String(addTime));
-      fd.append("time_step", timeStep);
+      fd.append("add_time_column", "true");
       fd.append("add_datetime_column", "true");
       const res = await api.post("/merge/convert", fd, { responseType: "blob" });
       downloadBlob(res.data, "cycle_files.zip");
@@ -112,21 +109,6 @@ export default function MergeTab() {
                 </label>
               ))}
             </div>
-          </section>
-
-          <section className="bg-surface rounded-xl p-5 space-y-3">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 3 · Options</h3>
-            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-              <input type="checkbox" checked={addTime} onChange={e=>setAddTime(e.target.checked)} className="accent-blue-500" />
-              Add generated Time column
-            </label>
-            {addTime && (
-              <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-400">Time step (s)</label>
-                <input type="number" value={timeStep} onChange={e=>setTimeStep(e.target.value)} step="0.01" min="0.01"
-                  className="w-24 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
-              </div>
-            )}
           </section>
 
           <button onClick={convert} disabled={loading}
