@@ -24,7 +24,26 @@ export default function PlotTab() {
   const [graphs, setGraphs] = useState<GraphRow[]>([emptyRow(), emptyRow()]);
   const [figure, setFigure] = useState<unknown|null>(null);
   const [loading, setLoading] = useState(false);
+  const [pngLoading, setPngLoading] = useState(false);
   const [status, setStatus] = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
+
+  const loadPng = async (dropped: File[]) => {
+    if (!dropped.length) return;
+    setPngLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", dropped[0]);
+      const res = await api.post("/plot/load-png", fd);
+      const d = res.data;
+      if (d.main_title) setMainTitle(d.main_title);
+      if (d.x_min) setXMin(d.x_min);
+      if (d.x_max) setXMax(d.x_max);
+      if (d.graphs?.length) setGraphs(d.graphs.map((g: GraphRow) => ({ ...emptyRow(), ...g })));
+      setStatus({ type: "success", msg: `Loaded settings from PNG · ${d.graphs?.length ?? 0} graph(s)` });
+    } catch (e: unknown) {
+      setStatus({ type: "error", msg: String((e as {response?:{data?:{detail?:string}}}).response?.data?.detail ?? e) });
+    } finally { setPngLoading(false); }
+  };
 
   const loadFile = async (dropped: File[]) => {
     setFiles(dropped);setFigure(null);
@@ -78,6 +97,12 @@ export default function PlotTab() {
   return (
     <div className="max-w-5xl space-y-6">
       <h2 className="text-xl font-semibold text-gray-100">Data Visualization</h2>
+
+      <section className="bg-surface rounded-xl p-5 space-y-3">
+        <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Load from Previous Graph (optional)</h3>
+        <p className="text-xs text-gray-500">Upload a PNG saved by Jerry to restore its titles, limits and graph layout automatically.</p>
+        <FileDropzone onFiles={loadPng} accept={["png"]} multiple={false} current={[]} label={pngLoading?"Reading PNG…":"Drop saved graph PNG here"} />
+      </section>
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload Max/Min File</h3>

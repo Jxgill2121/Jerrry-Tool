@@ -162,6 +162,49 @@ async def get_figure(
         raise HTTPException(500, str(e))
 
 
+@router.post("/load-png")
+async def load_png(file: UploadFile = File(...)):
+    """Extract jerry_settings metadata from a previously saved graph PNG."""
+    import json, io
+    from PIL import Image
+
+    try:
+        data = await file.read()
+        img = Image.open(io.BytesIO(data))
+        raw = img.info.get("jerry_settings")
+        if not raw:
+            raise HTTPException(400, "No settings found in this PNG — was it saved from Jerry?")
+        s = json.loads(raw)
+
+        # Map old Streamlit field names → new React field names
+        graphs = []
+        for g in s.get("graphs", []):
+            graphs.append({
+                "title":      g.get("title", ""),
+                "y_label":    g.get("y_label", "Value"),
+                "y1":         g.get("y1_var", g.get("y1", "")),
+                "y2":         g.get("y2_var", g.get("y2", "")),
+                "y_min":      str(g.get("y_min", "")),
+                "y_max":      str(g.get("y_max", "")),
+                "y_ticks":    str(g.get("y_ticks", "")),
+                "min_lower":  str(g.get("min_low",   g.get("min_lower", ""))),
+                "min_upper":  str(g.get("min_high",  g.get("min_upper", ""))),
+                "max_lower":  str(g.get("max_low",   g.get("max_lower", ""))),
+                "max_upper":  str(g.get("max_high",  g.get("max_upper", ""))),
+            })
+
+        return {
+            "main_title": s.get("main_title", ""),
+            "x_min": str(s.get("x_min", "")),
+            "x_max": str(s.get("x_max", "")),
+            "graphs": graphs,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Could not read PNG: {e}")
+
+
 def _fv(v):
     if v is None:
         return None
