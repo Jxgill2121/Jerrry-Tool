@@ -77,11 +77,13 @@ def validate_asr_temperature(
 
     # Calculate statistics (vectorized)
     valid_temps = temp_values[~np.isnan(temp_values)]
+    in_band_temps = temp_values[in_band & ~np.isnan(temp_values)]
     temp_stats = {
         'min': float(np.min(valid_temps)) if len(valid_temps) > 0 else 0,
         'max': float(np.max(valid_temps)) if len(valid_temps) > 0 else 0,
         'mean': float(np.mean(valid_temps)) if len(valid_temps) > 0 else 0,
         'std': float(np.std(valid_temps)) if len(valid_temps) > 0 else 0,
+        'in_band_mean': float(np.mean(in_band_temps)) if len(in_band_temps) > 0 else None,
     }
 
     # Create minimal detail_df (only if needed for export)

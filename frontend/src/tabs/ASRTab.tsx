@@ -8,6 +8,7 @@ interface BandResult {
   label:string; target_hours:number; hours_in_band:number;
   pct_complete:number|null; pass:boolean|null; excursions:number;
   temp_min_obs:number|null; temp_max_obs:number|null; temp_mean:number|null;
+  temp_in_band_avg:number|null;
 }
 
 const defaultBands: Band[] = [
@@ -179,6 +180,7 @@ export default function ASRTab() {
                   <Metric label="Excursions" value={r.excursions!=null?String(r.excursions):"—"} />
                   <Metric label="Temp min" value={r.temp_min_obs!=null?`${r.temp_min_obs.toFixed(2)}°C`:"—"} />
                   <Metric label="Temp max" value={r.temp_max_obs!=null?`${r.temp_max_obs.toFixed(2)}°C`:"—"} />
+                  <Metric label="Avg temp (in-band)" value={r.temp_in_band_avg!=null?`${r.temp_in_band_avg.toFixed(2)}°C`:"—"} />
                 </div>
                 {r.target_hours>0 && pct!=null && (
                   <div className="w-full bg-gray-800 rounded-full h-2">

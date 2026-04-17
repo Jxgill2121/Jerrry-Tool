@@ -69,10 +69,11 @@ async def validate(
                 "hours_in_band": round(hours_in, 4),
                 "pct_complete":  round(pct, 2) if pct is not None else None,
                 "pass":          (hours_in >= target_h) if target_h > 0 else None,
-                "excursions":    stats.get("excursion_count", 0),
-                "temp_min_obs":  stats.get("temp_stats", {}).get("min"),
-                "temp_max_obs":  stats.get("temp_stats", {}).get("max"),
-                "temp_mean":     stats.get("temp_stats", {}).get("mean"),
+                "excursions":       stats.get("excursion_count", 0),
+                "temp_min_obs":     stats.get("temp_stats", {}).get("min"),
+                "temp_max_obs":     stats.get("temp_stats", {}).get("max"),
+                "temp_mean":        stats.get("temp_stats", {}).get("mean"),
+                "temp_in_band_avg": stats.get("temp_stats", {}).get("in_band_mean"),
             })
             detail_sheets[label] = detail_df
 
