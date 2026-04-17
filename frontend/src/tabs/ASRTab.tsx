@@ -37,8 +37,16 @@ export default function ASRTab() {
       const hdrs:string[] = res.data.headers;
       setHeaders(hdrs);
       const hl=hdrs.map(h=>h.toLowerCase());
-      setTimeCol(hdrs[hl.findIndex(h=>h.includes("time"))]??hdrs[0]??"");
-      setTempCol(hdrs[hl.findIndex(h=>h.includes("temp")||h.includes("tamb"))]??"");
+      // Prefer numeric elapsed/time columns over datetime "Time" columns
+      const elapsedIdx = hl.findIndex(h=>h.includes("elapsed")||h==="time_s"||h==="time_sec");
+      const timeIdx    = hl.findIndex(h=>h.includes("time"));
+      setTimeCol(hdrs[elapsedIdx>=0?elapsedIdx:timeIdx]??hdrs[0]??"");
+      // Match common temperature column names
+      const tempIdx = hl.findIndex(h=>
+        h.includes("temp")||h.includes("tamb")||h.includes("tair")||
+        h.includes("t_air")||h.startsWith("t_")||h.match(/^t[a-z]/i)!=null
+      );
+      setTempCol(hdrs[tempIdx>=0?tempIdx:0]??"");
       setStatus({type:"success",msg:`Loaded · ${hdrs.length} columns`});
     } catch(e:unknown){setStatus({type:"error",msg:String((e as {response?:{data?:{detail?:string}}}).response?.data?.detail??e)});}
   };
