@@ -27,3 +27,9 @@ Thumbs.db
 
 # Claude Code session state
 TASK_STATE.md
+.claude/settings.local.json
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
