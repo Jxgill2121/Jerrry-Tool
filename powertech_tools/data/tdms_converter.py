@@ -128,9 +128,10 @@ def convert_tdms_files_to_cycles(
                                 start_datetime = channel.properties['wf_start_time']
                                 # Convert numpy datetime64 UTC → local time string
                                 try:
+                                    from dateutil.tz import tzlocal
                                     start_datetime_str = str(
                                         pd.Timestamp(start_datetime, tz='UTC')
-                                        .tz_convert('localtime')
+                                        .tz_convert(tzlocal())
                                         .tz_localize(None)
                                     )
                                 except Exception:
@@ -149,7 +150,8 @@ def convert_tdms_files_to_cycles(
             if add_datetime_column and start_datetime is not None:
                 try:
                     # Convert start_datetime from UTC to local system time
-                    start_ts = pd.Timestamp(start_datetime, tz='UTC').tz_convert('localtime').tz_localize(None)
+                    from dateutil.tz import tzlocal
+                    start_ts = pd.Timestamp(start_datetime, tz='UTC').tz_convert(tzlocal()).tz_localize(None)
                     # Generate datetime for each row
                     time_deltas = pd.to_timedelta(df['Time'], unit='s')
                     datetime_values = start_ts + time_deltas
