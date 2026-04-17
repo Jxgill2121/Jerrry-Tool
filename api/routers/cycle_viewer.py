@@ -71,6 +71,13 @@ async def get_figure(
         right_cols = cfg.get("right_cols", [tskin_col] if tskin_col else [])
         limits     = cfg.get("limits", {})
         title      = cfg.get("title", "")
+        time_unit  = cfg.get("time_unit", "seconds")   # seconds | minutes | hours | days
+        left_label = cfg.get("left_label", "")
+        right_label= cfg.get("right_label", "")
+
+        _time_divisors = {"seconds": 1, "minutes": 60, "hours": 3600, "days": 86400}
+        time_divisor = _time_divisors.get(time_unit, 1)
+        time_label = f"Time ({time_unit})"
 
         if mode == "per_cycle":
             idx = max(0, min(file_index, len(paths) - 1))
@@ -107,6 +114,9 @@ async def get_figure(
         else:
             t = pd.Series(range(len(df)), dtype=float)
 
+        # Apply time unit divisor
+        t = t / time_divisor
+
         # Decide which cols are left vs right
         left_cols = [ptank_col] + [c for c in extra_left if c and c != ptank_col]
         left_cols = [c for c in left_cols if c and c in df.columns]
@@ -140,15 +150,15 @@ async def get_figure(
             height=480,
             paper_bgcolor=_BG, plot_bgcolor=_PLOT,
             font=dict(color=_TEXT),
-            xaxis=dict(title="Time (s)", gridcolor=_GRID, color=_DIM),
+            xaxis=dict(title=time_label, gridcolor=_GRID, color=_DIM),
             hovermode="x unified",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                         bgcolor="rgba(26,26,46,0.8)", bordercolor=_GRID),
             margin=dict(t=60, b=50, l=60, r=60),
         )
-        fig.update_yaxes(title_text="Pressure / Left", gridcolor=_GRID, color=_DIM, secondary_y=False)
+        fig.update_yaxes(title_text=left_label or "Left Axis", gridcolor=_GRID, color=_DIM, secondary_y=False)
         if right_cols_f:
-            fig.update_yaxes(title_text="Temperature / Right", gridcolor=_GRID, color=_DIM, secondary_y=True)
+            fig.update_yaxes(title_text=right_label or "Right Axis", gridcolor=_GRID, color=_DIM, secondary_y=True)
 
         return {
             "figure": fig.to_dict(),
