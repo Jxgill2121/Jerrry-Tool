@@ -1,0 +1,98 @@
+{
+  "MaxMin Cycling Template": [
+    {
+      "y1": "Ptest (Min)",
+      "y2": "Ptest (Min)",
+      "y_min": "0",
+      "y_max": "50",
+      "min_low": "",
+      "min_high": "",
+      "max_low": "",
+      "max_high": ""
+    },
+    {
+      "y1": "Ptest (Max)",
+      "y2": "",
+      "y_min": "40",
+      "y_max": "50",
+      "min_low": "43.75",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "45.75"
+    },
+    {
+      "y1": "Ptest (Min)",
+      "y2": "",
+      "y_min": "0",
+      "y_max": "4",
+      "min_low": "1",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "3"
+    }
+  ],
+  "MaxMin Cycling template": [
+    {
+      "y1": "Ptest (Min)",
+      "y2": "Ptest (Min)",
+      "y_min": "0",
+      "y_max": "50",
+      "min_low": "",
+      "min_high": "",
+      "max_low": "",
+      "max_high": ""
+    },
+    {
+      "y1": "Ptest (Max)",
+      "y2": "",
+      "y_min": "40",
+      "y_max": "50",
+      "min_low": "43.75",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "45.75"
+    },
+    {
+      "y1": "Ptest (Min)",
+      "y2": "",
+      "y_min": "0",
+      "y_max": "4",
+      "min_low": "1",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "3"
+    }
+  ],
+  "Maxmin Temperature Plot": [
+    {
+      "y1": "Tfluid (Max)",
+      "y2": "Tair (Max)",
+      "y_min": "0",
+      "y_max": "40",
+      "min_low": "5",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "35"
+    },
+    {
+      "y1": "Tskin (Min)",
+      "y2": "Tskin (Max)",
+      "y_min": "0",
+      "y_max": "40",
+      "min_low": "5",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "35"
+    },
+    {
+      "y1": "Tfluid (Min)",
+      "y2": "Tfluid (Min)",
+      "y_min": "0 ",
+      "y_max": "40",
+      "min_low": "5",
+      "min_high": "",
+      "max_low": "",
+      "max_high": "35"
+    }
+  ]
+}
