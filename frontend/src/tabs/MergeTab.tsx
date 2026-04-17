@@ -3,24 +3,24 @@ import api, { downloadBlob } from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
 
+interface ChPreview { unit:string; samples:number[]; min:number|null; max:number|null; mean:number|null; count:number; }
 interface Structure {
   groups: string[];
   channels: Record<string, string[]>;
   filenames: string[];
+  preview: Record<string, Record<string, ChPreview>>;
 }
 
 export default function MergeTab() {
-  const [files, setFiles]               = useState<File[]>([]);
-  const [structure, setStructure]       = useState<Structure | null>(null);
-  const [selectedGroup, setGroup]       = useState("");
-  const [selectedChs, setSelectedChs]  = useState<Record<string, boolean>>({});
-  const [status, setStatus]             = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
-  const [loading, setLoading]           = useState(false);
+  const [files, setFiles]              = useState<File[]>([]);
+  const [structure, setStructure]      = useState<Structure | null>(null);
+  const [selectedGroup, setGroup]      = useState("");
+  const [selectedChs, setSelectedChs] = useState<Record<string, boolean>>({});
+  const [status, setStatus]            = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
+  const [loading, setLoading]          = useState(false);
 
   const loadStructure = async (dropped: File[]) => {
-    setFiles(dropped);
-    setStructure(null);
-    setStatus(null);
+    setFiles(dropped); setStructure(null); setStatus(null);
     if (!dropped.length) return;
     setLoading(true);
     try {
@@ -52,8 +52,7 @@ export default function MergeTab() {
   const convert = async () => {
     const chosen = Object.entries(selectedChs).filter(([,v])=>v).map(([k])=>k);
     if (!chosen.length) { setStatus({type:"error",msg:"Select at least one channel"}); return; }
-    setLoading(true);
-    setStatus({type:"info",msg:"Converting…"});
+    setLoading(true); setStatus({type:"info",msg:"Converting…"});
     try {
       const fd = new FormData();
       for (const f of files) fd.append("files", f);
@@ -70,10 +69,9 @@ export default function MergeTab() {
   };
 
   const channels = structure?.channels[selectedGroup] ?? [];
-  const allSel   = channels.every((c) => selectedChs[c]);
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <h2 className="text-xl font-semibold text-gray-100">TDMS → Cycle Files</h2>
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
@@ -84,30 +82,53 @@ export default function MergeTab() {
       {structure && (
         <>
           <section className="bg-surface rounded-xl p-5 space-y-4">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 2 · Select Group & Channels</h3>
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 2 · Select Channels</h3>
 
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-400 w-20">Group</label>
-              <select value={selectedGroup} onChange={(e)=>onGroupChange(e.target.value)}
-                className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
-                {structure.groups.map(g=><option key={g}>{g}</option>)}
-              </select>
-            </div>
+            {structure.groups.length > 1 && (
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-400 w-20">Group</label>
+                <select value={selectedGroup} onChange={(e)=>onGroupChange(e.target.value)}
+                  className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                  {structure.groups.map(g=><option key={g}>{g}</option>)}
+                </select>
+              </div>
+            )}
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2">
               <button onClick={()=>setSelectedChs(Object.fromEntries(channels.map(c=>[c,true])))}
                 className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded">Select All</button>
               <button onClick={()=>setSelectedChs(Object.fromEntries(channels.map(c=>[c,false])))}
                 className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded">Deselect All</button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-52 overflow-y-auto">
-              {channels.map(ch=>(
-                <label key={ch} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-                  <input type="checkbox" checked={!!selectedChs[ch]} onChange={()=>toggleCh(ch)} className="accent-blue-500" />
-                  {ch}
-                </label>
-              ))}
+            <div className="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
+              {channels.map(ch => {
+                const p = structure.preview?.[selectedGroup]?.[ch];
+                const checked = !!selectedChs[ch];
+                return (
+                  <div key={ch}
+                    onClick={()=>toggleCh(ch)}
+                    className={`flex items-start gap-3 rounded-lg px-3 py-2.5 cursor-pointer border transition-colors
+                      ${checked ? "bg-gray-800 border-blue-600" : "bg-gray-900 border-gray-700 opacity-60"}`}>
+                    <input type="checkbox" checked={checked} readOnly className="mt-0.5 accent-blue-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-100">{ch}</span>
+                        {p?.unit && <span className="text-xs text-gray-500">{p.unit}</span>}
+                        {p && <span className="text-xs text-gray-500 ml-auto">{p.count.toLocaleString()} pts</span>}
+                      </div>
+                      {p && (
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400">
+                          {p.min!=null && <span>min <span className="text-gray-200">{p.min}</span></span>}
+                          {p.mean!=null && <span>avg <span className="text-gray-200">{p.mean}</span></span>}
+                          {p.max!=null && <span>max <span className="text-gray-200">{p.max}</span></span>}
+                          <span className="text-gray-600">samples: [{p.samples.slice(0,3).join(", ")}…]</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 

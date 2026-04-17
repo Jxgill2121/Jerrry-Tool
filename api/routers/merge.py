@@ -8,9 +8,11 @@ import tempfile
 import zipfile
 from typing import List, Optional
 
+import numpy as np
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from nptdms import TdmsFile
 
-from api.utils import save_uploads, zip_response
+from api.utils import save_uploads, zip_response, sanitize
 from powertech_tools.data.tdms_converter import read_tdms_structure, convert_tdms_files_to_cycles
 
 router = APIRouter()
@@ -26,14 +28,36 @@ async def get_structure(files: List[UploadFile] = File(...)):
             raise HTTPException(400, "No files uploaded")
 
         groups, channels = read_tdms_structure(paths[0])
-        return {
+
+        # Build per-channel preview stats from first file
+        preview: dict = {}
+        try:
+            tf = TdmsFile.read(paths[0])
+            for grp in tf.groups():
+                preview[grp.name] = {}
+                for ch in grp.channels():
+                    data = ch[:]
+                    numeric = data[~np.isnan(data.astype(float))] if data.dtype.kind in "fiu" else np.array([])
+                    unit = ch.properties.get("unit_string") or ch.properties.get("NI_UnitDescription") or ""
+                    samples = [round(float(v), 4) for v in data[:5].tolist()] if len(data) else []
+                    preview[grp.name][ch.name] = {
+                        "unit": unit,
+                        "samples": samples,
+                        "min": round(float(np.min(numeric)), 4) if len(numeric) else None,
+                        "max": round(float(np.max(numeric)), 4) if len(numeric) else None,
+                        "mean": round(float(np.mean(numeric)), 4) if len(numeric) else None,
+                        "count": int(len(data)),
+                    }
+        except Exception:
+            pass  # preview is optional
+
+        return sanitize({
             "file_count": len(paths),
             "filenames": [os.path.basename(p) for p in paths],
             "groups": groups,
             "channels": channels,
-            "session_tmpdir": tmpdir,
-            "session_paths": paths,
-        }
+            "preview": preview,
+        })
     except HTTPException:
         raise
     except Exception as e:
