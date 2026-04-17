@@ -103,3 +103,65 @@ async def convert(
 
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+@router.post("/concatenate-txt")
+async def concatenate_txt(
+    files: List[UploadFile] = File(...),
+    time_col: str = Form("Time"),
+    output_name: str = Form("merged.txt"),
+):
+    """Concatenate multiple TXT cycle files into one, offsetting time to be continuous."""
+    import pandas as pd
+
+    tmpdir = tempfile.mkdtemp(prefix="jerry_cat_")
+    try:
+        paths = await save_uploads(files, tmpdir)
+        if len(paths) < 2:
+            raise HTTPException(400, "Upload at least 2 files to concatenate")
+
+        from powertech_tools.utils.file_parser import read_headers_only, load_table_allow_duplicate_headers
+        from fastapi.responses import StreamingResponse as SR
+
+        frames = []
+        time_offset = 0.0
+        meta_lines = []
+        captured_meta = False
+
+        for p in paths:
+            headers, delim, header_idx, lines = read_headers_only(p)
+            if not captured_meta:
+                meta_lines = [l.rstrip("\n") for l in lines[:header_idx] if l.strip()]
+                captured_meta = True
+
+            df = load_table_allow_duplicate_headers(p)
+
+            if time_col in df.columns:
+                t = pd.to_numeric(df[time_col], errors="coerce")
+                if not t.isna().all():
+                    t0 = float(t.dropna().iloc[0])
+                    t_end = float(t.dropna().iloc[-1])
+                    df[time_col] = t - t0 + time_offset
+                    time_offset += (t_end - t0) + 1.0
+
+            frames.append(df)
+
+        merged = pd.concat(frames, ignore_index=True)
+
+        text = io.StringIO()
+        for ml in meta_lines:
+            text.write(ml + "\n")
+        text.write("\n")
+        text.write("\t".join(str(c) for c in merged.columns) + "\n")
+        merged.to_csv(text, sep="\t", index=False, header=False, lineterminator="\n")
+
+        buf = io.BytesIO(text.getvalue().encode("utf-8"))
+        buf.seek(0)
+        safe_name = output_name if output_name.endswith(".txt") else output_name + ".txt"
+        return SR(buf, media_type="text/plain; charset=utf-8",
+                  headers={"Content-Disposition": f'attachment; filename="{safe_name}"'})
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))

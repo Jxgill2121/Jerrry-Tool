@@ -19,6 +19,12 @@ export default function MergeTab() {
   const [status, setStatus]            = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
   const [loading, setLoading]          = useState(false);
 
+  // Concatenate TXT state
+  const [catFiles, setCatFiles]       = useState<File[]>([]);
+  const [catTimeCol, setCatTimeCol]   = useState("Time");
+  const [catName, setCatName]         = useState("merged.txt");
+  const [catLoading, setCatLoading]   = useState(false);
+
   const loadStructure = async (dropped: File[]) => {
     setFiles(dropped); setStructure(null); setStatus(null);
     if (!dropped.length) return;
@@ -138,6 +144,50 @@ export default function MergeTab() {
           </button>
         </>
       )}
+
+      {/* ── Concatenate TXT section ─────────────────────────────────── */}
+      <div className="border-t border-gray-700 pt-6 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-100">Concatenate TXT Files</h2>
+        <p className="text-xs text-gray-500">Join multiple converted TXT files into one continuous file. Time is offset automatically so it runs without gaps.</p>
+
+        <section className="bg-surface rounded-xl p-5 space-y-4">
+          <FileDropzone onFiles={setCatFiles} accept={["txt","log","dat","csv"]} current={catFiles.map(f=>f.name)}
+            label="Drop TXT files here (2 or more, in order)" />
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Time column name</label>
+              <input value={catTimeCol} onChange={e=>setCatTimeCol(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Output filename</label>
+              <input value={catName} onChange={e=>setCatName(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+
+          <button
+            disabled={catFiles.length < 2 || catLoading}
+            onClick={async () => {
+              setCatLoading(true);
+              try {
+                const fd = new FormData();
+                for (const f of catFiles) fd.append("files", f);
+                fd.append("time_col", catTimeCol);
+                fd.append("output_name", catName);
+                const res = await api.post("/merge/concatenate-txt", fd, { responseType: "blob" });
+                downloadBlob(res.data, catName.endsWith(".txt") ? catName : catName + ".txt");
+                setStatus({ type: "success", msg: `Merged ${catFiles.length} files → ${catName}` });
+              } catch (e: unknown) {
+                setStatus({ type: "error", msg: String((e as {response?:{data?:{detail?:string}}}).response?.data?.detail ?? e) });
+              } finally { setCatLoading(false); }
+            }}
+            className="px-6 py-2.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 rounded-lg font-medium text-sm transition-colors">
+            {catLoading ? "Merging…" : `Merge & Download (${catFiles.length} files)`}
+          </button>
+        </section>
+      </div>
 
       {status && <StatusBanner type={status.type} message={status.msg} />}
     </div>
