@@ -126,10 +126,14 @@ def convert_tdms_files_to_cycles(
                             # Get start datetime
                             if 'wf_start_time' in channel.properties:
                                 start_datetime = channel.properties['wf_start_time']
-                                # Convert numpy datetime64 to string
-                                if hasattr(start_datetime, 'astype'):
-                                    start_datetime_str = str(pd.Timestamp(start_datetime))
-                                else:
+                                # Convert numpy datetime64 UTC → local time string
+                                try:
+                                    start_datetime_str = str(
+                                        pd.Timestamp(start_datetime, tz='UTC')
+                                        .tz_convert('localtime')
+                                        .tz_localize(None)
+                                    )
+                                except Exception:
                                     start_datetime_str = str(start_datetime)
                             break
                     except Exception:
@@ -144,8 +148,8 @@ def convert_tdms_files_to_cycles(
             # Add DateTime column if requested and we have start time
             if add_datetime_column and start_datetime is not None:
                 try:
-                    # Convert start_datetime to pandas Timestamp
-                    start_ts = pd.Timestamp(start_datetime)
+                    # Convert start_datetime from UTC to local system time
+                    start_ts = pd.Timestamp(start_datetime, tz='UTC').tz_convert('localtime').tz_localize(None)
                     # Generate datetime for each row
                     time_deltas = pd.to_timedelta(df['Time'], unit='s')
                     datetime_values = start_ts + time_deltas
