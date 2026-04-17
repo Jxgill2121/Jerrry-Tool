@@ -14,6 +14,7 @@ export default function CycleViewerTab() {
   const [rightCols, setRightCols] = useState<Record<string,boolean>>({});
   const [mode, setMode]           = useState<"per_cycle"|"duration">("per_cycle");
   const [timeUnit, setTimeUnit]   = useState<"seconds"|"minutes"|"hours"|"days">("seconds");
+  const [chartTitle, setChartTitle] = useState("");
   const [leftLabel, setLeftLabel] = useState("");
   const [rightLabel, setRightLabel] = useState("");
   const [fileIndex, setFileIndex] = useState(0);
@@ -54,6 +55,7 @@ export default function CycleViewerTab() {
         right_cols: Object.entries(rightCols).filter(([,v])=>v).map(([k])=>k),
         mode, file_index:fi,
         time_unit: timeUnit,
+        title: chartTitle,
         left_label: leftLabel,
         right_label: rightLabel,
       }));
@@ -98,6 +100,11 @@ export default function CycleViewerTab() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="text-xs text-gray-400 block mb-1">Chart title</label>
+                <input value={chartTitle} onChange={e=>setChartTitle(e.target.value)} placeholder="Leave blank to use filename"
+                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+              </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Left axis label</label>
                 <input value={leftLabel} onChange={e=>setLeftLabel(e.target.value)} placeholder="e.g. Pressure (MPa)"
