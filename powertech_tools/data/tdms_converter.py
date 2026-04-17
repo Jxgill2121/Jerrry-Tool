@@ -131,11 +131,12 @@ def convert_tdms_files_to_cycles(
                                     from dateutil.tz import tzlocal
                                     start_datetime_str = str(
                                         pd.Timestamp(start_datetime, tz='UTC')
-                                        .tz_convert(tzlocal())
-                                        .tz_localize(None)
+                                        .tz_convert(tzlocal()).tz_localize(None)
                                     )
                                 except Exception:
-                                    start_datetime_str = str(start_datetime)
+                                    start_datetime_str = str(
+                                        pd.Timestamp(start_datetime, tz='UTC').tz_localize(None)
+                                    )
                             break
                     except Exception:
                         continue
@@ -149,16 +150,17 @@ def convert_tdms_files_to_cycles(
             # Add DateTime column if requested and we have start time
             if add_datetime_column and start_datetime is not None:
                 try:
-                    # Convert start_datetime from UTC to local system time
-                    from dateutil.tz import tzlocal
-                    start_ts = pd.Timestamp(start_datetime, tz='UTC').tz_convert(tzlocal()).tz_localize(None)
-                    # Generate datetime for each row
+                    ts_utc = pd.Timestamp(start_datetime, tz='UTC')
+                    try:
+                        from dateutil.tz import tzlocal
+                        start_ts = ts_utc.tz_convert(tzlocal()).tz_localize(None)
+                    except Exception:
+                        start_ts = ts_utc.tz_localize(None)  # fall back to UTC
                     time_deltas = pd.to_timedelta(df['Time'], unit='s')
                     datetime_values = start_ts + time_deltas
-                    # Format as string for output
                     df.insert(1, 'DateTime', datetime_values.dt.strftime('%Y-%m-%d %H:%M:%S'))
                 except Exception:
-                    pass  # Skip datetime column if conversion fails
+                    pass
 
             # Determine cycle number for output filename
             if cycle_number_column and cycle_number_column in df.columns:
