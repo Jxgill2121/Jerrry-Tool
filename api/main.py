@@ -12,6 +12,8 @@ if _root not in sys.path:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from api.routers import merge, maxmin, avg, asr, validation, plot, cycle_viewer, fuel_systems
 
@@ -22,7 +24,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,3 +43,13 @@ app.include_router(fuel_systems.router, prefix="/api/fuel-systems", tags=["fuel_
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# Serve built React frontend (used in production / server deployment)
+_dist = os.path.join(_root, "frontend", "dist")
+if os.path.isdir(_dist):
+    app.mount("/assets", StaticFiles(directory=os.path.join(_dist, "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    def serve_spa(full_path: str):
+        return FileResponse(os.path.join(_dist, "index.html"))
