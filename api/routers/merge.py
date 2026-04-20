@@ -102,6 +102,7 @@ async def convert(
         return zip_response(buf, "cycle_files.zip")
 
     except Exception as e:
+        import traceback; traceback.print_exc()
         raise HTTPException(500, str(e))
 
 
