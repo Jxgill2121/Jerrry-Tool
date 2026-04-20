@@ -5,10 +5,32 @@ FastAPI backend entry point
 
 import sys
 import os
+import logging
+import logging.handlers
+from datetime import datetime, timezone
 
 _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _root not in sys.path:
     sys.path.insert(0, _root)
+
+_start_time = datetime.now(timezone.utc)
+
+# File logging (written to logs/ next to repo root)
+_log_dir = os.path.join(_root, "logs")
+os.makedirs(_log_dir, exist_ok=True)
+_log_file = os.path.join(_log_dir, "jerry.log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.handlers.RotatingFileHandler(
+            _log_file, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8"
+        ),
+    ],
+)
+logger = logging.getLogger("jerry")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,9 +62,22 @@ app.include_router(cycle_viewer.router, prefix="/api/cycle-viewer", tags=["cycle
 app.include_router(fuel_systems.router, prefix="/api/fuel-systems", tags=["fuel_systems"])
 
 
+@app.on_event("startup")
+async def on_startup():
+    logger.info("Jerry started — listening on http://0.0.0.0:8000")
+
+
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    uptime = datetime.now(timezone.utc) - _start_time
+    hours, remainder = divmod(int(uptime.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return {
+        "status": "ok",
+        "version": "2.0.0",
+        "uptime": f"{hours}h {minutes}m {seconds}s",
+        "started": _start_time.isoformat(),
+    }
 
 
 # Serve built React frontend (used in production / server deployment)

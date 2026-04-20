@@ -33,3 +33,4 @@ TASK_STATE.md
 build/
 dist/
 *.spec
+logs/
