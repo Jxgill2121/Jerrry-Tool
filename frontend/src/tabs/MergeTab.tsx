@@ -94,7 +94,7 @@ export default function MergeTab() {
               <div className="flex items-center gap-3">
                 <label className="text-sm text-gray-400 w-20">Group</label>
                 <select value={selectedGroup} onChange={(e)=>onGroupChange(e.target.value)}
-                  className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                  className="bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                   {structure.groups.map(g=><option key={g}>{g}</option>)}
                 </select>
               </div>
@@ -115,7 +115,7 @@ export default function MergeTab() {
                   <div key={ch}
                     onClick={()=>toggleCh(ch)}
                     className={`flex items-start gap-3 rounded-lg px-3 py-2.5 cursor-pointer border transition-colors
-                      ${checked ? "bg-gray-800 border-blue-600" : "bg-gray-900 border-gray-700 opacity-60"}`}>
+                      ${checked ? "bg-gray-800 border-blue-600" : "bg-surface border-border opacity-60"}`}>
                     <input type="checkbox" checked={checked} readOnly className="mt-0.5 accent-blue-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -158,12 +158,12 @@ export default function MergeTab() {
             <div>
               <label className="text-xs text-gray-400 block mb-1">Time column name</label>
               <input value={catTimeCol} onChange={e=>setCatTimeCol(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-xs text-gray-400 block mb-1">Output filename</label>
               <input value={catName} onChange={e=>setCatName(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
             </div>
           </div>
 

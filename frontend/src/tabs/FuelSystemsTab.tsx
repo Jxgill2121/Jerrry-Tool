@@ -115,7 +115,7 @@ export default function FuelSystemsTab() {
   const Sel = ({label,value,onChange,allowEmpty}:{label:string;value:string;onChange:(v:string)=>void;allowEmpty?:boolean}) => (
     <div><label className="text-xs text-gray-400 block mb-1">{label}</label>
       <select value={value} onChange={e=>onChange(e.target.value)}
-        className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+        className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
         {allowEmpty&&<option value="">— none —</option>}
         {headers.map(h=><option key={h}>{h}</option>)}
       </select></div>
@@ -146,7 +146,7 @@ export default function FuelSystemsTab() {
             <div className="flex items-center gap-4">
               <div><label className="text-xs text-gray-400 block mb-1">Ptank Threshold (MPa)</label>
                 <input type="number" value={ptankThr} onChange={e=>setPtankThr(e.target.value)} step="0.1"
-                  className="w-28 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                  className="w-28 bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">End of Fill</label>
                 <div className="flex gap-3">
@@ -163,7 +163,7 @@ export default function FuelSystemsTab() {
                 <Sel label="SOC Column" value={socCol} onChange={setSocCol} allowEmpty />
                 <div><label className="text-xs text-gray-400 block mb-1">SOC Threshold %</label>
                   <input type="number" value={socThr} onChange={e=>setSocThr(e.target.value)}
-                    className="w-24 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                    className="w-24 bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
               </div>
             )}
           </section>
@@ -177,10 +177,10 @@ export default function FuelSystemsTab() {
               <div className="flex gap-3 ml-5">
                 <div><label className="text-xs text-gray-400 block mb-1">Target Temp (°C)</label>
                   <input type="number" value={tfuelTarget} onChange={e=>setTfuelTarget(e.target.value)}
-                    className="w-24 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                    className="w-24 bg-surface2 border border-border rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
                 <div><label className="text-xs text-gray-400 block mb-1">Time Window (s)</label>
                   <input type="number" value={tfuelWindow} onChange={e=>setTfuelWindow(e.target.value)}
-                    className="w-24 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                    className="w-24 bg-surface2 border border-border rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
               </div>
             )}
             <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -189,7 +189,7 @@ export default function FuelSystemsTab() {
             {enRamp&&(
               <div className="ml-5"><label className="text-xs text-gray-400 block mb-1">Min Ramp (MPa/min) — blank to report only</label>
                 <input type="number" value={rampLimit} onChange={e=>setRampLimit(e.target.value)} placeholder="optional"
-                  className="w-36 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                  className="w-36 bg-surface2 border border-border rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
             )}
           </section>
 

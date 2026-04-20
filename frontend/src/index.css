@@ -4,10 +4,25 @@
 
 body {
   @apply bg-base text-gray-100;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: #0f172a; }
-::-webkit-scrollbar-thumb  { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #30363d; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+input[type="text"],
+input[type="number"],
+input:not([type]),
+textarea {
+  @apply bg-surface2 border border-border rounded-md px-3 py-1.5 text-sm text-gray-100
+         placeholder-gray-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30
+         transition-colors;
+}
+
+select {
+  @apply bg-surface2 border border-border rounded-md px-3 py-1.5 text-sm text-gray-100
+         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30
+         transition-colors cursor-pointer;
+}

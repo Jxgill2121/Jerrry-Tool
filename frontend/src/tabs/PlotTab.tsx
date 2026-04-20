@@ -116,18 +116,18 @@ export default function PlotTab() {
             <div className="grid grid-cols-2 gap-3">
               <div><label className="text-xs text-gray-400 block mb-1">Main Title</label>
                 <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="e.g. PL-006117"
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                  className="w-full bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
               <div><label className="text-xs text-gray-400 block mb-1">Cycle Column</label>
                 <select value={cycleCol} onChange={e=>setCycleCol(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                  className="w-full bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                   {cycleOpts.map(c=><option key={c} value={c}>{cols.find(x=>x.id===c)?.display??c}</option>)}
                 </select></div>
               <div><label className="text-xs text-gray-400 block mb-1">X Min</label>
                 <input type="number" value={xMin} onChange={e=>setXMin(e.target.value)} placeholder="auto"
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                  className="w-full bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
               <div><label className="text-xs text-gray-400 block mb-1">X Max</label>
                 <input type="number" value={xMax} onChange={e=>setXMax(e.target.value)} placeholder="auto"
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
+                  className="w-full bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
             </div>
           </section>
 
@@ -138,14 +138,14 @@ export default function PlotTab() {
               {graphs.length>1&&<button onClick={()=>setGraphs(p=>p.slice(0,-1))} className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded">− Remove Last</button>}
             </div>
             {graphs.map((g,i)=>(
-              <div key={i} className="border border-gray-700 rounded-lg p-4 space-y-3">
+              <div key={i} className="border border-border rounded-lg p-4 space-y-3">
                 <p className="text-xs font-medium text-gray-400">Graph {i+1}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[["Title",g.title,"title"],["Y Label",g.y_label,"y_label"]].map(([lbl,val,f])=>(
                     <div key={String(f)}>
                       <label className="text-xs text-gray-500">{String(lbl)}</label>
                       <input value={String(val)} onChange={e=>setG(i,f as keyof GraphRow,e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                        className="w-full bg-surface2 border border-border rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
                     </div>
                   ))}
                 </div>
@@ -154,7 +154,7 @@ export default function PlotTab() {
                     <div key={String(f)}>
                       <label className="text-xs text-gray-500">{String(lbl)}</label>
                       <select value={String(val)} onChange={e=>setG(i,f as keyof GraphRow,e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                        className="w-full bg-surface2 border border-border rounded px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                         {paramOpts.map(o=><option key={o}>{o}</option>)}
                       </select>
                     </div>
@@ -165,7 +165,7 @@ export default function PlotTab() {
                     <div key={f}>
                       <label className="text-xs text-gray-500">{f.replace(/_/g," ")}</label>
                       <input type="number" value={g[f] as string} onChange={e=>setG(i,f,e.target.value)} placeholder="auto"
-                        className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-xs text-gray-100 focus:outline-none focus:border-blue-500" />
+                        className="w-full bg-surface2 border border-border rounded px-2 py-0.5 text-xs text-gray-100 focus:outline-none focus:border-blue-500" />
                     </div>
                   ))}
                 </div>

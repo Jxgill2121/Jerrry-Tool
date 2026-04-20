@@ -91,7 +91,7 @@ export default function CycleViewerTab() {
                 <div key={lbl}>
                   <label className="text-xs text-gray-400 block mb-1">{lbl}</label>
                   <select value={val} onChange={e=>set(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                    className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                     <option value="">— none —</option>
                     {headers.map(h=><option key={h}>{h}</option>)}
                   </select>
@@ -103,17 +103,17 @@ export default function CycleViewerTab() {
               <div className="col-span-2">
                 <label className="text-xs text-gray-400 block mb-1">Chart title</label>
                 <input value={chartTitle} onChange={e=>setChartTitle(e.target.value)} placeholder="Leave blank to use filename"
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                  className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Left axis label</label>
                 <input value={leftLabel} onChange={e=>setLeftLabel(e.target.value)} placeholder="e.g. Pressure (MPa)"
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                  className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Right axis label</label>
                 <input value={rightLabel} onChange={e=>setRightLabel(e.target.value)} placeholder="e.g. Temperature (°C)"
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                  className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
               </div>
             </div>
 

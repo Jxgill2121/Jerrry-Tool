@@ -76,7 +76,7 @@ export default function ValidationTab() {
             <div className="flex items-center gap-3">
               <label className="text-sm text-gray-400 w-28">Cycle column</label>
               <select value={cycleCol} onChange={e=>setCycleCol(e.target.value)}
-                className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                className="bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                 {headers.map(h=><option key={h}>{h}</option>)}
               </select>
             </div>
@@ -100,7 +100,7 @@ export default function ValidationTab() {
                         <td key={f} className="px-2 py-1">
                           <input type="number" value={(r[f] as string)} placeholder="—"
                             onChange={e=>setLim(i,f,e.target.value)}
-                            className="w-24 bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
+                            className="w-24 bg-surface2 border border-border rounded px-2 py-0.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
                         </td>
                       ))}
                     </tr>

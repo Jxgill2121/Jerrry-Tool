@@ -67,7 +67,7 @@ export default function AvgTab() {
             <div className="flex items-center gap-3 mb-1">
               <label className="text-sm text-gray-400 w-24">Time col</label>
               <select value={timeCol} onChange={e=>setTimeCol(e.target.value)}
-                className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                className="bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                 {headers.map(h=><option key={h}>{h}</option>)}
               </select>
             </div>

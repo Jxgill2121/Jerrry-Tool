@@ -105,7 +105,7 @@ export default function MaxMinTab() {
 function ColSelect({headers,value,onChange,allowEmpty}:{headers:string[];value:string;onChange:(v:string)=>void;allowEmpty?:boolean}) {
   return (
     <select value={value} onChange={e=>onChange(e.target.value)}
-      className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500 min-w-40">
+      className="bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500 min-w-40">
       {allowEmpty && <option value="">— none —</option>}
       {headers.map(h=><option key={h}>{h}</option>)}
     </select>

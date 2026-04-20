@@ -108,7 +108,7 @@ export default function ASRTab() {
                 <div key={String(lbl)} className="flex flex-col gap-1">
                   <label className="text-xs text-gray-400">{String(lbl)}</label>
                   <select value={String(val)} onChange={e=>(set as (v:string)=>void)(e.target.value)}
-                    className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
+                    className="bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500">
                     <option value="">— select —</option>
                     {headers.map(h=><option key={h}>{h}</option>)}
                   </select>
@@ -139,7 +139,7 @@ export default function ASRTab() {
                     {(["label","temp_min","temp_max","target_hours"] as (keyof Band)[]).map(f=>(
                       <td key={f} className="pr-2 py-1">
                         <input value={b[f]} onChange={e=>setBand(i,f,e.target.value)} type={f==="label"?"text":"number"}
-                          className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-100 focus:outline-none focus:border-blue-500 text-xs" />
+                          className="w-full bg-surface2 border border-border rounded px-2 py-1 text-gray-100 focus:outline-none focus:border-blue-500 text-xs" />
                       </td>
                     ))}
                     <td><button onClick={()=>delBand(i)} className="text-red-400 hover:text-red-300 text-xs px-1">✕</button></td>
