@@ -175,14 +175,24 @@ def convert_tdms_files_to_cycles(
             out_filename = f"{base_name}_cycle{cycle_num}.txt"
             out_path = os.path.join(output_dir, out_filename)
 
-            # Write with Powertech header format
+            # Pull file-level metadata from TDMS
+            file_props = tdms_file.properties
+            tdms_name   = file_props.get("name", os.path.splitext(os.path.basename(filepath))[0])
+            tdms_title  = file_props.get("Title", "")
+            tdms_author = file_props.get("Author", "")
+
+            # Write header (compatible with ShowGraph format)
             with open(out_path, "w", encoding="utf-8") as f:
-                f.write("Powertech Test Log\n")
-                f.write(f"Time step ={actual_time_step:.2f} s\n")
+                f.write(f"name\t\n")
+                f.write(f"{tdms_name}\t\n")
+                if tdms_title:
+                    f.write(f"Title\t\n{tdms_title}\t\n")
+                if tdms_author:
+                    f.write(f"Author\t\n{tdms_author}\t\n")
+                f.write(f"Log Rate = {actual_time_step:.6f}\n")
                 if start_datetime_str:
                     f.write(f"Start time ={start_datetime_str}\n")
                 f.write("\n")
-                f.write("Cycle test\n")
                 f.write("\t".join(df.columns) + "\n")
                 df.to_csv(f, sep="\t", index=False, header=False, lineterminator="\n")
 

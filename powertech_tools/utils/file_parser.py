@@ -107,7 +107,10 @@ def find_header_line_index(path: str, max_lines: int = 400) -> Tuple[int, str, L
             continue
 
         low = raw.lower()
-        if low.startswith("log rate") or low.startswith("powertech test log") or low.startswith("time step") or low.startswith("cycle test"):
+        if (low.startswith("log rate") or low.startswith("powertech test log")
+                or low.startswith("time step") or low.startswith("cycle test")
+                or low.startswith("name") or low.startswith("title")
+                or low.startswith("author") or low.startswith("start time")):
             continue
 
         parts = smart_split(lines[i], delim)
@@ -180,7 +183,32 @@ def load_table_allow_duplicate_headers(path: str) -> pd.DataFrame:
     )
 
     df.columns = headers
+
+    # Convert MM:SS.f time format (e.g. "16:56.1") to elapsed seconds
+    time_col = next((c for c in df.columns if c.lower() in ("time", "elapsed")), None)
+    if time_col and df[time_col].dtype == object:
+        converted = _parse_mmssf(df[time_col])
+        if converted is not None:
+            df[time_col] = converted
+
     return df
+
+
+def _parse_mmssf(series: "pd.Series") -> "pd.Series | None":
+    """Convert MM:SS.f strings to elapsed seconds. Returns None if not that format."""
+    sample = series.dropna().head(5).astype(str)
+    if not sample.str.match(r"^\d+:\d+(\.\d+)?$").all():
+        return None
+    def to_seconds(v: str) -> float:
+        try:
+            mins, rest = v.split(":")
+            return float(mins) * 60 + float(rest)
+        except Exception:
+            return float("nan")
+    elapsed = series.astype(str).apply(to_seconds)
+    # Make relative (start from 0)
+    first = elapsed.dropna().iloc[0] if not elapsed.dropna().empty else 0
+    return elapsed - first
 
 
 def build_minmax_display_map(headers: List[str]) -> Tuple[List[str], Dict[str, str], Dict[str, str]]:
