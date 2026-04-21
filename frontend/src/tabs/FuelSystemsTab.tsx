@@ -32,7 +32,7 @@ export default function FuelSystemsTab() {
   const [rampLimit, setRampLimit] = useState("");
   const [paramRows, setParamRows] = useState<ParamRow[]>([]);
   const [results, setResults]   = useState<FSResult[]|null>(null);
-  const [figure, setFigure]     = useState<unknown|null>(null);
+  const [figure, setFigure]     = useState<object|null>(null);
   const [vizIdx, setVizIdx]     = useState(0);
   const [loading, setLoading]   = useState(false);
   const [status, setStatus]     = useState<{type:"info"|"success"|"error";msg:string}|null>(null);

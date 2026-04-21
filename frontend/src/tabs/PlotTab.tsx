@@ -22,7 +22,7 @@ export default function PlotTab() {
   const [xMin, setXMin]     = useState("");
   const [xMax, setXMax]     = useState("");
   const [graphs, setGraphs] = useState<GraphRow[]>([emptyRow(), emptyRow()]);
-  const [figure, setFigure] = useState<unknown|null>(null);
+  const [figure, setFigure] = useState<object|null>(null);
   const [loading, setLoading] = useState(false);
   const [pngLoading, setPngLoading] = useState(false);
   const [status, setStatus] = useState<{type:"info"|"success"|"error";msg:string}|null>(null);

@@ -18,7 +18,7 @@ export default function CycleViewerTab() {
   const [leftLabel, setLeftLabel] = useState("");
   const [rightLabel, setRightLabel] = useState("");
   const [fileIndex, setFileIndex] = useState(0);
-  const [figure, setFigure]       = useState<unknown|null>(null);
+  const [figure, setFigure]       = useState<object|null>(null);
   const [loading, setLoading]     = useState(false);
   const [status, setStatus]       = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
 
