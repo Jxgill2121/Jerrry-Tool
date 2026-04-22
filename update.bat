@@ -27,6 +27,6 @@ if errorlevel 1 ( echo ERROR: Could not restart. Is PM2 running? Try: pm2 start 
 echo.
 echo ================================
 echo  Done! Jerry is up to date.
-echo  http://localhost:8000
+echo  http://localhost:80
 echo ================================
 pause

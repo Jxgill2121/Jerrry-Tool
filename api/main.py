@@ -64,7 +64,7 @@ app.include_router(fuel_systems.router, prefix="/api/fuel-systems", tags=["fuel_
 
 @app.on_event("startup")
 async def on_startup():
-    logger.info("Jerry started — listening on http://0.0.0.0:8000")
+    logger.info("Jerry started — listening on http://0.0.0.0:80")
 
 
 @app.get("/api/health")
