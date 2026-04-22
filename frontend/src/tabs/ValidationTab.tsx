@@ -2,6 +2,7 @@ import { useState } from "react";
 import api, { downloadBlob } from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
+import TabDescription from "../components/TabDescription";
 
 interface LimitRow { variable:string; min_lower:string; min_upper:string; max_lower:string; max_upper:string; }
 
@@ -63,7 +64,17 @@ export default function ValidationTab() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">Validation & QC</h2>
+      <TabDescription
+        title="Cylinder Validation"
+        summary="Validates cylinder test data against engineering acceptance limits. Checks every cycle in a Max/Min summary file against your specified bounds and exports a detailed pass/fail report to Excel."
+        details={[
+          "Upload a Max/Min summary file — the output from the Max/Min tab. The tool automatically detects paired Min/Max column pairs for each parameter.",
+          "Select the Cycle column so each row in the report is correctly labeled by cycle number.",
+          "For each parameter, define up to four acceptance limits: Min Lower (the minimum value the Min must be above), Min Upper (the maximum value the Min must be below), Max Lower, and Max Upper. Leave any field blank to skip that check.",
+          "The tool evaluates every cycle against all limits and exports an Excel file with a row per cycle showing the raw values and a PASS/FAIL flag for each limit.",
+          "Useful for confirming that measured pressures, temperatures, or other parameters stay within the engineering specification across all test cycles.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload Max/Min File</h3>

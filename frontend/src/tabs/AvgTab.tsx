@@ -2,6 +2,7 @@ import { useState } from "react";
 import api, { downloadBlob } from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
+import TabDescription from "../components/TabDescription";
 
 export default function AvgTab() {
   const [files, setFiles]   = useState<File[]>([]);
@@ -53,7 +54,17 @@ export default function AvgTab() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">Cycle Averages & Stats</h2>
+      <TabDescription
+        title="Generate Averages"
+        summary="Computes per-parameter statistics across all uploaded cycle files and exports a summary Excel spreadsheet — useful for characterizing steady-state performance over an entire test campaign."
+        details={[
+          "Upload one or more TXT cycle files. Each file is treated as one test cycle.",
+          "Identify the Time column so it can be excluded from averaging. All other selected columns will be averaged.",
+          "Use the checkboxes to choose which parameters to include. Select All / Deselect All buttons are available for quick selection.",
+          "The exported Excel file contains the mean, minimum, maximum, and standard deviation for each selected parameter across all cycles.",
+          "Averages are computed per-column across all rows of all files combined, giving you a single row of summary statistics per parameter.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload Cycle Files</h3>

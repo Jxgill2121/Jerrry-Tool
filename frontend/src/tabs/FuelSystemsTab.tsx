@@ -4,6 +4,7 @@ import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
 import ParamBoundsEditor, { ParamRow } from "../components/ParamBoundsEditor";
 import PlotlyChart from "../components/PlotlyChart";
+import TabDescription from "../components/TabDescription";
 
 interface FSResult {
   file:string; status:"PASS"|"FAIL"|"ERROR";
@@ -123,7 +124,18 @@ export default function FuelSystemsTab() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">Fuel Systems Validation</h2>
+      <TabDescription
+        title="Fuel Systems"
+        summary="Runs a suite of automated checks on fuel system test cycle files — verifying pre-conditioning temperature, parameter bounds, fill ramp rate, and state-of-charge completion — and produces a pass/fail summary for each cycle."
+        details={[
+          "Upload one or more TXT cycle files. Select the Time, tank pressure (Ptank), and fuel temperature (Tfuel) columns along with any additional parameters to bounds-check.",
+          "Fuel temperature pre-conditioning check: verifies that Tfuel reached the required soak temperature before the fill cycle began. Configure the target temperature and soak window.",
+          "Parameter bounds check: define upper and lower limits for any channel. Any cycle where a parameter goes out of bounds is flagged as a violation.",
+          "Ramp rate check: measures how fast tank pressure rose during the fill and flags cycles where the average ramp rate falls outside acceptable limits.",
+          "State-of-charge (SOC) check: confirms whether the SOC channel reached the target threshold (e.g., 100%) during the cycle.",
+          "Results are shown as a table with a PASS/FAIL status per cycle, plus specific messages for each check. An Excel export is also available.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload Cycle Files</h3>

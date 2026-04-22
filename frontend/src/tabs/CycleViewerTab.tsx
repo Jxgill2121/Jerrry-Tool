@@ -3,6 +3,7 @@ import api from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
 import PlotlyChart from "../components/PlotlyChart";
+import TabDescription from "../components/TabDescription";
 
 export default function CycleViewerTab() {
   const [files, setFiles]         = useState<File[]>([]);
@@ -74,7 +75,18 @@ export default function CycleViewerTab() {
 
   return (
     <div className="max-w-5xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">Cycle Viewer</h2>
+      <TabDescription
+        title="Cycle Viewer"
+        summary="Visualizes individual test cycle waveforms from raw cycle TXT files. Useful for quick inspection of data quality, spotting anomalies in a specific cycle, and preparing time-series figures for reports."
+        details={[
+          "Upload one or more TXT cycle files. If multiple files are uploaded, use the cycle selector to navigate between them.",
+          "Select the Time column, a primary (left Y-axis) channel such as tank pressure (Ptank), and an optional skin temperature (Tskin) channel.",
+          "Additional channels can be toggled on the right Y-axis to overlay parameters like temperature, flow rate, or voltage on the same time axis.",
+          "Two view modes: Per Cycle (shows one file at a time) or Full Duration (concatenates all files into a single continuous timeline).",
+          "Time units can be converted on the fly — seconds, minutes, hours, or days — without re-uploading the data.",
+          "Add a custom chart title and axis labels to make the plot ready for a report or presentation.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload Files</h3>

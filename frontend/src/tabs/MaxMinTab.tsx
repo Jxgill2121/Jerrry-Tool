@@ -2,6 +2,7 @@ import { useState } from "react";
 import api, { downloadBlob } from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
+import TabDescription from "../components/TabDescription";
 
 type Mode = "multiple" | "single_cycle" | "single_template";
 
@@ -57,7 +58,17 @@ export default function MaxMinTab() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">Max/Min Converter</h2>
+      <TabDescription
+        title="Max / Min"
+        summary="Processes cycle data files and extracts the minimum and maximum value of every selected parameter across each cycle, producing a summary spreadsheet used by the Report Graph Generator and Cylinder Validation tools."
+        details={[
+          "Upload one or more TXT cycle files. Each file is treated as one cycle, or you can use a single combined file with a cycle-number column.",
+          "Three processing modes: Multiple Files (one file per cycle), Single File with Cycle Column (cycle number embedded in the data), or Single File with Template (cycle boundaries detected automatically from a reference parameter like Ptank).",
+          "Select your Time column and Cycle column so the tool can correctly segment and label each cycle in the output.",
+          "The output is an Excel file where each row is one cycle and each parameter appears as two columns — Min and Max — in the exact paired format expected by the Report Graph Generator.",
+          "This is typically the first processing step after converting TDMS files to cycles.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload Cycle Files</h3>

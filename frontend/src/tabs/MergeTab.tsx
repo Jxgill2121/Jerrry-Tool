@@ -2,6 +2,7 @@ import { useState } from "react";
 import api, { downloadBlob } from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
+import TabDescription from "../components/TabDescription";
 
 interface ChPreview { unit:string; samples:number[]; min:number|null; max:number|null; mean:number|null; count:number; }
 interface Structure {
@@ -78,7 +79,17 @@ export default function MergeTab() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">TDMS → Cycle Files</h2>
+      <TabDescription
+        title="TDMS → Cycle Files"
+        summary="Converts raw TDMS data acquisition files (from LabVIEW or similar DAQ systems) into individual cycle TXT files that are compatible with ShowGraph and Jerry's other analysis tools."
+        details={[
+          "Each TDMS file you upload is treated as one test cycle. The tool reads groups, channels, timestamps, and metadata directly from the TDMS file structure.",
+          "Select which data group and channels to export. A preview of each channel (min, max, mean, sample count, units) is shown so you can confirm you have the right data before converting.",
+          "Time and DateTime columns are added automatically — time comes from the TDMS time track and dates are converted from UTC to your local timezone.",
+          "Output files use the ShowGraph-compatible header format (name, Log Rate, Start time) and are bundled into a ZIP for download.",
+          "The Concatenate section at the bottom joins multiple cycle TXT files into a single continuous file, offsetting time values so they run without gaps — useful when you want to analyze an entire test campaign as one dataset.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload TDMS Files</h3>

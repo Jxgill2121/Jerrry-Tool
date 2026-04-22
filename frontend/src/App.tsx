@@ -35,21 +35,21 @@ const GROUPS = [
     items: [
       { id: "merge",      label: "TDMS → Cycles", component: MergeTab },
       { id: "maxmin",     label: "Max / Min",      component: MaxMinTab },
-      { id: "avg",        label: "Averages",       component: AvgTab },
+      { id: "avg",        label: "Generate Averages", component: AvgTab },
     ],
   },
   {
     label: "Analysis",
     items: [
       { id: "asr",        label: "ASR Validation", component: ASRTab },
-      { id: "validation", label: "Validation & QC",component: ValidationTab },
+      { id: "validation", label: "Cylinder Validation", component: ValidationTab },
       { id: "fuel",       label: "Fuel Systems",   component: FuelSystemsTab },
     ],
   },
   {
     label: "Visualization",
     items: [
-      { id: "plot",       label: "Data Viz",       component: PlotTab },
+      { id: "plot",       label: "Report Graph Generator", component: PlotTab },
       { id: "cycle",      label: "Cycle Viewer",   component: CycleViewerTab },
     ],
   },

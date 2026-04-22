@@ -9,8 +9,8 @@ body {
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: #30363d; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #484f58; }
+::-webkit-scrollbar-thumb  { background: #3c5070; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #4e6590; }
 
 input[type="text"],
 input[type="number"],

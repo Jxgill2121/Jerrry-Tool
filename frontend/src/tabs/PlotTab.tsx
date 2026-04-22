@@ -3,6 +3,7 @@ import api from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
 import PlotlyChart from "../components/PlotlyChart";
+import TabDescription from "../components/TabDescription";
 
 interface ColInfo { id:string; display:string; kind:"min"|"max"|"other"; }
 interface GraphRow { title:string; y_label:string; y1:string; y2:string;
@@ -96,7 +97,18 @@ export default function PlotTab() {
 
   return (
     <div className="max-w-5xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">Data Visualization</h2>
+      <TabDescription
+        title="Report Graph Generator"
+        summary="Generates publication-quality multi-panel plots from Max/Min summary data, formatted for engineering reports. Each subplot shows a parameter's min and max trends across cycles with optional pass/fail limit lines."
+        details={[
+          "Upload a Max/Min summary file (produced by the Max/Min tab). The tool reads all paired Min/Max parameter columns and makes them available for plotting.",
+          "Configure global settings: the overall report title, which column to use as the X-axis (typically Cycle), and the X-axis range.",
+          "Add as many subplots as needed using '+ Add Graph'. For each subplot, set a title, Y-axis label, choose up to two parameters (Y1 and Y2), and optionally set Y-axis min/max and tick count.",
+          "Each subplot also supports optional pass/fail reference lines (Min Lower, Min Upper, Max Lower, Max Upper) drawn as dashed horizontal lines so you can visually assess whether data is within spec.",
+          "The plot is rendered interactively in-browser using Plotly — you can zoom, pan, and hover over data points. Plots can be saved as PNG.",
+          "Load from Previous Graph: drop a PNG that was previously saved by Jerry to automatically restore its title, axis settings, and subplot configuration.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-3">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Load from Previous Graph (optional)</h3>

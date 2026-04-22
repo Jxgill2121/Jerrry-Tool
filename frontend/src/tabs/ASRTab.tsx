@@ -2,6 +2,7 @@ import { useState } from "react";
 import api, { downloadBlob } from "../api/client";
 import FileDropzone from "../components/FileDropzone";
 import StatusBanner from "../components/StatusBanner";
+import TabDescription from "../components/TabDescription";
 
 interface Band { label:string; temp_min:string; temp_max:string; target_hours:string; }
 interface BandResult {
@@ -92,7 +93,17 @@ export default function ASRTab() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <h2 className="text-xl font-semibold text-gray-100">ASR Validation</h2>
+      <TabDescription
+        title="ASR Validation"
+        summary="Checks whether a test campaign has met its Accelerated Stress Reliability (ASR) temperature soak requirements by tallying how many hours the device spent in each defined temperature band."
+        details={[
+          "ASR tests require the device under test to accumulate a minimum number of hours at specific temperature extremes — for example, 200 hours below -20°C and 200 hours above 50°C.",
+          "Define your temperature bands by setting a label, lower and upper temperature bounds, and the required target hours for each band.",
+          "Upload one or more log files containing a time channel and a temperature channel. Select the correct columns and specify the time unit (seconds, minutes, hours).",
+          "The tool scans the temperature data sample by sample and tallies time spent within each band. It also counts excursions — samples that fall outside any defined band.",
+          "Results show hours accumulated, percent completion toward the target, pass/fail status, and observed min/mean/max temperature within each band.",
+        ]}
+      />
 
       <section className="bg-surface rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1 · Upload File</h3>
