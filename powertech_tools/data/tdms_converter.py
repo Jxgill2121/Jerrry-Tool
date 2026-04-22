@@ -98,6 +98,18 @@ def convert_tdms_files_to_cycles(
             if skipped_channels and progress_callback:
                 progress_callback(file_idx, total_files, f"⚠️ Skipped empty channels: {', '.join(skipped_channels)}")
 
+            # Channels can have different lengths — truncate all to the shortest
+            lengths = {ch: len(v) for ch, v in data_dict.items()}
+            min_len = min(lengths.values())
+            max_len = max(lengths.values())
+            if min_len != max_len:
+                if progress_callback:
+                    mismatched = [f"{ch}({l})" for ch, l in lengths.items() if l != min_len]
+                    progress_callback(file_idx, total_files,
+                        f"⚠️ Channel length mismatch in {os.path.basename(filepath)}, "
+                        f"truncating to {min_len} samples. Longer channels: {', '.join(mismatched)}")
+                data_dict = {ch: v[:min_len] for ch, v in data_dict.items()}
+
             df = pd.DataFrame(data_dict)
 
             if len(df) == 0:
