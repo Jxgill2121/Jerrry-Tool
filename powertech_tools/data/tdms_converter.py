@@ -98,6 +98,27 @@ def convert_tdms_files_to_cycles(
             if skipped_channels and progress_callback:
                 progress_callback(file_idx, total_files, f"⚠️ Skipped empty channels: {', '.join(skipped_channels)}")
 
+            # Channels can have different lengths — pad shorter ones with NaN
+            lengths = {ch: len(v) for ch, v in data_dict.items()}
+            min_len = min(lengths.values())
+            max_len = max(lengths.values())
+            if min_len != max_len:
+                if progress_callback:
+                    mismatched = [f"{ch}({l})" for ch, l in lengths.items() if l != max_len]
+                    progress_callback(file_idx, total_files,
+                        f"⚠️ Channel length mismatch in {os.path.basename(filepath)}, "
+                        f"padding to {max_len} samples. Shorter channels: {', '.join(mismatched)}")
+                padded = {}
+                for ch, v in data_dict.items():
+                    if len(v) < max_len:
+                        arr = np.empty(max_len)
+                        arr[:len(v)] = v
+                        arr[len(v):] = np.nan
+                        padded[ch] = arr
+                    else:
+                        padded[ch] = v
+                data_dict = padded
+
             df = pd.DataFrame(data_dict)
 
             if len(df) == 0:
