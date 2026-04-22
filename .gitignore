@@ -34,3 +34,8 @@ build/
 dist/
 *.spec
 logs/
+
+# Data files — do not commit test or sample data
+*.tdms
+*.TDMS
+Test/

@@ -116,7 +116,7 @@ export default function App() {
 
         {/* Footer */}
         <div className="px-4 py-3 border-t border-border/60">
-          <p className="text-[10px] text-gray-600">Surrey, BC · Powertech Labs</p>
+          <p className="text-[10px] text-gray-600">Powertech Analysis Tools</p>
         </div>
       </aside>
 

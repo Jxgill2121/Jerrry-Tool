@@ -127,7 +127,7 @@ export default function PlotTab() {
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 2 · Global Settings</h3>
             <div className="grid grid-cols-2 gap-3">
               <div><label className="text-xs text-gray-400 block mb-1">Main Title</label>
-                <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="e.g. PL-006117"
+                <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="e.g. Test Report Title"
                   className="w-full bg-surface2 border border-border rounded px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500" /></div>
               <div><label className="text-xs text-gray-400 block mb-1">Cycle Column</label>
                 <select value={cycleCol} onChange={e=>setCycleCol(e.target.value)}
