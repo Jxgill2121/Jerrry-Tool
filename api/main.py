@@ -37,7 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from api.routers import merge, maxmin, avg, asr, validation, plot, cycle_viewer, fuel_systems
+from api.routers import merge, maxmin, avg, asr, validation, plot, cycle_viewer, fuel_systems, soc_converter
 
 app = FastAPI(
     title="Jerry – Powertech Analysis Tools API",
@@ -60,6 +60,7 @@ app.include_router(validation.router,   prefix="/api/validation",   tags=["valid
 app.include_router(plot.router,         prefix="/api/plot",         tags=["plot"])
 app.include_router(cycle_viewer.router, prefix="/api/cycle-viewer", tags=["cycle_viewer"])
 app.include_router(fuel_systems.router, prefix="/api/fuel-systems", tags=["fuel_systems"])
+app.include_router(soc_converter.router, prefix="/api/soc",         tags=["soc"])
 
 
 @app.on_event("startup")
