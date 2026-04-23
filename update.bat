@@ -6,7 +6,9 @@ echo.
 
 :: Pull latest code from GitHub
 echo [1/3] Downloading latest code...
-git pull origin main
+git fetch origin main
+git checkout main
+git reset --hard origin/main
 if errorlevel 1 ( echo ERROR: git pull failed. Check your internet connection. & pause & exit /b 1 )
 
 :: Rebuild frontend
