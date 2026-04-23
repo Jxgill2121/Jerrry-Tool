@@ -55,7 +55,7 @@ async def process(
 
         out = io.StringIO()
         df.to_csv(out, sep="\t", index=False)
-        return text_response(io.BytesIO(out.getvalue().encode()), "maxmin_output.txt")
+        return text_response(out.getvalue(), "maxmin_output.txt")
 
     except HTTPException:
         raise
