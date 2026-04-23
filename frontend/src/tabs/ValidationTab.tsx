@@ -71,7 +71,7 @@ export default function ValidationTab() {
     <div className="max-w-4xl space-y-6">
       <TabDescription
         title="Cylinder Validation"
-        summary="Validates cylinder test data against engineering acceptance limits. Checks every cycle in a Max/Min summary file against your specified bounds and exports a detailed pass/fail report to Excel."
+        summary="Validates any Max/Min file but is widely used for the cylinder lab due to their long tests. Works for any Max/Min file."
         details={[
           "Upload a Max/Min summary file — the output from the Max/Min tab. The tool automatically detects paired Min/Max column pairs for each parameter.",
           "Select the Cycle column so each row in the report is correctly labeled by cycle number.",

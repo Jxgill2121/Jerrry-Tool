@@ -77,14 +77,12 @@ export default function CycleViewerTab() {
     <div className="max-w-5xl space-y-6">
       <TabDescription
         title="Cycle Viewer"
-        summary="Visualizes individual test cycle waveforms from raw cycle TXT files. Useful for quick inspection of data quality, spotting anomalies in a specific cycle, and preparing time-series figures for reports."
+        summary="View and inspect individual cycle files"
         details={[
-          "Upload one or more TXT cycle files. If multiple files are uploaded, use the cycle selector to navigate between them.",
-          "Select the Time column, a primary (left Y-axis) channel such as tank pressure (Ptank), and an optional skin temperature (Tskin) channel.",
-          "Additional channels can be toggled on the right Y-axis to overlay parameters like temperature, flow rate, or voltage on the same time axis.",
-          "Two view modes: Per Cycle (shows one file at a time) or Full Duration (concatenates all files into a single continuous timeline).",
-          "Time units can be converted on the fly — seconds, minutes, hours, or days — without re-uploading the data.",
-          "Add a custom chart title and axis labels to make the plot ready for a report or presentation.",
+          "Upload one or more TXT cycle files and navigate between them using the cycle selector.",
+          "Select a Time column and up to two Y-axis channels to overlay on the same plot.",
+          "Switch between Per Cycle and Full Duration view to see one file at a time or all files concatenated.",
+          "Convert time units on the fly — seconds, minutes, hours, or days.",
         ]}
       />
 

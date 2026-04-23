@@ -105,10 +105,19 @@ export default function PlotTab() {
           "Configure global settings: the overall report title, which column to use as the X-axis (typically Cycle), and the X-axis range.",
           "Add as many subplots as needed using '+ Add Graph'. For each subplot, set a title, Y-axis label, choose up to two parameters (Y1 and Y2), and optionally set Y-axis min/max and tick count.",
           "Each subplot also supports optional pass/fail reference lines (Min Lower, Min Upper, Max Lower, Max Upper) drawn as dashed horizontal lines so you can visually assess whether data is within spec.",
-          "LOAD FROM A PREVIOUS GRAPH — Instead of filling in all parameters manually, drop a previously saved Jerry PNG into the 'Load from Previous Graph' box. It will automatically restore all titles, axis settings, limits, and subplot layout. Reference graphs (e.g. R134 standard at 70MPa) will be pre-built and available — just upload the reference PNG for the test type you want and your data is ready to plot instantly.",
-          "SAVE IMAGES TO THE S DRIVE — When you save a graph as PNG, save it to the S drive. This builds a library of reference graphs that can be reloaded here later. The more graphs saved there, the less manual setup anyone needs to do.",
         ]}
       />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 space-y-1">
+          <p className="text-sm font-bold text-white">Load from a Previous Graph</p>
+          <p className="text-sm text-gray-200">Instead of filling in all parameters manually, drop a previously saved Jerry PNG to instantly restore all titles, axes, limits, and layout. Reference graphs (e.g. R134 standard at 70MPa) will be pre-built — just upload the right one and you're ready to plot.</p>
+        </div>
+        <div className="rounded-xl border border-green-500/40 bg-green-500/10 p-4 space-y-1">
+          <p className="text-sm font-bold text-white">Save PNGs to the S Drive</p>
+          <p className="text-sm text-gray-200">Always save graphs to the S drive. This builds a shared library of reference graphs that anyone can reload here later — the more that's saved, the less setup everyone has to do.</p>
+        </div>
+      </div>
 
       <section className="bg-surface rounded-xl p-5 space-y-3">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Load from Previous Graph (optional)</h3>

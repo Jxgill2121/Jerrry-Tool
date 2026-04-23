@@ -95,9 +95,8 @@ export default function ASRTab() {
     <div className="max-w-3xl space-y-6">
       <TabDescription
         title="ASR Validation"
-        summary="Checks whether a test campaign has met its Accelerated Stress Reliability (ASR) temperature soak requirements by tallying how many hours the device spent in each defined temperature band."
+        summary="Validates ASR data"
         details={[
-          "ASR tests require the device under test to accumulate a minimum number of hours at specific temperature extremes — for example, 200 hours below -20°C and 200 hours above 50°C.",
           "Define your temperature bands by setting a label, lower and upper temperature bounds, and the required target hours for each band.",
           "Upload one or more log files containing a time channel and a temperature channel. Select the correct columns and specify the time unit (seconds, minutes, hours).",
           "The tool scans the temperature data sample by sample and tallies time spent within each band. It also counts excursions — samples that fall outside any defined band.",

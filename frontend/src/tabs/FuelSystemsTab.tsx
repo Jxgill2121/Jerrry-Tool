@@ -126,7 +126,7 @@ export default function FuelSystemsTab() {
     <div className="max-w-4xl space-y-6">
       <TabDescription
         title="Fuel Systems"
-        summary="Runs a suite of automated checks on fuel system test cycle files — verifying pre-conditioning temperature, parameter bounds, fill ramp rate, and state-of-charge completion — and produces a pass/fail summary for each cycle."
+        summary="Customized for fuel systems testing, to automate going through multiple cycles (Validate with ShowGraph after)"
         details={[
           "Upload one or more TXT cycle files. Select the Time, tank pressure (Ptank), and fuel temperature (Tfuel) columns along with any additional parameters to bounds-check.",
           "Fuel temperature pre-conditioning check: verifies that Tfuel reached the required soak temperature before the fill cycle began. Configure the target temperature and soak window.",
