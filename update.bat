@@ -6,7 +6,7 @@ echo.
 
 :: Pull latest code from GitHub
 echo [1/3] Downloading latest code...
-git pull origin claude/convert-to-webapp-BR383
+git pull origin main
 if errorlevel 1 ( echo ERROR: git pull failed. Check your internet connection. & pause & exit /b 1 )
 
 :: Rebuild frontend
