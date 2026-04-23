@@ -105,8 +105,8 @@ export default function PlotTab() {
           "Configure global settings: the overall report title, which column to use as the X-axis (typically Cycle), and the X-axis range.",
           "Add as many subplots as needed using '+ Add Graph'. For each subplot, set a title, Y-axis label, choose up to two parameters (Y1 and Y2), and optionally set Y-axis min/max and tick count.",
           "Each subplot also supports optional pass/fail reference lines (Min Lower, Min Upper, Max Lower, Max Upper) drawn as dashed horizontal lines so you can visually assess whether data is within spec.",
-          "The plot is rendered interactively in-browser using Plotly — you can zoom, pan, and hover over data points. Plots can be saved as PNG.",
-          "Load from Previous Graph: drop a PNG that was previously saved by Jerry to automatically restore its title, axis settings, and subplot configuration.",
+          "LOAD FROM A PREVIOUS GRAPH — Instead of filling in all parameters manually, drop a previously saved Jerry PNG into the 'Load from Previous Graph' box. It will automatically restore all titles, axis settings, limits, and subplot layout. Reference graphs (e.g. R134 standard at 70MPa) will be pre-built and available — just upload the reference PNG for the test type you want and your data is ready to plot instantly.",
+          "SAVE IMAGES TO THE S DRIVE — When you save a graph as PNG, save it to the S drive. This builds a library of reference graphs that can be reloaded here later. The more graphs saved there, the less manual setup anyone needs to do.",
         ]}
       />
 
