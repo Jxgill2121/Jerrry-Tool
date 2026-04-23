@@ -51,7 +51,7 @@ cd ..
 **Terminal 1 - Backend (FastAPI):**
 ```bash
 cd api
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 80
 ```
 
 **Terminal 2 - Frontend (Vite):**
@@ -79,15 +79,15 @@ npm run build
 cd ..
 
 # Start with PM2
-pm2 start "cd /path/to/api && uvicorn main:app --host 0.0.0.0 --port 8000" --name jerry
+pm2 start "cd /path/to/api && uvicorn main:app --host 0.0.0.0 --port 80" --name jerry
 pm2 save
 pm2 startup
 ```
 
 **Server Access:**
 - Frontend: `http://localhost` or configured domain
-- API: `http://localhost:8000`
-- Health check: `http://localhost:8000/api/health`
+- API: `http://localhost:80`
+- Health check: `http://localhost:80/api/health`
 
 ---
 
@@ -201,12 +201,12 @@ OSError: [Errno 98] Address already in use
 **Fix:** 
 ```bash
 # Find process on port 8000
-lsof -i :8000
+lsof -i :80
 # Kill it
 kill -9 <PID>
 
 # Or use different port
-uvicorn api.main:app --port 8001
+uvicorn api.main:app --port 8080
 ```
 
 ### PM2 Server Not Restarting
@@ -216,7 +216,7 @@ pm2 restart jerry failed
 **Fix:** Check if PM2 process exists:
 ```bash
 pm2 list
-pm2 start "cd /path/to/api && uvicorn main:app --host 0.0.0.0 --port 8000" --name jerry
+pm2 start "cd /path/to/api && uvicorn main:app --host 0.0.0.0 --port 80" --name jerry
 pm2 save
 ```
 
