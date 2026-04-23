@@ -68,8 +68,8 @@ export default function JerryApp() {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-border/60">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <span className="text-base leading-none">🐐</span>
+            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
+              <span className="text-2xl leading-none">🐐</span>
             </div>
             <div>
               <p className="text-white font-semibold text-sm leading-tight">Jerry</p>
