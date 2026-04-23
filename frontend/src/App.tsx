@@ -1,12 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import JerryApp from "./JerryApp";
+import GraphApp from "./GraphApp";
 import UncertaintyApp from "./uncertainty-tool/UncertaintyApp";
 import SocConverterApp from "./soc-converter/SocConverterApp";
 
 const APPS = [
-  { id: "jerry", label: "Jerry Tool", path: "/" },
-  { id: "uncertainty", label: "Uncertainty Tool", path: "/uncertainty-tool" },
-  { id: "soc", label: "SOC Calculator", path: "/soc-converter" },
+  { id: "jerry",       label: "Jerry Tool",              path: "/" },
+  { id: "graph",       label: "Report Graph Generator",  path: "/graph" },
+  { id: "uncertainty", label: "Uncertainty Tool",        path: "/uncertainty-tool" },
+  { id: "soc",         label: "SOC Calculator",          path: "/soc-converter" },
 ];
 
 export default function App() {
@@ -15,6 +17,7 @@ export default function App() {
       <TopNav />
       <Routes>
         <Route path="/" element={<JerryApp />} />
+        <Route path="/graph" element={<GraphApp />} />
         <Route path="/uncertainty-tool" element={
           <div className="flex-1 overflow-auto bg-base">
             <UncertaintyApp />
