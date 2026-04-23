@@ -73,7 +73,7 @@ export default function JerryApp() {
             </div>
             <div>
               <p className="text-white font-semibold text-sm leading-tight">Jerry</p>
-              <p className="text-gray-500 text-[10px] leading-tight">Powertech Tools</p>
+              <p className="text-gray-500 text-[10px] leading-tight">Just Endless Reports, Right? Yeah.</p>
             </div>
           </div>
         </div>
