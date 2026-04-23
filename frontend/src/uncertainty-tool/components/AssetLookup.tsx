@@ -364,6 +364,18 @@ export function AssetLookup({ onAssetSelect }: Props) {
       )}
 
       <div className="upload-section">
+        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '0.5rem', borderLeft: '4px solid #4CAF50' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold', fontSize: '0.95rem' }}>📁 Find the Asset List</p>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: '#333' }}>
+            The instrumentation list is located at:<br />
+            <code style={{ display: 'block', marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#fff', borderRadius: '0.3rem', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+              S:\07 LIBRARY\05 Calculators, Lookups and Guides\Uncertainty Measurement Asset Lists
+            </code>
+          </p>
+          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+            Download the Excel file and upload it here to search for your equipment.
+          </p>
+        </div>
         <label className="upload-btn">
           Upload Asset List (.xlsx)
           <input
