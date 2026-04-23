@@ -56,7 +56,7 @@ export default function AvgTab() {
     <div className="max-w-2xl space-y-6">
       <TabDescription
         title="Generate Averages"
-        summary="Computes per-parameter statistics across all uploaded cycle files and exports a summary Excel spreadsheet — useful for characterizing steady-state performance over an entire test campaign."
+        summary="Generates averages for each column in a cycle"
         details={[
           "Upload one or more TXT cycle files. Each file is treated as one test cycle.",
           "Identify the Time column so it can be excluded from averaging. All other selected columns will be averaged.",
