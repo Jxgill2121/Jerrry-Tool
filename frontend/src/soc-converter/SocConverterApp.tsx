@@ -97,7 +97,7 @@ export default function SocConverterApp() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-text mb-2">SOC Calculator</h1>
-          <p className="text-subtext">Calculate State of Charge (SOC) for H2 tanks</p>
+          <p className="text-subtext">Calculates SOC from Ptank and Ttank using hardcoded lookup values. If you have a tank at a given pressure and temperature and want to know its SOC relative to a different MPa rated tank, this is the tool for that.</p>
         </div>
 
         <div className="bg-surface border border-border rounded-lg p-6 space-y-6">
