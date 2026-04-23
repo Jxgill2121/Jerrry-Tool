@@ -99,7 +99,7 @@ export default function PlotTab() {
     <div className="max-w-5xl space-y-6">
       <TabDescription
         title="Report Graph Generator"
-        summary="Generates publication-quality multi-panel plots from Max/Min summary data, formatted for engineering reports. Each subplot shows a parameter's min and max trends across cycles with optional pass/fail limit lines."
+        summary="Generates max/min graphs"
         details={[
           "Upload a Max/Min summary file (produced by the Max/Min tab). The tool reads all paired Min/Max parameter columns and makes them available for plotting.",
           "Configure global settings: the overall report title, which column to use as the X-axis (typically Cycle), and the X-axis range.",
