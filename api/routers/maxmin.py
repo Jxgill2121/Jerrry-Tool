@@ -5,6 +5,7 @@ Max/Min Converter router
 import io
 import os
 import tempfile
+import traceback
 from typing import List
 
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -60,4 +61,5 @@ async def process(
     except HTTPException:
         raise
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(500, str(e))
