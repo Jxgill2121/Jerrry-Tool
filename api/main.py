@@ -50,6 +50,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total", "X-Passed", "X-Failed"],
 )
 
 app.include_router(merge.router,        prefix="/api/merge",        tags=["merge"])

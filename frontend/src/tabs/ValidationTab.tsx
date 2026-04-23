@@ -13,6 +13,7 @@ export default function ValidationTab() {
   const [limits, setLimits]   = useState<LimitRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus]   = useState<{type:"info"|"success"|"error";msg:string}|null>(null);
+  const [counts, setCounts]   = useState<{total:number;passed:number;failed:number}|null>(null);
 
   const loadFile = async (dropped: File[]) => {
     setFiles(dropped);setLimits([]);
@@ -57,6 +58,10 @@ export default function ValidationTab() {
       fd.append("limits_json",JSON.stringify(limitsObj));
       const res = await api.post("/validation/validate",fd,{responseType:"blob"});
       downloadBlob(res.data,"validation_results.xlsx");
+      const total  = parseInt(res.headers["x-total"]  ?? "0");
+      const passed = parseInt(res.headers["x-passed"] ?? "0");
+      const failed = parseInt(res.headers["x-failed"] ?? "0");
+      setCounts({total, passed, failed});
       setStatus({type:"success",msg:"Downloaded validation_results.xlsx"});
     } catch(e:unknown){setStatus({type:"error",msg:String((e as {response?:{data?:{detail?:string}}}).response?.data?.detail??e)});}
     finally{setLoading(false);}
@@ -126,6 +131,13 @@ export default function ValidationTab() {
             {loading?"Validating…":"Validate & Export Excel"}
           </button>
         </>
+      )}
+      {counts && (
+        <div className="flex gap-4 text-sm font-medium">
+          <span className="text-gray-400">{counts.total} cycles</span>
+          <span className="text-green-400">{counts.passed} passed</span>
+          <span className="text-red-400">{counts.failed} failed</span>
+        </div>
       )}
       {status && <StatusBanner type={status.type} message={status.msg} />}
     </div>

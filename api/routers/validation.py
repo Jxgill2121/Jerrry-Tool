@@ -10,8 +10,9 @@ import pandas as pd
 import openpyxl
 from openpyxl.styles import PatternFill, Font
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi.responses import StreamingResponse
 
-from api.utils import save_uploads, excel_response
+from api.utils import save_uploads
 from powertech_tools.utils.file_parser import read_headers_only, load_maxmin_for_plot
 from powertech_tools.data.validator import validate_maxmin_file
 
@@ -67,7 +68,17 @@ async def validate(
                 for cell in row:
                     cell.fill = fill
 
-        return excel_response(buf, "validation_results.xlsx")
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": 'attachment; filename="validation_results.xlsx"',
+                "X-Total":  str(summary["total_cycles"]),
+                "X-Passed": str(summary["passed_cycles"]),
+                "X-Failed": str(summary["failed_cycles"]),
+            },
+        )
 
     except HTTPException:
         raise
