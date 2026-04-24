@@ -15,8 +15,8 @@ if _root not in sys.path:
 
 _start_time = datetime.now(timezone.utc)
 
-# File logging (written to logs/ next to repo root)
-_log_dir = os.path.join(_root, "logs")
+# File logging (written to user's home logs/ folder so any account can write)
+_log_dir = os.path.join(os.path.expanduser("~"), "jerry_logs")
 os.makedirs(_log_dir, exist_ok=True)
 _log_file = os.path.join(_log_dir, "jerry.log")
 
